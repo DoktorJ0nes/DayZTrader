@@ -1,0 +1,172 @@
+FrameWidgetClass TraderMenu
+{
+	visible 0
+	color 0 0 0 0
+	position 0 0
+	size 1300 790
+	halign center_ref
+	valign center_ref
+	hexactpos 0
+	vexactpos 0
+	hexactsize 1
+	vexactsize 1
+	style EditorPanel
+
+	{
+        PanelWidgetClass Background
+        {
+			visible 1
+			color 0 0 0 0.45
+			position 0 0
+			size 1300 790
+			hexactpos 1
+			vexactpos 1
+			hexactsize 0
+			vexactsize 1
+			style rover_sim_colorable
+        }
+
+		PanelWidgetClass title_wrapper
+		{
+			visible 1
+			color 0 0 0 0.7843
+			position 0 0
+			size 1 50
+			hexactpos 1
+			vexactpos 1
+			hexactsize 0
+			vexactsize 1
+			style rover_sim_colorable
+
+			{
+				TextWidgetClass title_text
+				{
+					position 0 0
+					size 1 1
+					halign center_ref
+					valign center_ref
+					hexactpos 0
+					vexactpos 0
+					hexactsize 0
+					vexactsize 0
+					style Normal
+					text "Weapon Trader"
+					font "gui/fonts/Metron58"
+					"text offset" 30 0
+				}
+			}
+		}
+		
+		XComboBoxWidgetClass xcombobox_categorys 
+		{
+			position 5 55
+			size 600 40
+			halign left_ref
+            valign top_ref
+			hexactpos 1
+			vexactpos 1
+			hexactsize 1
+			vexactsize 1
+			font "gui/fonts/Metron28"
+			items "Melee;Sidearms;Shotguns;Assault Rifles;Light Machine Guns;Sub-Machine Guns;Sniper Rifles"
+		}
+		
+		TextWidgetClass text_saldo {
+			position 610 55
+			size 300 40
+			halign left_ref
+            valign top_ref
+			hexactpos 1
+			vexactpos 1
+			hexactsize 1
+			vexactsize 1
+			text "Balance: "
+			"exact text" 1
+			font "gui/fonts/Metron28"
+			"text halign" right
+		}
+		TextWidgetClass text_saldoValue {
+			position 910 55
+			size 300 40
+			halign left_ref
+            valign top_ref
+			hexactpos 1
+			vexactpos 1
+			hexactsize 1
+			vexactsize 1
+			text "1234567890"
+			"exact text" 1
+			font "gui/fonts/Metron28"
+			"text halign" left
+		}
+		
+		TextListboxWidgetClass txtlist_items {
+		 clipchildren 0
+         position 5 55
+         size 1290 625
+		 halign right_ref
+         valign bottom_ref
+         hexactpos 1
+         vexactpos 1
+         hexactsize 1
+         vexactsize 1
+         style Default
+         lines 1
+		 "title visible" 1
+		 colums "Item;70;Price Buy;15;Price Sell;15"
+         font "gui/fonts/Metron22"
+        }
+		
+		ButtonWidgetClass btn_cancel
+        {
+            position 5 5
+            size 160 40
+            halign left_ref
+            valign bottom_ref
+            hexactpos 1
+            vexactpos 1
+            hexactsize 1
+            vexactsize 1
+            text "Cancel"
+        }
+		
+		ButtonWidgetClass btn_show
+        {
+            position 335 5
+            size 160 40
+            halign right_ref
+            valign bottom_ref
+            hexactpos 1
+            vexactpos 1
+            hexactsize 1
+            vexactsize 1
+            text "Show"
+        }
+		
+		ButtonWidgetClass btn_buy
+        {
+            position 170 5
+            size 160 40
+            halign right_ref
+            valign bottom_ref
+            hexactpos 1
+            vexactpos 1
+            hexactsize 1
+            vexactsize 1
+            text "Buy"
+        }
+		
+		ButtonWidgetClass btn_sell
+        {
+            position 5 5
+            size 160 40
+            halign right_ref
+            valign bottom_ref
+            hexactpos 1
+            vexactpos 1
+            hexactsize 1
+            vexactsize 1
+            text "Sell"
+        }
+	}
+}
