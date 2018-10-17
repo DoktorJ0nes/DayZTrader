@@ -1,3 +1,15 @@
 {
-    "C_Cpp.errorSquiggles": "Disabled"
+    //"editor.multiCursorModifier": "alt",
+
+    //"C_Cpp.errorSquiggles": "Disabled",
+
+    "files.exclude": {
+        "$PREFIX$": true,
+        "$REVISION$": true
+      },
+
+    "files.associations": {
+    "*.c": "java",
+    "*.java": "java"
+    }
 }
