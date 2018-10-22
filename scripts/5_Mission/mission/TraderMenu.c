@@ -340,12 +340,19 @@ class TraderMenu extends UIScriptedMenu
 	
 	private bool canCreateItemInPlayerInventory(string itemType)
 	{
+		PlayerBase m_Player = g_Game.GetPlayer();
+
 		InventoryLocation il = new InventoryLocation;
 		
 		if (g_Game.GetPlayer().GetInventory().FindFirstFreeLocationForNewEntity(itemType, FindInventoryLocationType.ANY, il))
 		{
 			return true;
 		}
+
+		EntityAI entityInHands = m_Player.GetHumanInventory().GetEntityInHands();
+		if (!entityInHands)
+			return true;
+
 		return false;			
 	}
 	
@@ -378,7 +385,11 @@ class TraderMenu extends UIScriptedMenu
 		
 		array<EntityAI> itemsArray = new array<EntityAI>;
 		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
-		
+
+		/*EntityAI entityInHands = m_Player.GetHumanInventory().GetEntityInHands();
+		if (entityInHands)
+			itemsArray.Insert(entityInHands);*/
+
 		ItemBase item;
 		
 		for (int i = 0; i < itemsArray.Count(); i++)
@@ -391,6 +402,7 @@ class TraderMenu extends UIScriptedMenu
 			}
 		}
 		
+		/*
 		// remove double counted items because item was also in hand
 		ItemBase entityInHands;
 		Class.CastTo(entityInHands, m_Player.GetHumanInventory().GetEntityInHands());
@@ -400,7 +412,8 @@ class TraderMenu extends UIScriptedMenu
 		//if(item && item.GetType() == m_Player.m_Trader_CurrencyItemType)
 			//currencyAmount -= QuantityConversions.GetItemQuantity(entityInHands);	
 		
-		//m_Player.MessageStatus("currencyAmount: " + currencyAmount);		
+		//m_Player.MessageStatus("currencyAmount: " + currencyAmount);	
+		*/	
 		
 		return currencyAmount;
 	}
