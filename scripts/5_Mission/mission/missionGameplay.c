@@ -155,6 +155,11 @@ modded class MissionGameplay
 				}
 			}
 		}*/
+
+		if (key == KeyCode.KC_N)
+		{
+			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, new Param3<PlayerBase, string, int>(player, "MountainBag_Green", -1), true); // TO SERVER: createInInventory(player, itemType);
+		}
 		
 		if ( key == KeyCode.KC_M && player.m_Trader_RecievedAllData)
 		{			
@@ -166,7 +171,7 @@ modded class MissionGameplay
 				}
 			}*/
 		
-			Param3<PlayerBase, string, int> rp4 = new Param3<PlayerBase, string, int>(player, player.m_Trader_CurrencyItemType, 5);
+			Param3<PlayerBase, string, int> rp4 = new Param3<PlayerBase, string, int>(player, player.m_Trader_CurrencyItemType, 35);
 			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, rp4, true); // TO SERVER: createInInventory(player, itemType);
 		}
 

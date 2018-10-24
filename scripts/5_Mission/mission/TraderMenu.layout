@@ -51,7 +51,7 @@ FrameWidgetClass TraderMenu
 					vexactsize 0
 					style Normal
 					text "Weapon Trader"
-					font "gui/fonts/Metron58"
+					font "gui/fonts/Metron48"
 					"text offset" 30 0
 				}
 			}
@@ -72,8 +72,8 @@ FrameWidgetClass TraderMenu
 		}
 		
 		TextWidgetClass text_saldo {
-			position 610 55
-			size 300 40
+			position 610 60
+			size 500 40
 			halign left_ref
             valign top_ref
 			hexactpos 1
@@ -86,7 +86,7 @@ FrameWidgetClass TraderMenu
 			"text halign" right
 		}
 		TextWidgetClass text_saldoValue {
-			position 910 55
+			position 1110 60
 			size 300 40
 			halign left_ref
             valign top_ref
@@ -133,7 +133,7 @@ FrameWidgetClass TraderMenu
 		ButtonWidgetClass btn_show
         {
             position 335 5
-            size 160 40
+            size 0 0
             halign right_ref
             valign bottom_ref
             hexactpos 1

@@ -396,6 +396,8 @@ modded class DayZPlayerImplement
 					Print("[TRADER] READING ITEM ENTRY..");
 					char_count = FGets( file_index,  line_content );
 					
+					line_content = FileReadHelper.TrimComment(line_content);
+
 					if (line_content.Contains("<Trader>"))
 					{
 						traderID++;
@@ -410,7 +412,7 @@ modded class DayZPlayerImplement
 						continue;
 					}
 					
-					line_content = FileReadHelper.TrimComment(line_content);
+					//line_content = FileReadHelper.TrimComment(line_content);
 					
 					if (!line_content.Contains(","))
 						continue;
@@ -786,6 +788,7 @@ modded class DayZPlayerImplement
 		//
         //    return false;
 		//}
+
 		if (m_Trader_IsInSafezone)
 			return false;
 
@@ -830,7 +833,8 @@ modded class DayZPlayerImplement
 	void ShowDeadScreen(bool show)
 	{
 		//if (m_Trader_IsInSafezone)
-        //    return;
+		//if (m_Trader_PlayerDiedInSafezone)
+        //   return;
 
 	#ifndef NO_GUI
 		if (show && IsPlayerSelected())
@@ -841,7 +845,7 @@ modded class DayZPlayerImplement
 			if (!m_Trader_PlayerDiedInSafezone)
 				GetGame().GetUIManager().ScreenFadeIn(0, "You are dead", FadeColors.BLACK, FadeColors.WHITE);
 			else
-				GetGame().GetUIManager().ScreenFadeIn(0, "Someone killed you in the Safezone! Just exit and rejoin. We will find and torture him!", FadeColors.BLACK, 0xFFFF0000);
+				GetGame().GetUIManager().ScreenFadeIn(0, "Someone killed you in the Safezone! Just EXIT and RECONNECT to the Server. Do NOT RESPAWN!", FadeColors.BLACK, 0xFFFF0000);
 		#endif
 		}
 		else
@@ -853,8 +857,9 @@ modded class DayZPlayerImplement
 	
 	/*void SimulateDeath(bool state)
 	{
-		if (m_Trader_IsInSafezone)
-            return;
+		//if (m_Trader_IsInSafezone)
+		//if (m_Trader_PlayerDiedInSafezone)
+        //    return;
 
 		if (g_Game.GetMissionState() != DayZGame.MISSION_STATE_GAME)	 return;
 		//Print("Calling simulate death in state: " + state)

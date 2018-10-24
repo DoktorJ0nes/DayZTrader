@@ -1,8 +1,13 @@
 modded class PlayerBase
 {
+	bool m_Trader_IsTrader = false;
+
     override void EEKilled( Object killer )
 	{
-        //--------------------------------------------------------------- TRADER BEGIN ------------------------------------------------------------------------
+		//--------------------------------------------------------------- TRADER BEGIN ------------------------------------------------------------------------
+		if (m_Trader_IsTrader)
+			return;
+
         if (this.GetIdentity() != NULL)
         {
             m_Trader_PlayerDiedInSafezone = m_Trader_IsInSafezone;
@@ -10,14 +15,61 @@ modded class PlayerBase
 
             if (m_Trader_PlayerDiedInSafezone)
             {
+				/*// KEEP ALIVE METHOD START
+				//GetHive().CharacterExit(this); // AUSPROBIEREN!
+
+				string characterName = GetGame().CreateRandomPlayer();
+				vector pos = this.GetPosition();
+
+				PlayerBase m_player;
+				Entity playerEnt;
+				playerEnt = GetGame().CreatePlayer(this.GetIdentity(), characterName, pos, 0, "NONE");
+				Class.CastTo(m_player, playerEnt);
+				//HumanInventory i = HumanInventory.Cast(GetInventory());
+				
+				GetGame().SelectPlayer(this.GetIdentity(), m_player);
+				//GetGame().SelectPlayer(this.GetIdentity(), this);
+				
+				if( player ) player.OnConnect();		
+				// Send list of players at all clients
+				SyncEvents.SendPlayerList();
+
+				//GetHive().CharacterKill(this);
+				GetHive().CharacterSave(m_player);
+				//GetHive().CharacterExit(m_player);
+				//GetGame().DisconnectPlayer(m_player.GetIdentity(), m_player.GetIdentity().GetId());
+				//m_player.Delete();
+				////this.Delete();
+				
+				//GetGame().RPCSingleParam(m_player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "CHAR IS VALID!" ), true, m_player.GetIdentity());
+				// KEEP ALIVE METHOD END*/
+				
+				this.SetHealth( "", "", this.m_Trader_HealthEnteredSafeZone );
+				this.SetHealth( "","Blood", this.m_Trader_HealthBloodEnteredSafeZone );
+				this.SetHealth( "","Shock", this.GetMaxHealth( "", "Shock" ) );
+
+				if (GetHive())
+					GetHive().CharacterExit(this);
+					
+				if (!this.IsAlive())
+					SetPosition(vector.Zero);
+				
+				//GetGame().SelectPlayer(this.GetIdentity(), this);
+				//GetHive().CharacterSave(this);
+
+				// RELOG METHOD START
                 //GetHumanInventory().LockInventory(LOCK_FROM_SCRIPT);
 
-                if (GetHive())
-                    GetHive().CharacterExit(this);
+                //if (GetHive())
+                //    GetHive().CharacterExit(this);
 
-                //GetGame().ObjectDelete(player);
-                //GetGame().ObjectDelete(this);
-                SetPosition(vector.Zero);
+                ////GetGame().ObjectDelete(player);
+				////GetGame().ObjectDelete(this);
+				////this.Delete();
+				//SetPosition(vector.Zero);
+
+				//this.OnConnect();
+				// RELOG METHOD END
 
                 return;
             }
@@ -53,63 +105,6 @@ modded class PlayerBase
 		if (GetHive())
 		{
 			GetHive().CharacterKill(this);
-            GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "CHAR KILLED FROM HIVE!" ), true, this.GetIdentity());
 		}
 	}
-
-	/*override void EEHitBy(TotalDamageResult damageResult, int damageType, EntityAI source, string component, string ammo, vector modelPos)
-	{
-        PlayerBase player = GetGame().GetPlayer();
-        if (player.m_Trader_IsInSafezone)
-               return;
-
-		super.EEHitBy(damageResult, damageType, source, component, ammo, modelPos);
-		if( damageResult != null && damageResult.GetDamage(component, "Shock") > 0)
-		{
-			m_LastShockHitTime = GetGame().GetTime();
-		}
-		//DamagePlayer(damageResult, source, modelPos, ammo);
-		
-		//new bleeding computation
-		//---------------------------------------
-		if ( damageResult != null && GetBleedingManager() )
-		{
-			float dmg = damageResult.GetDamage(component, "Blood");
-			GetBleedingManager().ProcessHit(dmg, component, ammo, modelPos);
-		}
-		//Print(damageResult.GetDamage(component,"Health"));
-		//---------------------------------------
-		
-		//if( GetBleedingManager() ) GetBleedingManager().ProcessHit(component, ammo, modelPos);
-		#ifdef DEVELOPER
-		if(DiagMenu.GetBool(DiagMenuIDs.DM_MELEE_DEBUG_ENABLE))
-		{
-			Print("EEHitBy() | Charater " + GetDisplayName() + " hit by " + source.GetDisplayName() + " to " + component);
-		}
-		
-		PluginRemotePlayerDebugServer plugin_remote_server = PluginRemotePlayerDebugServer.Cast( GetPlugin(PluginRemotePlayerDebugServer) );
-		if(plugin_remote_server)
-		{
-			plugin_remote_server.OnDamageEvent(this, damageResult);
-		}
-		#endif
-		if (GetGame().IsDebugMonitor())
-			m_DebugMonitorValues.SetLastDamage(source.GetDisplayName());
-	}
-	
-	override void EEHitByRemote(int damageType, EntityAI source, string component, string ammo, vector modelPos)
-	{
-        PlayerBase player = GetGame().GetPlayer();
-        if (player.m_Trader_IsInSafezone)
-               return;
-
-		super.EEHitByRemote(damageType, source, component, ammo, modelPos);
-		
-		if( GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_CLIENT )
-		{
-			SpawnBulletHitReaction();
-		}	
-		
-		Print("DayZPlayerImplement : EEHitByRemote");
-	}*/
 }

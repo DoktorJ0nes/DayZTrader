@@ -4,8 +4,9 @@ class TraderMenu extends UIScriptedMenu
     ButtonWidget m_BtnBuy;
 	ButtonWidget m_BtnSell;
 	ButtonWidget m_BtnCancel;
-	ButtonWidget m_BtnShow;
+	//ButtonWidget m_BtnShow;
 	TextListboxWidget m_ListboxItems;
+	TextWidget m_Saldo;
 	TextWidget m_SaldoValue;
 	TextWidget m_TraderName;
 	XComboBoxWidget m_XComboboxCategorys;
@@ -57,8 +58,9 @@ class TraderMenu extends UIScriptedMenu
         m_BtnBuy = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_buy" ) );
 		m_BtnSell = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_sell" ) );
 		m_BtnCancel = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_cancel" ) );
-		m_BtnShow = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_show" ) );
+		//m_BtnShow = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_show" ) );
 		m_ListboxItems = TextListboxWidget.Cast(layoutRoot.FindAnyWidget("txtlist_items") );
+		m_Saldo = TextWidget.Cast(layoutRoot.FindAnyWidget("text_saldo") );
 		m_SaldoValue = TextWidget.Cast(layoutRoot.FindAnyWidget("text_saldoValue") );
 		m_TraderName = TextWidget.Cast(layoutRoot.FindAnyWidget("title_text") );
 		m_XComboboxCategorys = XComboBoxWidget.Cast( layoutRoot.FindAnyWidget( "xcombobox_categorys" ) );
@@ -154,7 +156,7 @@ class TraderMenu extends UIScriptedMenu
 				return true;
 			}
 			
-			//EntityAI entity = g_Game.GetPlayer().SpawnEntityOnGroundPos(itemType, m_Player.GetPosition()); // ghgostitem to check if there is space in inventory // nicht sichtbar fuer clients?
+			//EntityAI entity = g_Game.GetPlayer().SpawnEntityOnGroundPos(itemType, m_Player.GetPosition()); // ghostitem to check if there is space in inventory // nicht sichtbar fuer clients?
 			
 			//if (m_Player.GetHumanInventory().CanAddEntityToInventory(entity))
 			if (canCreateItemInPlayerInventory(itemType))
@@ -220,7 +222,7 @@ class TraderMenu extends UIScriptedMenu
 			return true;
 		}
 		
-		if ( w == m_BtnShow )
+		/*if ( w == m_BtnShow )
 		{
 			m_Player.MessageStatus("[Trader] Preview " + itemType);
 			EntityAI entityToInspect = g_Game.GetPlayer().SpawnEntityOnGroundPos(itemType, m_Player.GetPosition());
@@ -228,7 +230,7 @@ class TraderMenu extends UIScriptedMenu
 			entityToInspect.Delete();
 
 			return true;
-		}
+		}*/
 		
 		if ( w == m_BtnCancel )
 		{
@@ -269,6 +271,17 @@ class TraderMenu extends UIScriptedMenu
 		
 		//updateItemListboxContent();
 		updateListbox = true;
+
+		/*PlayerBase m_Player = g_Game.GetPlayer();
+		EntityAI entityInHands = m_Player.GetHumanInventory().GetEntityInHands();
+		if (entityInHands)
+		{
+			m_Player.MessageStatus("SOMETHING IN HANDS!");
+			bool testIA = IsAttachment(entityInHands, "AK_Suppressor");
+			m_Player.MessageStatus("ISATTACHMENT = " + testIA);
+		}
+		else
+			m_Player.MessageStatus("NOTHING IN HANDS!");*/
 		
 		return false;
 	}
@@ -328,14 +341,28 @@ class TraderMenu extends UIScriptedMenu
 			{
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(1, 1, 1, 1) );
 			}
+
+			//PlayerBase m_Player = g_Game.GetPlayer();
+			EntityAI entityInHands = g_Game.GetPlayer().GetHumanInventory().GetEntityInHands();
+			if (entityInHands)
+			{
+				if (IsAttached(entityInHands, itemClassname))
+					m_ListboxItems.SetItemColor(i, 0, ARGBF(1, 0.4, 0.4, 1) );
+				else if (IsAttachment(entityInHands, itemClassname))
+					m_ListboxItems.SetItemColor(i, 0, ARGBF(1, 0.7, 0.7, 1) );
+				else
+					m_ListboxItems.SetItemColor(i, 0, ARGBF(1, 1, 1, 1) );
+			}
 		}
 	}
 	
 	private void updatePlayerCurrencyAmount()
 	{
+		PlayerBase m_Player = g_Game.GetPlayer();
+
 		m_Player_CurrencyAmount = 0;
 		m_Player_CurrencyAmount = getPlayerCurrencyAmount();
-		m_SaldoValue.SetText("" + m_Player_CurrencyAmount);
+		m_SaldoValue.SetText(" " + m_Player_CurrencyAmount);
 	}
 	
 	private bool canCreateItemInPlayerInventory(string itemType)
@@ -673,13 +700,379 @@ class TraderMenu extends UIScriptedMenu
 		else
 			return itemClassname;
 	}
+
+	private bool IsAttached(EntityAI parentEntity, string attachmentClassname)
+	{
+		for ( int i = 0; i < parentEntity.GetInventory().AttachmentCount(); i++ )
+		{
+			EntityAI attachment = parentEntity.GetInventory().GetAttachmentFromIndex ( i );
+			if ( attachment.IsKindOf ( attachmentClassname ) )
+				return true;
+		}
+
+		return false;
+	}
+
+	private bool IsAttachment(EntityAI parentEntity, string attachmentClassname)
+	{
+		//PlayerBase m_Player = g_Game.GetPlayer();
+
+		// Check chamberable Ammunitions
+		string type_name = parentEntity.GetType();
+		TStringArray cfg_chamberables = new TStringArray;
+
+		GetGame().ConfigGetTextArray(CFG_WEAPONSPATH + " " + type_name + " chamberableFrom", cfg_chamberables);
+
+		for (int i = 0; i < cfg_chamberables.Count(); i++)
+		{
+			if (attachmentClassname == cfg_chamberables[i])
+				return true;
+		}
+
+
+		// Check Magazines
+		TStringArray cfg_magazines = new TStringArray;
+
+		GetGame().ConfigGetTextArray(CFG_WEAPONSPATH + " " + type_name + " magazines", cfg_magazines);
+
+		for (i = 0; i < cfg_magazines.Count(); i++)
+		{
+			if (attachmentClassname == cfg_magazines[i])
+				return true;
+		}
+
+
+		// Check non-Ammo Attachments (TODO with "Cfg ... randomAttachments")
+		/*
+		string attachmentInventorySlot = GetItemInventorySlot(attachmentClassname);
+		if (attachmentInventorySlot == string.Empty || attachmentInventorySlot == "weaponOptics")
+			return false;
+
+		array<string> attachments_slots = GetItemAttachmentSlots(parentEntity.GetType());
+
+		for (i = 0; i < attachments_slots.Count(); i++)
+		{
+			if (attachments_slots.Get(i) == attachmentInventorySlot)
+				return true;
+		}*/
+
+
+		return false;
+
+
+		/*string attachmentInventorySlot;
+		g_Game.ConfigGetText(CFG_VEHICLESPATH + " " + attachmentClassname + " inventorySlot", attachmentInventorySlot);
+		m_Player.MessageStatus("ITEM: " + attachmentInventorySlot);*/
+
+
+		/*TStringArray searching_in = new TStringArray;
+		searching_in.Insert( CFG_VEHICLESPATH );
+		searching_in.Insert( CFG_WEAPONSPATH );
+		searching_in.Insert( CFG_MAGAZINESPATH );
+
+		array<string> attachments_slots	= new array<string>;
+
+		for ( int s = 0; s < searching_in.Count(); ++s )
+		{
+			string cfg_name = searching_in.Get( s );
+			string path = cfg_name + " " + parentEntity.GetType();
+
+			if ( GetGame().ConfigIsExisting( path ) )
+			{
+				g_Game.ConfigGetTextArray( path + " attachments", attachments_slots );
+				if ( parentEntity.IsWeapon() )
+				{
+					attachments_slots.Insert( "magazine" );
+				}
+			}
+		}
+		if ( parentEntity.IsWeapon() )
+		{
+			attachments_slots.Insert( "magazine" );
+		}
+
+		for (int i = 0; i < attachments_slots.Count(); i++)
+		{
+			string slot_name = attachments_slots.Get ( i );
+
+			string namePath = "CfgSlots" + " Slot_" + slot_name;
+			GetGame().ConfigGetText( namePath + " name", slot_name );
+
+			m_Player.MessageStatus("HANDS: " + slot_name);
+
+			if (slot_name == attachmentInventorySlot)
+				return true;
+
+			
+			//int cfg_count = GetGame().ConfigGetChildrenCount(namePath);
+			//m_Player.MessageStatus("WOW: " + cfg_count);
+			//for (int j = 0; j < cfg_count; j++)
+			//{
+			//	string childName;
+			//	GetGame().ConfigGetChildName(namePath, j, childName);
+			//	m_Player.MessageStatus("WOWW: " + childName);
+			//}
+		}
+
+		return false;*/
+
+
+		// Check with Ghostentity
+		/*EntityAI entity = g_Game.GetPlayer().SpawnEntityOnGroundPos(attachmentClassname, vector.Zero); 
+		m_Player.MessageStatus("DEBUG: Placed " + entity.GetDisplayName());
+
+		if ( parentEntity.GetInventory() && parentEntity.GetInventory().CanAddAttachment( entity ) )
+		{
+			entity.Delete();
+			return true;
+		}
+
+		entity.Delete();
+		return false;*/
+
+
+		/*
+		//string			type_name = entity.GetType();
+		string			type_name = parentEntity.GetType();
+		TStringArray	cfg_attachments = new TStringArray;
+		
+		string cfg_path;
+		
+		if ( GetGame().ConfigIsExisting(CFG_VEHICLESPATH+" "+type_name) )
+		{
+			cfg_path = CFG_VEHICLESPATH+" "+type_name+" attachments";
+		}
+		else if ( GetGame().ConfigIsExisting(CFG_WEAPONSPATH+" "+type_name) )
+		{
+			cfg_path = CFG_WEAPONSPATH+" "+type_name+" attachments";
+		}
+		else if ( GetGame().ConfigIsExisting(CFG_MAGAZINESPATH+" "+type_name) )
+		{
+			cfg_path = CFG_MAGAZINESPATH+" "+type_name+" attachments";
+		}
+		
+		GetGame().ConfigGetTextArray(cfg_path, cfg_attachments);
+
+		//GetGame().ConfigGetTextArray("cfgVehicles " + type_name + " itemInfo", cfg_attachments);
+		GetGame().ConfigGetTextArray(cfg_path, cfg_attachments);
+
+		for (int i = 0; i < cfg_attachments.Count(); i++)
+		{
+			m_Player.MessageStatus(cfg_attachments[i]);
+
+			if (attachmentClassname == cfg_attachments[i].GetType)
+			return true;
+		}
+
+		return false;*/
+
+		/*string tesstr;
+		TStringArray cfg_attachments = new TStringArray;
+		string type_name = parentEntity.GetType();
+		string path = CFG_WEAPONSPATH + " " + type_name + " chamberableFrom";
+		//int cfg_count = GetGame().ConfigGetChildrenCount(path);
+
+		
+		GetGame().ConfigGetTextArray(path, cfg_attachments);
+		//tesstr = GetGame().ConfigGetTextOut(path);
+		//cfg_attachments.Insert(tesstr);
+
+		m_Player.MessageStatus("(" + cfg_attachments.Count() + ") CFGs: " + path + ":");
+		Print("(" + cfg_attachments.Count() + ") CFGs: " + path + ":");
+
+		for (int i = 0; i < cfg_attachments.Count(); i++)
+		{
+			m_Player.MessageStatus("x   " + cfg_attachments[i]);
+			Print("x   " + cfg_attachments[i]);
+		}
+
+		return false;*/
+	}
+
+	private string GetItemInventorySlot(string itemClassname)
+	{
+		TStringArray searching_in = new TStringArray;
+		searching_in.Insert( CFG_VEHICLESPATH );
+		searching_in.Insert( CFG_WEAPONSPATH );
+		searching_in.Insert( CFG_MAGAZINESPATH );
+
+		string inventorySlot = string.Empty;
+
+		for ( int s = 0; s < searching_in.Count(); ++s )
+		{
+			string cfg_name = searching_in.Get( s );
+			string path = cfg_name + " " + itemClassname + " inventorySlot";
+
+			if ( GetGame().ConfigIsExisting( path ) )
+			{
+				g_Game.ConfigGetText( path, inventorySlot );
+
+				return inventorySlot;
+			}
+		}
+
+		return inventorySlot;
+	}
+
+	private array<string> GetItemAttachmentSlots(string itemClassname)
+	{
+		TStringArray searching_in = new TStringArray;
+		searching_in.Insert( CFG_VEHICLESPATH );
+		searching_in.Insert( CFG_WEAPONSPATH );
+		searching_in.Insert( CFG_MAGAZINESPATH );
+
+		array<string> attachments_slots	= new array<string>;
+
+		for ( int s = 0; s < searching_in.Count(); ++s )
+		{
+			string cfg_name = searching_in.Get( s );
+			string path = cfg_name + " " + itemClassname;
+
+			if ( GetGame().ConfigIsExisting( path ) )
+			{
+				g_Game.ConfigGetTextArray( path + " attachments", attachments_slots );
+				/*if ( parentEntity.IsWeapon() )
+				{
+					attachments_slots.Insert( "magazine" );
+				}*/
+			}
+		}
+		/*if ( parentEntity.IsWeapon() )
+		{
+			attachments_slots.Insert( "magazine" );
+		}*/
+
+		//TEST();
+
+		return attachments_slots;
+	}
+
+	/*private void TEST()
+	{
+		string classname = "CZ61";
+
+		TStringArray searching_in = new TStringArray;
+		searching_in.Insert( CFG_VEHICLESPATH );
+		searching_in.Insert( CFG_WEAPONSPATH );
+		searching_in.Insert( CFG_MAGAZINESPATH );
+
+		ref array<array<string>> entrys = new array<array<string>>;
+
+		for ( int s = 0; s < searching_in.Count(); ++s )
+		{
+			string cfg_name = searching_in.Get( s );
+			string path = cfg_name + " " + classname;
+
+			if ( GetGame().ConfigIsExisting( path ) )
+			{
+				g_Game.ConfigGetTextArray( path + " randomAttachments", entrys );
+
+				for (int i = 0; i < entrys.Count(); i++)
+				{
+					Print("ENTRYS: " + entrys.Get(i));
+				}
+			}
+		}
+	}*/
+
+	/*static void GetBaseConfigClasses( out TStringArray base_classes )
+	{
+		base_classes.Clear();
+		base_classes.Insert(CFG_VEHICLESPATH);
+		base_classes.Insert(CFG_WEAPONSPATH);
+		base_classes.Insert(CFG_MAGAZINESPATH);
+		base_classes.Insert(CFG_RECIPESPATH);
+	}
+
+	static void GetAllConfigClasses( string search_string, out TStringArray filtered_classes, bool only_public = false )
+	{	
+		TStringArray searching_in = new TStringArray;
+		GetBaseConfigClasses( searching_in );
+		
+		filtered_classes.Clear();
+		
+		search_string.ToLower();
+		
+		for ( int s = 0; s < searching_in.Count(); ++s )
+		{
+			string config_path = searching_in.Get(s);
+			
+			int objects_count = GetGame().ConfigGetChildrenCount(config_path);
+			for (int i = 0; i < objects_count; i++)
+			{
+				string childName;
+				GetGame().ConfigGetChildName(config_path, i, childName);
+	
+				//if ( only_public )
+				//{
+				//	int scope = GetGame().ConfigGetInt( config_path + " " + childName + " scope" );
+				//	if ( scope == 0 )
+				//	{
+				//		continue;
+				//	}
+				//}
+				
+				string nchName = childName;
+				nchName.ToLower();
+	
+				//if ( nchName.Contains(search_string) != -1)
+				//{
+				filtered_classes.Insert(childName);
+				Print("CGFs ChildName: " + childName);
+				
+				int objects_count2 = GetGame().ConfigGetChildrenCount(config_path + " " + childName);
+				for (int i2 = 0; i2 < objects_count2; i2++)
+				{
+					string childName2;
+					GetGame().ConfigGetChildName(config_path + " " + childName, i2, childName2);
+					//GetGame().ConfigGetTextArray(cfg_path, cfg_attachments);
+
+					filtered_classes.Insert(childName2);
+					Print("---CGFs ChildName2: " + childName2);
+				}
+				//}
+			}
+		}
+	}*/
+
+	/*array<string> GetItemSlots(EntityAI e)
+	{
+		TStringArray searching_in = new TStringArray;
+		searching_in.Insert(CFG_VEHICLESPATH);
+		searching_in.Insert(CFG_WEAPONSPATH);
+		searching_in.Insert(CFG_MAGAZINESPATH);
+
+		array<string> attachments_slots	= new array<string>;
+		
+		for ( int s = 0; s < searching_in.Count(); ++s )
+		{
+			string cfg_name = searching_in.Get(s);
+			string path = cfg_name + " " + e.GetType();   
+
+			if ( GetGame().ConfigIsExisting( path ) )
+			{
+				g_Game.ConfigGetTextArray(path + " attachments", attachments_slots);
+				if ( e.IsWeapon() )
+				{
+					attachments_slots.Insert("magazine");
+				}
+				return attachments_slots;
+			}
+		}
+		if ( e.IsWeapon() )
+		{
+			attachments_slots.Insert("magazine");
+		}
+		return attachments_slots;
+	}*/
 	
 	private bool LoadFileValues()
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
 		m_TraderName.SetText(m_Player.m_Trader_TraderNames.Get(m_TraderID));
-		
+		m_Saldo.SetText("(" + getItemDisplayName(m_Player.m_Trader_CurrencyItemType) + ") Balance: ");
+
 		m_XComboboxCategorys.ClearAll();
 		m_Categorys = new array<string>;
 		m_CategorysTraderKey = new array<int>;
@@ -755,7 +1148,6 @@ class TraderMenu extends UIScriptedMenu
 		m_ListboxItemsQuantity = new array<int>;
 		m_ListboxItemsBuyValue = new array<int>;
 		m_ListboxItemsSellValue = new array<int>;
-			
 			
 		for ( int i = 0; i < m_Player.m_Trader_ItemsClassnames.Count(); i++ )
 		{

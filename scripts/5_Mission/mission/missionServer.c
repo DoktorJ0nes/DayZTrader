@@ -133,10 +133,6 @@ modded class MissionServer
 
 				if (m_Trader_PlayerHiveUpdateTime == 0 && player.IsAlive())
 					GetHive().CharacterSave(player);
-
-				//if ( player.GetActionManager() )	 player.GetActionManager().DisableActions();
-				////player.GetInventory().LockInventory(LOCK_FROM_SCRIPT);
-				//player.m_InventorySoftLocked = true;
 			}
 		}
 		
@@ -232,7 +228,7 @@ modded class MissionServer
 			obj.SetAllowDamage(false); // <- funzt nicht bei Charakteren..
 			Print("[TRADER] SPAWNED OBJECT '" + traderObjectType + "' AT '" + objectPosition + "'");
 			
-			bool isTrader = false
+			bool isTrader = false;
 			PlayerBase man;
 			if (Class.CastTo(man, obj))
 			{
@@ -259,6 +255,7 @@ modded class MissionServer
 				
 				if (isTrader)
 				{
+					man.m_Trader_IsTrader = true;
 					m_Trader_SpawnedTraderCharactersDirections.Insert(obj.GetDirection());
 					m_Trader_SpawnedTraderCharacters.Insert(man);
 				}
