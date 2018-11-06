@@ -96,34 +96,38 @@ modded class PlayerBase
         //---------------------------------------------------------------- TRADER END -------------------------------------------------------------------------
 
 		Print("EEKilled, you have died");
-		if( GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_CLIENT )
+		
+		DayZPlayerSyncJunctures.SendDeath(this, -1, 0);
+		
+		if( GetBleedingManagerServer() ) delete GetBleedingManagerServer();
+		
+		if( GetHumanInventory().GetEntityInHands() )
 		{
-			// @NOTE: this branch does not happen, EEKilled is called only on server
-			if( GetGame().GetPlayer() == this )
+			if( CanDropEntity(this) )
 			{
-				super.EEKilled( killer );
+				if( !IsRestrained() )
+				{
+					GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(ServerDropEntity,1000,false,( GetHumanInventory().GetEntityInHands()));
+				}
 			}
-			if (GetHumanInventory().GetEntityInHands())
-				GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(ServerDropEntity,1000,false,( GetHumanInventory().GetEntityInHands() ));
+			
 		}
-		else if( GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_SERVER)//server
-		{
-			if( GetBleedingManager() ) delete GetBleedingManager();
-			if( GetHumanInventory().GetEntityInHands() )
-				GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(ServerDropEntity,1000,false,( GetHumanInventory().GetEntityInHands() ));
-		}
-		
-		if ( GetSoftSkillManager() )
-		{
-			delete GetSoftSkillManager();
-		} 
-		
-		GetStateManager().OnPlayerKilled();
 		
 		// kill character in database
 		if (GetHive())
 		{
 			GetHive().CharacterKill(this);
 		}
+	
+		// disable voice communication
+		GetGame().EnableVoN(this, false);
+	
+		
+		if ( GetSoftSkillManager() )
+		{
+			delete GetSoftSkillManager();
+		} 
+		
+		GetSymptomManager().OnPlayerKilled();
 	}
 }

@@ -18,6 +18,8 @@ modded class MissionServer
 		UpdateDummyScheduler();
 		TickScheduler(timeslice);
 		UpdateLogoutPlayers();
+		
+		//---------------------------------------------- TRADER BEGIN ----------------------------
 
 		m_Trader_PlayerHiveUpdateTime += timeslice;
 		if (m_Trader_PlayerHiveUpdateTime >= 1)

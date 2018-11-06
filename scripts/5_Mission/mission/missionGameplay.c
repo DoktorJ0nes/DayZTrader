@@ -20,8 +20,10 @@ modded class MissionGameplay
 	{
 		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
 				
-		//if( player )
-		//	player.OnTick();
+		if( player )
+			player.OnTick();
+			
+		//---------------------------------------------- TRADER BEGIN ----------------------------
 		
 		if ( player )
 		{		
@@ -84,7 +86,82 @@ modded class MissionGameplay
 	override void OnKeyPress(int key)
 	{
 		super.OnKeyPress(key);
-		m_hud.KeyPress(key);
+		m_Hud.KeyPress(key);
+		
+		
+		//temporary
+		//Gestures [.]
+#ifdef DEVELOPER
+		/*if ( key == KeyCode.KC_PERIOD )
+		{
+			//open gestures menu
+			if ( !GetUIManager().IsMenuOpen( MENU_GESTURES ) )
+			{
+				//TODO reconnect when appropriate
+				GesturesMenu.OpenMenu();
+			}
+		}*/
+#endif
+		/*
+		//temporary
+		//Radial Quickbar [,]
+		if ( key == KeyCode.KC_COMMA )
+		{
+			//open radial quickbar menu
+			if ( !GetGame().GetUIManager().IsMenuOpen( MENU_RADIAL_QUICKBAR ) )
+			{
+				//TODO reconnect when appropriate
+				RadialQuickbarMenu.OpenMenu();
+			}
+		}
+		*/
+		
+#ifdef DEVELOPER
+		// drop item prototype
+		if ( key == KeyCode.KC_N )
+		{
+			PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
+			if (player && player.GetItemInHands() && !GetUIManager().GetMenu())
+			{
+				ActionManagerClient manager = ActionManagerClient.Cast(player.GetActionManager());
+				manager.ActionDropItemStart(player.GetItemInHands(),null);
+			}
+		}
+		
+		/*if ( key == KeyCode.KC_P )
+		{
+			if (!player)
+				player = PlayerBase.Cast(GetGame().GetPlayer());
+			player.SetHealth("Brain","Health",0);
+			player.SetHealth("","Health",0);
+		}*/
+		
+		/*if ( key == KeyCode.KC_P )
+		{
+			if (!player)
+				player = PlayerBase.Cast(GetGame().GetPlayer());
+			int slot_id = InventorySlots.GetSlotIdFromString("Legs"); 
+ 			EntityAI players_legs = player.GetInventory().FindPlaceholderForSlot( slot_id );
+			Print("--attachment type = " + players_legs.GetType());
+		}*/
+		
+		/*if ( key == KeyCode.KC_P )
+		{
+			if (!player)
+				player = PlayerBase.Cast(GetGame().GetPlayer());
+			if (player && player.m_EmoteManager && player.GetItemInHands())
+			{
+				player.DropItem(player.GetItemInHands());
+			}
+		}*/
+		
+		if ( key == KeyCode.KC_Q )
+		{
+			//SEffectManager.PlaySound("HandCuffs_A_SoundSet", GetGame().GetPlayer().GetPosition(), 0, 0, false);
+		}
+#endif
+		
+		//---------------------------------------------- TRADER BEGIN ----------------------------
 		
 		
 		PlayerBase player = g_Game.GetPlayer();
@@ -103,18 +180,6 @@ modded class MissionGameplay
 			
 			handledFirstInput = true;
 		}
-		
-		//temporary
-		//Gestures [.]
-		/*if ( key == KeyCode.KC_PERIOD )
-		{
-			//open gestures menu
-			if ( !GetUIManager().IsMenuOpen( MENU_GESTURES ) )
-			{
-				//TODO reconnect when appropriate
-				GesturesMenu.OpenMenu();
-			}
-		}*/
 		
 		if ( key == KeyCode.KC_T )
 		{
@@ -340,6 +405,7 @@ modded class MissionGameplay
 		
 		//temporary
 		//Gestures [.]
+#ifdef DEVELOPER
 		/*if ( key == KeyCode.KC_PERIOD )
 		{
 			//close gestures menu
@@ -349,6 +415,22 @@ modded class MissionGameplay
 				GesturesMenu.CloseMenu();
 			}
 		}*/
+#endif
+		/*
+		//temporary
+		//Radial Quickbar [,]
+		if ( key == KeyCode.KC_COMMA )
+		{
+			//close radial quickbar menu
+			if ( GetGame().GetUIManager().IsMenuOpen( MENU_RADIAL_QUICKBAR ) )
+			{
+				//TODO reconnect when appropriate
+				RadialQuickbarMenu.CloseMenu();
+			}
+		}
+		*/
+		
+		//---------------------------------------------- TRADER BEGIN ----------------------------
 		
 		PlayerBase player = GetGame().GetPlayer();
 		

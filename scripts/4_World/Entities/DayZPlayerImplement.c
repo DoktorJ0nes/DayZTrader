@@ -73,12 +73,27 @@ modded class DayZPlayerImplement
 	
 	ref array<Object> TEST_ObjectsToSave = new array<Object>;
 	
-	//---------------------------------------------------
+	//------------------ TRADERVARS END -----------------
 	
 	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
 		super.OnRPC(sender, rpc_type, ctx);
+		
+		if (rpc_type == ERPCs.RPC_DAYZPLAYER_DEBUGSERVERWALK)
+		{
+			Print("ERPCs.RPC_DAYZPLAYER_DEBUGSERVERWALK");
 
+			Param1<bool> rp = new Param1<bool>(false);
+
+			ctx.Read(rp);
+
+			GetInputController().OverrideMovementSpeed(rp.param1, 1);
+			GetInputController().OverrideAimChangeX(rp.param1, 0.01);
+
+		}
+		
+		//--------------------------------------------------------------- TRADER BEGIN ------------------------------------------------------------------------		
+		
 		PlayerBase player;
 		string itemType;
 		ItemBase item;
@@ -830,7 +845,7 @@ modded class DayZPlayerImplement
 	
 	//static const int DEAD_SCREEN_DELAY = 1000;
 	
-	void ShowDeadScreen(bool show)
+	void ShowDeadScreen(bool show, float duration)
 	{
 		//if (m_Trader_IsInSafezone)
 		//if (m_Trader_PlayerDiedInSafezone)
@@ -840,18 +855,23 @@ modded class DayZPlayerImplement
 		if (show && IsPlayerSelected())
 		{
 		#ifdef PLATFORM_CONSOLE
-			GetGame().GetUIManager().ScreenFadeIn(0, "You are dead", FadeColors.DARK_RED, FadeColors.WHITE);
+			GetGame().GetUIManager().ScreenFadeIn(duration, "#dayz_implement_dead", FadeColors.DARK_RED, FadeColors.WHITE);
 		#else
 			if (!m_Trader_PlayerDiedInSafezone)
-				GetGame().GetUIManager().ScreenFadeIn(0, "You are dead", FadeColors.BLACK, FadeColors.WHITE);
+				GetGame().GetUIManager().ScreenFadeIn(duration, "#dayz_implement_dead", FadeColors.BLACK, FadeColors.WHITE);
 			else
-				GetGame().GetUIManager().ScreenFadeIn(0, "Someone killed you in the Safezone! Just EXIT and RECONNECT to the Server. Do NOT RESPAWN!", FadeColors.BLACK, 0xFFFF0000);
+				GetGame().GetUIManager().ScreenFadeIn(duration, "Someone killed you in the Safezone! Just EXIT and RECONNECT to the Server. Do NOT RESPAWN!", FadeColors.BLACK, 0xFFFF0000);
 		#endif
 		}
 		else
 		{
 			GetGame().GetUIManager().ScreenFadeOut(0);
 		}
+		
+		if (duration > 0)
+			GetGame().GetCallQueue(CALL_CATEGORY_GUI).CallLater(StopDeathDarkeningEffect, duration*1000, false);
+		else
+			GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(StopDeathDarkeningEffect);
 	#endif
 	}
 	
