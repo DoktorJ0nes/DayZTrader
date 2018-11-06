@@ -5,13 +5,29 @@ modded class PlayerBase
     override void EEKilled( Object killer )
 	{
 		//--------------------------------------------------------------- TRADER BEGIN ------------------------------------------------------------------------
-		if (m_Trader_IsTrader)
-			return;
+		
 
-        if (this.GetIdentity() != NULL)
-        {
+        //if (this.GetIdentity() != NULL)
+        //{
             m_Trader_PlayerDiedInSafezone = m_Trader_IsInSafezone;
             GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_TRADER_PLAYER_DIED_IN_SAFEZONE, new Param1<bool>( m_Trader_PlayerDiedInSafezone ), true, this.GetIdentity());
+			
+			if (killer != NULL && (m_Trader_PlayerDiedInSafezone || m_Trader_IsTrader))
+			{
+				PlayerBase playerKiller;
+				Class.CastTo(playerKiller, killer);
+
+				if (playerKiller && playerKiller != this)
+				{
+					Print("[TRADER] Player with PlayerUID " + playerKiller.GetIdentity().GetId() + " killed someone in the Safezone!");
+					playerKiller.SetPosition(this.GetPosition());
+					playerKiller.SetHealth( "", "", 0 );
+					playerKiller.SetHealth( "", "Blood", 0 );
+				}
+
+				if (playerKiller == this)
+					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "IDIOT!" ), true, this.GetIdentity());
+			}
 
             if (m_Trader_PlayerDiedInSafezone)
             {
@@ -73,7 +89,10 @@ modded class PlayerBase
 
                 return;
             }
-        }
+		//}
+		
+		if (m_Trader_IsTrader) // TODO!
+			return;
         //---------------------------------------------------------------- TRADER END -------------------------------------------------------------------------
 
 		Print("EEKilled, you have died");
