@@ -145,7 +145,7 @@ modded class MissionServer
 			//m_Trader_SpawnedTraderCharacters.Get(i).GetStatStamina().Set(1000);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatEnergy().Set(1000);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatWater().Set(1000);
-			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachSolid().Set(300);		
+			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachVolume().Set(300);		
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachWater().Set(300);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachEnergy().Set(300);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatHeatComfort().Set(0);
