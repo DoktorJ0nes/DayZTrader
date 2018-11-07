@@ -846,7 +846,7 @@ modded class DayZPlayerImplement
 	}*/
 	
 	//static const int DEAD_SCREEN_DELAY = 1000;
-	
+
 	void ShowDeadScreen(bool show, float duration)
 	{
 		//if (m_Trader_IsInSafezone)
@@ -862,7 +862,7 @@ modded class DayZPlayerImplement
 			if (!m_Trader_PlayerDiedInSafezone)
 				GetGame().GetUIManager().ScreenFadeIn(duration, "#dayz_implement_dead", FadeColors.BLACK, FadeColors.WHITE);
 			else
-				GetGame().GetUIManager().ScreenFadeIn(duration, "Someone killed you in the Safezone! Just EXIT and RECONNECT to the Server. Do NOT RESPAWN!", FadeColors.BLACK, 0xFFFF0000);
+				GetGame().GetUIManager().ScreenFadeIn(0, "Someone killed you in the Safezone! Just EXIT and RECONNECT to the Server. DO NOT RESPAWN!", FadeColors.BLACK, 0xFFFF0000);
 		#endif
 		}
 		else

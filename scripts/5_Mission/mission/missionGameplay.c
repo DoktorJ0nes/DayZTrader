@@ -1,6 +1,6 @@
 modded class MissionGameplay
 {
-	bool handledFirstInput = false;
+	//bool handledFirstInput = true;//false;
 	
 	float traderModIsLoadedReplicationTimer = 0.1;
 	
@@ -15,6 +15,18 @@ modded class MissionGameplay
 		//GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TRADER_MOD_IS_LOADED, new Param1<bool>( false ), true); // TO SERVER: traderModIsLoaded();
 		//Print("[TRADER] Mod is loaded!");
 	}*/
+
+	override void OnInit()
+  	{
+		g_Game.SetProfileOption( EDayZProfilesOptions.GAME_MESSAGES, 0 );
+		g_Game.SetProfileOption( EDayZProfilesOptions.ADMIN_MESSAGES, 0 );
+		g_Game.SetProfileOption( EDayZProfilesOptions.PLAYER_MESSAGES, 0 );
+
+		super.OnInit();
+
+		//Param1<PlayerBase> rp1 = new Param1<PlayerBase>( g_Game.GetPlayer() );
+		//GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_REQUEST_TRADER_DATA, rp1, true); // TO SERVER: requestTraderData();
+	}
 	
 	void TickScheduler(float timeslice)
 	{
@@ -27,19 +39,20 @@ modded class MissionGameplay
 		
 		if ( player )
 		{		
-			player.OnTick();
+			//player.OnTick();
 			
-			traderModIsLoadedReplicationTimer -= timeslice;
-			
+			traderModIsLoadedReplicationTimer -= timeslice;			
 			if (traderModIsLoadedReplicationTimer > 0)
-				return;
-			
+				return;			
 			traderModIsLoadedReplicationTimer = 0.5;
 			
 			if (!GetGame().IsServer() && !player.m_Trader_TraderModIsLoadedHandled)
 			{
 				GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_TRADER_MOD_IS_LOADED, new Param1<PlayerBase>( GetGame().GetPlayer() ), true); // TO SERVER: traderModIsLoaded();
 			}
+
+			if (!player.m_Trader_RecievedAllData)
+				GetGame().RPCSingleParam(player, TRPCs.RPC_REQUEST_TRADER_DATA, new Param1<PlayerBase>( player ), true); // TO SERVER: requestTraderData();
 
 			//if ( player.GetActionManager() )	 player.GetActionManager().DisableActions();
 			////player.GetInventory().LockInventory(LOCK_FROM_SCRIPT);
@@ -166,11 +179,11 @@ modded class MissionGameplay
 		
 		PlayerBase player = g_Game.GetPlayer();
 		
-		if (handledFirstInput == false)
+		/*if (handledFirstInput == false)
 		{
-			/*player.MessageImportant("Welcome to Kraxus Gaming!");
-			player.MessageImportant("Press 'B'-Key to open the Trader.");
-			player.MessageImportant(" ");*/
+			//player.MessageImportant("Welcome to Kraxus Gaming!");
+			//player.MessageImportant("Press 'B'-Key to open the Trader.");
+			//player.MessageImportant(" ");
 			
 			if (player.m_Trader_RecievedAllData == false)
 			{
@@ -179,7 +192,7 @@ modded class MissionGameplay
 			}
 			
 			handledFirstInput = true;
-		}
+		}*/
 		
 		if ( key == KeyCode.KC_T )
 		{

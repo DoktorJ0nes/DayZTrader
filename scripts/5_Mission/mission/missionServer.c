@@ -65,6 +65,8 @@ modded class MissionServer
 						
 						msgRp0.param1 = " ";
 						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
+
+						//TODO: Kick Player from Server
 					}
 					
 					player.m_Trader_WelcomeMessageHandled = true;
@@ -73,7 +75,7 @@ modded class MissionServer
 			
 			//if (!player.m_Trader_TraderModIsLoaded || !player.m_Trader_RecievedAllData) // m_Trader_RecievedAllData unnoetig?
 			if (!player.m_Trader_RecievedAllData)
-				continue;			
+				continue;	
 			
 			bool isInSafezone = false;
 			

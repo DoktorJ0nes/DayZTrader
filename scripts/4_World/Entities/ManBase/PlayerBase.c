@@ -25,8 +25,8 @@ modded class PlayerBase
 					playerKiller.SetHealth( "", "Blood", 0 );
 				}
 
-				if (playerKiller == this)
-					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "IDIOT!" ), true, this.GetIdentity());
+				//if (playerKiller == this)
+				//	GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "IDIOT!" ), true, this.GetIdentity());
 			}
 
             if (m_Trader_PlayerDiedInSafezone)
@@ -129,5 +129,44 @@ modded class PlayerBase
 		} 
 		
 		GetSymptomManager().OnPlayerKilled();
+	}
+
+	override void EEHitBy(TotalDamageResult damageResult, int damageType, EntityAI source, int component, string dmgZone, string ammo, vector modelPos)
+	{
+		if ( m_Trader_IsInSafezone )
+			return;
+
+		super.EEHitBy(damageResult, damageType, source, component, dmgZone, ammo, modelPos);
+		if( damageResult != null && damageResult.GetDamage(dmgZone, "Shock") > 0)
+		{
+			m_LastShockHitTime = GetGame().GetTime();
+		}
+		//DamagePlayer(damageResult, source, modelPos, ammo);
+		
+		//new bleeding computation
+		//---------------------------------------
+		if ( damageResult != null && GetBleedingManagerServer() )
+		{
+			float dmg = damageResult.GetDamage(dmgZone, "Blood");
+			GetBleedingManagerServer().ProcessHit(dmg, component, dmgZone, ammo, modelPos);
+		}
+		//Print(damageResult.GetDamage(dmgZone,"Health"));
+		//---------------------------------------
+		
+		//if( GetBleedingManagerServer() ) GetBleedingManagerServer().ProcessHit(dmgZone, ammo, modelPos);
+		#ifdef DEVELOPER
+		if(DiagMenu.GetBool(DiagMenuIDs.DM_MELEE_DEBUG_ENABLE))
+		{
+			Print("EEHitBy() | Charater " + GetDisplayName() + " hit by " + source.GetDisplayName() + " to " + dmgZone);
+		}
+		
+		PluginRemotePlayerDebugServer plugin_remote_server = PluginRemotePlayerDebugServer.Cast( GetPlugin(PluginRemotePlayerDebugServer) );
+		if(plugin_remote_server)
+		{
+			plugin_remote_server.OnDamageEvent(this, damageResult);
+		}
+		#endif
+		if (GetGame().IsDebugMonitor())
+			m_DebugMonitorValues.SetLastDamage(source.GetDisplayName());
 	}
 }
