@@ -65,11 +65,20 @@ modded class MissionServer
 						
 						msgRp0.param1 = " ";
 						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
-
-						//TODO: Kick Player from Server
 					}
 					
 					player.m_Trader_WelcomeMessageHandled = true;
+				}
+			}
+
+			// Kill player after some Time when not have the Mod loaded:
+			if (player.m_Trader_WelcomeMessageHandled && !player.m_Trader_TraderModIsLoaded)
+			{
+				player.m_Trader_WelcomeMessageTimer -= timeslice;
+				if (player.m_Trader_WelcomeMessageTimer < -5)
+				{
+					player.SetHealth( "", "", 0 );
+					player.SetHealth( "", "Blood", 0 );
 				}
 			}
 			
