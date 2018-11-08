@@ -1,7 +1,7 @@
 //modded class LandMineTrap
 modded class TrapBase
 {
-    void StartActivate( PlayerBase player )
+    override void StartActivate( PlayerBase player )
 	{
         //--------------------------------------------------------------- TRADER BEGIN ------------------------------------------------------------------------
         if (player)
@@ -11,6 +11,9 @@ modded class TrapBase
         }
         //---------------------------------------------------------------- TRADER END -------------------------------------------------------------------------
 
+        super.StartActivate(player);
+        
+        /*
         m_Timer = new Timer( CALL_CATEGORY_GAMEPLAY );
         HideSelection("safety_pin");
         
@@ -19,12 +22,10 @@ modded class TrapBase
             m_IsInProgress = true;
             m_Timer.Run( m_InitWaitTime, this, "SetActive" );
             
-            /*
-            if (player)
-            {
-                player.MessageStatus( m_InfoActivationTime );
-            }
-            */
+            //if (player)
+            //{
+            //    player.MessageStatus( m_InfoActivationTime );
+            //}
         
             Synch(NULL);
         }
@@ -32,5 +33,6 @@ modded class TrapBase
         {
             SetActive();
         }
+        */
 	}
 }

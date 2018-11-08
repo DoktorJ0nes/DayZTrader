@@ -97,7 +97,9 @@ class TraderMenu extends UIScriptedMenu
 			m_UiUpdateTimer = m_UiUpdateTimer + timeslice;
 		}
 
-		
+		//PlayerBase player = g_Game.GetPlayer();
+		//player.GetInputController().OverrideAimChangeX(true,0);
+		//player.GetInputController().OverrideAimChangeY(true,0);
 	}
 
     override void OnHide()

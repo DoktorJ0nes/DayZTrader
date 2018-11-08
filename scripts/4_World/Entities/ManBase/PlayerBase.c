@@ -43,7 +43,9 @@ modded class PlayerBase
 			return;
         //---------------------------------------------------------------- TRADER END -------------------------------------------------------------------------
 
-		Print("EEKilled, you have died");
+		super.EEKilled(killer);
+
+		/*Print("EEKilled, you have died");
 		
 		DayZPlayerSyncJunctures.SendDeath(this, -1, 0);
 		
@@ -76,7 +78,7 @@ modded class PlayerBase
 			delete GetSoftSkillManager();
 		} 
 		
-		GetSymptomManager().OnPlayerKilled();
+		GetSymptomManager().OnPlayerKilled();*/
 	}
 
 	override void EEHitBy(TotalDamageResult damageResult, int damageType, EntityAI source, int component, string dmgZone, string ammo, vector modelPos)
@@ -102,6 +104,8 @@ modded class PlayerBase
 		//---------------------------------------------------------------- TRADER END -------------------------------------------------------------------------
 
 		super.EEHitBy(damageResult, damageType, source, component, dmgZone, ammo, modelPos);
+
+		/*super.EEHitBy(damageResult, damageType, source, component, dmgZone, ammo, modelPos);
 		if( damageResult != null && damageResult.GetDamage(dmgZone, "Shock") > 0)
 		{
 			m_LastShockHitTime = GetGame().GetTime();
@@ -132,6 +136,6 @@ modded class PlayerBase
 		}
 		#endif
 		if (GetGame().IsDebugMonitor())
-			m_DebugMonitorValues.SetLastDamage(source.GetDisplayName());
+			m_DebugMonitorValues.SetLastDamage(source.GetDisplayName());*/
 	}
 }

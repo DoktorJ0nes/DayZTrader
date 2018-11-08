@@ -77,21 +77,6 @@ modded class DayZPlayerImplement
 	{
 		super.OnRPC(sender, rpc_type, ctx);
 		
-#ifdef DEVELOPER
-		if (rpc_type == ERPCs.RPC_DAYZPLAYER_DEBUGSERVERWALK)
-		{
-			TraderServerLogs.PrintS("ERPCs.RPC_DAYZPLAYER_DEBUGSERVERWALK");
-
-			Param1<bool> rp = new Param1<bool>(false);
-
-			ctx.Read(rp);
-
-			GetInputController().OverrideMovementSpeed(rp.param1, 1);
-			GetInputController().OverrideAimChangeX(rp.param1, 0.01);
-
-		}
-#endif
-		
 		//--------------------------------------------------------------- TRADER BEGIN ------------------------------------------------------------------------		
 		
 		PlayerBase player;

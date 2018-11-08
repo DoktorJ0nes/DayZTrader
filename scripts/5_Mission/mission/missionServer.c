@@ -8,14 +8,18 @@ modded class MissionServer
 	
 	override void OnInit()
 	{		
+		super.OnInit();
+
 		SpawnTraderObjects();
 	}
 	
 	override void OnUpdate(float timeslice)
 	{
-		UpdateDummyScheduler();
-		TickScheduler(timeslice);
-		UpdateLogoutPlayers();
+		//UpdateDummyScheduler();
+		//TickScheduler(timeslice);
+		//UpdateLogoutPlayers();
+
+		super.OnUpdate(timeslice);
 		
 		//---------------------------------------------- TRADER BEGIN ----------------------------
 
