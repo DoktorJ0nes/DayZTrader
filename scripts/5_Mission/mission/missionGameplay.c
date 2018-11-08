@@ -16,13 +16,9 @@ modded class MissionGameplay
 	override void TickScheduler(float timeslice)
 	{
 		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-				
-		//if( player )
-		//	player.OnTick();
 
 		super.TickScheduler(timeslice);
 			
-		//---------------------------------------------- TRADER BEGIN ----------------------------
 		
 		if ( player )
 		{
@@ -77,8 +73,7 @@ modded class MissionGameplay
 	override void OnKeyPress(int key)
 	{
 		super.OnKeyPress(key);
-		
-		//---------------------------------------------- TRADER BEGIN ----------------------------		
+
 		
 		PlayerBase player = g_Game.GetPlayer();
 		
@@ -245,7 +240,6 @@ modded class MissionGameplay
 	{
 		super.OnKeyRelease(key);
 		
-		//---------------------------------------------- TRADER BEGIN ----------------------------
 		
 		PlayerBase player = GetGame().GetPlayer();
 		

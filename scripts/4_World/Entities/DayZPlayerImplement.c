@@ -2,7 +2,6 @@
 
 modded class DayZPlayerImplement
 {
-	// ------------- TRADERVARS -------------------------
 	static const string m_Trader_ConfigFilePath = "$profile:Trader/TraderConfig.txt";
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
 	
@@ -71,13 +70,10 @@ modded class DayZPlayerImplement
 	ref array<Object> TEST_ObjectsToSave = new array<Object>;
 #endif
 	
-	//------------------ TRADERVARS END -----------------
-	
 	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
 		super.OnRPC(sender, rpc_type, ctx);
-		
-		//--------------------------------------------------------------- TRADER BEGIN ------------------------------------------------------------------------		
+			
 		
 		PlayerBase player;
 		string itemType;
@@ -86,8 +82,6 @@ modded class DayZPlayerImplement
 		Magazine mgzn;
 		int amount;
 		vector position;
-		
-		
 		
 		if (GetGame().IsServer()) //////////////////////////////////////////////////////////////////////////////////////////////////////////////// SERVER RPC ///////////////////////////////////////////////////////////
 		{

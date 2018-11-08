@@ -15,13 +15,8 @@ modded class MissionServer
 	
 	override void OnUpdate(float timeslice)
 	{
-		//UpdateDummyScheduler();
-		//TickScheduler(timeslice);
-		//UpdateLogoutPlayers();
-
 		super.OnUpdate(timeslice);
 		
-		//---------------------------------------------- TRADER BEGIN ----------------------------
 
 		m_Trader_PlayerHiveUpdateTime += timeslice;
 		if (m_Trader_PlayerHiveUpdateTime >= 1)
