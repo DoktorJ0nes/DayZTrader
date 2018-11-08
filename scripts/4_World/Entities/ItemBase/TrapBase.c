@@ -1,4 +1,3 @@
-//modded class LandMineTrap
 modded class TrapBase
 {
     override void StartActivate( PlayerBase player )
