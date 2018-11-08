@@ -1,3 +1,5 @@
+//#define Trader_Debug
+
 modded class MissionGameplay
 {
 	//bool handledFirstInput = true;//false;
@@ -64,6 +66,7 @@ modded class MissionGameplay
 			//player.GetInputController().OverrideRaise(true, false);
 		}
 		
+#ifdef Trader_Debug
 		// TEST ///
 		if(!player.TEST_ClassnamesInitialized)
 			TEST_InitialClassnames();
@@ -94,6 +97,7 @@ modded class MissionGameplay
 				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_REDIR_OBJECT, rps2, true); // TO SERVER
 			}
 		}
+#endif
 	}
 	
 	override void OnKeyPress(int key)
@@ -194,6 +198,7 @@ modded class MissionGameplay
 			handledFirstInput = true;
 		}*/
 		
+#ifdef Trader_Debug
 		if ( key == KeyCode.KC_T )
 		{
 			//vector teleportPosition = "10741.7 6.94919 2499.11";
@@ -252,6 +257,7 @@ modded class MissionGameplay
 			Param3<PlayerBase, string, int> rp4 = new Param3<PlayerBase, string, int>(player, player.m_Trader_CurrencyItemType, 35);
 			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, rp4, true); // TO SERVER: createInInventory(player, itemType);
 		}
+#endif
 
 		if ( key == KeyCode.KC_B )
 		{			
@@ -296,6 +302,7 @@ modded class MissionGameplay
 			}
 		}
 		
+#ifdef Trader_Debug
 		// TEST!
 		/*if ( key == KeyCode.KC_H )
 		{
@@ -410,6 +417,7 @@ modded class MissionGameplay
 				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps8, true); // TO SERVER
 			}
 		}
+#endif
 	}
 	
 	override void OnKeyRelease(int key)
@@ -447,6 +455,7 @@ modded class MissionGameplay
 		
 		PlayerBase player = GetGame().GetPlayer();
 		
+#ifdef Trader_Debug
 		if ( key == 0x3B ) // F1
 		{
 			vector teleportPosition1 = "11876.8 140.012 12467";
@@ -520,8 +529,10 @@ modded class MissionGameplay
 		{
 			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_SAVE_OBJECTS, new Param1<bool>( false ), true);
 		}
+#endif
 	}
 	
+#ifdef Trader_Debug
 	private string GetClassname()
 	{
 		PlayerBase player = g_Game.GetPlayer();
@@ -555,7 +566,9 @@ modded class MissionGameplay
 		
 		return "ERROR";
 	}
-	
+#endif
+
+#ifdef Trader_Debug
 	private void IncreaseClassnameID()
 	{
 		PlayerBase player = g_Game.GetPlayer();
@@ -611,7 +624,9 @@ modded class MissionGameplay
 			break;
 		}
 	}
-	
+#endif
+
+#ifdef Trader_Debug
 	private void DecreaseClassnameID()
 	{
 		PlayerBase player = g_Game.GetPlayer();
@@ -667,7 +682,9 @@ modded class MissionGameplay
 			break;
 		}
 	}
+#endif
 	
+#ifdef Trader_Debug
 	private void TEST_InitialClassnames()
 	{
 		PlayerBase player = g_Game.GetPlayer();
@@ -692,4 +709,5 @@ modded class MissionGameplay
 		ref array<string> TEST_ClassnamesSpecific = { "Land_Radio_PanelBig", "Land_Radio_PanelPAS", "Land_Tower_TC3_Red", "Land_Tower_TC3_Grey", "Land_Church1_Yellow", "Land_Airfield_Small_Control", "Land_Airfield_Small_Hangar", "Land_Cableway_Base", "Land_Cableway_Tower", "Land_Cableway_Tower_Slope", "Land_Camp_House_white", "Land_Camp_House_brown", "Land_Camp_House_red", "Land_Castle_Bastion", "Land_Castle_Bastion_nolc", "Land_Castle_Gate", "Land_Castle_Wall1_20", "Land_Castle_Wall1_20_Turn", "Land_Castle_Wall1_Corner1", "Land_Castle_Wall1_End1", "Land_Castle_Wall1_End2", "Land_Castle_Wall2_30", "Land_Castle_Wall2_Corner1", "Land_Castle_Wall2_End1", "Land_Castle_Wall2_End2", "Land_Castle_WallS_10", "Land_Castle_WallS_5_D", "Land_Castle_WallS_End", "Land_Castle_Stairs", "Land_Castle_Stairs_nolc", "Land_Castle_Wall1_Corner2", "Land_Castle_Wall2_Corner2", "Land_Castle_Bergfrit", "Land_Castle_Donjon", "Land_Dead_MassGrave", "Land_FuelStation_Build", "Land_FuelStation_Feed", "Land_Hotel_Damaged", "Land_Hotel", "Land_Chapel", "Land_Church2_2", "Land_Church3", "Land_Lunapark_Autodrome", "Land_Lunapark_Carousel_Swan", "Land_Lunapark_Ferris_wheel", "Land_Lunapark_Shooting_Gallery", "Land_Prison_Main", "Land_Prison_Side", "Land_Prison_Wall_Large", "Land_Radio_building", "Land_Monument_T34", "Land_Tower_TC1", "Land_Tower_TC2_Base", "Land_Tower_TC2_Mid", "Land_Tower_TC2_Top", "Land_Tower_TC4_Base", "Land_Tower_TC4_Mid", "Land_Tower_TC4_Top" };
 		player.TEST_ClassnamesSpecific = TEST_ClassnamesSpecific;
 	}
+#endif
 }

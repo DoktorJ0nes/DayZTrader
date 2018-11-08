@@ -38,11 +38,11 @@ modded class MissionServer
 				{
 					for ( int l = 0; l < m_Trader_SpawnedTraderCharacters.Count(); l++ )
 					{
-						//Print("DIRARRAYENTRYS: " + m_Trader_SpawnedTraderCharactersDirections.Count());
+						//TraderServerLogs.PrintS("DIRARRAYENTRYS: " + m_Trader_SpawnedTraderCharactersDirections.Count());
 						m_Trader_SpawnedTraderCharacters.Get(l).SetDirection(m_Trader_SpawnedTraderCharactersDirections.Get(l));
-						//Print("TRADERDIR: " + m_Trader_SpawnedTraderCharacters.Get(l).GetDirection());
+						//TraderServerLogs.PrintS("TRADERDIR: " + m_Trader_SpawnedTraderCharacters.Get(l).GetDirection());
 						m_Trader_SpawnedTraderCharacters.Get(l).SetOrientation(m_Trader_SpawnedTraderCharacters.Get(l).GetOrientation());
-						//Print("TRADERORI: " + m_Trader_SpawnedTraderCharacters.Get(l).GetOrientation());
+						//TraderServerLogs.PrintS("TRADERORI: " + m_Trader_SpawnedTraderCharacters.Get(l).GetOrientation());
 					}
 					
 					player.m_Trader_TraderCharacterSynchronizationHandled = true;
@@ -178,13 +178,13 @@ modded class MissionServer
 		m_Trader_SpawnedTraderCharacters = new array<PlayerBase>;
 		m_Trader_SpawnedTraderCharactersDirections = new array<vector>;
 		
-		Print("[TRADER] DEBUG START");
+		TraderServerLogs.PrintS("[TRADER] DEBUG START");
 		
 		FileHandle file_index = OpenFile(m_Trader_ObjectsFilePath, FileMode.READ);
 				
 		if ( file_index == 0 )
 		{
-			Print( "[TRADER] FOUND NO TRADEROBJECTS FILE!" );
+			TraderServerLogs.PrintS( "[TRADER] FOUND NO TRADEROBJECTS FILE!" );
 			return;
 		}
 		
@@ -192,13 +192,13 @@ modded class MissionServer
 		bool skipDirEntry = false;
 		
 		string line_content = "";
-		while ( markerCounter <= 5000 && line_content.Contains("<TraderEnd>") == false)
+		while ( markerCounter <= 5000 && line_content.Contains("<FileEnd>") == false)
 		{
 			// Get Object Type ------------------------------------------------------------------------------------
 			if (skipDirEntry)
 				skipDirEntry = false;
 			else
-				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Object>", "<TraderEnd>");
+				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Object>", "<FileEnd>");
 			
 			if (!line_content.Contains("<Object>"))
 				continue;
@@ -207,17 +207,17 @@ modded class MissionServer
 			line_content = FileReadHelper.TrimComment(line_content);
 			line_content = FileReadHelper.TrimSpaces(line_content);
 			
-			Print("[TRADER] READING OBJECT TYPE ENTRY..");
+			TraderServerLogs.PrintS("[TRADER] READING OBJECT TYPE ENTRY..");
 			
 			string traderObjectType = line_content;
 			
 			// Get Object Position --------------------------------------------------------------------------------
-			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectPosition>", "<TraderEnd>");
+			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectPosition>", "<FileEnd>");
 			
 			line_content.Replace("<ObjectPosition>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
 			
-			Print("[TRADER] READING OBJECT POSITION ENTRY..");
+			TraderServerLogs.PrintS("[TRADER] READING OBJECT POSITION ENTRY..");
 			
 			TStringArray strso = new TStringArray;
 			line_content.Split( ",", strso );
@@ -239,13 +239,13 @@ modded class MissionServer
 			Object obj = GetGame().CreateObject( traderObjectType, objectPosition, false, false, true );
 			obj.SetPosition(objectPosition); // prevent automatic on ground placing
 			obj.SetAllowDamage(false); // <- funzt nicht bei Charakteren..
-			Print("[TRADER] SPAWNED OBJECT '" + traderObjectType + "' AT '" + objectPosition + "'");
+			TraderServerLogs.PrintS("[TRADER] SPAWNED OBJECT '" + traderObjectType + "' AT '" + objectPosition + "'");
 			
 			bool isTrader = false;
 			PlayerBase man;
 			if (Class.CastTo(man, obj))
 			{
-				Print("[TRADER] Object was a Man..");
+				TraderServerLogs.PrintS("[TRADER] Object was a Man..");
 				//m_Trader_SpawnedTraderCharacters.Insert(man);
 				isTrader = true;
 			}
@@ -255,14 +255,14 @@ modded class MissionServer
 			
 			if (line_content == string.Empty)
 			{
-				//Print("[TRADER] SKIPPED OBJECT DIRECTION..");
+				//TraderServerLogs.PrintS("[TRADER] SKIPPED OBJECT DIRECTION..");
 				
-				line_content = "<TraderEnd>";
+				line_content = "<FileEnd>";
 			}
 			
 			if (line_content.Contains("<Object>"))
 			{
-				//Print("[TRADER] SKIPPED OBJECT DIRECTION..");
+				//TraderServerLogs.PrintS("[TRADER] SKIPPED OBJECT DIRECTION..");
 				
 				//obj.SetFlags(EntityFlags.SYNCHRONIZATION_DIRTY, true);
 				
@@ -284,7 +284,7 @@ modded class MissionServer
 			line_content.Replace("<ObjectDirection>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
 			
-			Print("[TRADER] READING OBJECT DIRECTION ENTRY..");
+			TraderServerLogs.PrintS("[TRADER] READING OBJECT DIRECTION ENTRY..");
 			
 			TStringArray strsod = new TStringArray;
 			line_content.Split( ",", strsod );
@@ -314,12 +314,12 @@ modded class MissionServer
 				m_Trader_SpawnedTraderCharacters.Insert(man);
 			}
 			
-			Print("[TRADER] OBJECT DIRECTION = '" + obj.GetDirection() + "'");
+			TraderServerLogs.PrintS("[TRADER] OBJECT DIRECTION = '" + obj.GetDirection() + "'");
 			
 			markerCounter++;
 		}
 		
 		CloseFile(file_index);
-		Print("[TRADER] DEBUG END");
+		TraderServerLogs.PrintS("[TRADER] DEBUG END");
 	}
 }

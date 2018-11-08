@@ -1,3 +1,5 @@
+//#define Trader_Debug
+
 modded class DayZPlayerImplement
 {
 	// ------------- TRADERVARS -------------------------
@@ -40,6 +42,7 @@ modded class DayZPlayerImplement
 	ref array<int> m_Trader_ItemsBuyValue;
 	ref array<int> m_Trader_ItemsSellValue;	
 	
+#ifdef Trader_Debug
 	// TEST!
 	Object TEST_PreviewObj;
 	vector TEST_PreviewObjectPosition;
@@ -72,6 +75,7 @@ modded class DayZPlayerImplement
 	int TEST_ClassnamesSpecificID = 0;
 	
 	ref array<Object> TEST_ObjectsToSave = new array<Object>;
+#endif
 	
 	//------------------ TRADERVARS END -----------------
 	
@@ -82,7 +86,7 @@ modded class DayZPlayerImplement
 #ifdef DEVELOPER
 		if (rpc_type == ERPCs.RPC_DAYZPLAYER_DEBUGSERVERWALK)
 		{
-			Print("ERPCs.RPC_DAYZPLAYER_DEBUGSERVERWALK");
+			TraderServerLogs.PrintS("ERPCs.RPC_DAYZPLAYER_DEBUGSERVERWALK");
 
 			Param1<bool> rp = new Param1<bool>(false);
 
@@ -119,7 +123,7 @@ modded class DayZPlayerImplement
 				player = rp0.param1;
 				
 				m_Trader_TraderModIsLoaded = true;
-				Print("[TRADER] Someone uses the Mod!"); // weg damit!
+				TraderServerLogs.PrintS("[TRADER] Someone uses the Mod!"); // weg damit!
 				
 				GetGame().RPCSingleParam(player, TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM, new Param1<PlayerBase>( player ), true, player.GetIdentity());
 			}
@@ -323,7 +327,7 @@ modded class DayZPlayerImplement
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CLEAR, crpClr, true, player.GetIdentity());
 				
 				//------------------------------------------------------------------------------------
-				Print("[TRADER] DEBUG START");
+				TraderServerLogs.PrintS("[TRADER] DEBUG START");
 				
 				FileHandle file_index = OpenFile(m_Trader_ConfigFilePath, FileMode.READ);
 				
@@ -336,7 +340,7 @@ modded class DayZPlayerImplement
 				
 				string line_content = "";
 				
-				Print("[TRADER] READING CURRENCY ENTRY..");
+				TraderServerLogs.PrintS("[TRADER] READING CURRENCY ENTRY..");
 				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Currency>", "");
 				line_content.Replace("<Currency>", "");
 				line_content = FileReadHelper.TrimComment(line_content);
@@ -346,9 +350,9 @@ modded class DayZPlayerImplement
 				int traderCounter = 0;
 				
 				line_content = "";
-				while (traderCounter <= 500 && line_content != "<TraderEnd>")
+				while (traderCounter <= 500 && line_content != "<FileEnd>")
 				{
-					Print("[TRADER] READING TRADER ENTRY..");
+					TraderServerLogs.PrintS("[TRADER] READING TRADER ENTRY..");
 					
 					if (traderInstanceDone == false)
 						line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Trader>", "");
@@ -368,7 +372,7 @@ modded class DayZPlayerImplement
 					int categoryCounter = 0;
 					
 					line_content = "";
-					while (categoryCounter <= 500 && line_content != "<TraderEnd>")
+					while (categoryCounter <= 500 && line_content != "<FileEnd>")
 					{
 						line_content = FileReadHelper.TrimComment(FileReadHelper.SearchForNextTermInFile(file_index, "<Category>", "<Trader>"));
 						
@@ -380,11 +384,11 @@ modded class DayZPlayerImplement
 						
 						if (line_content == string.Empty)
 						{
-							line_content = "<TraderEnd>";
+							line_content = "<FileEnd>";
 							break;
 						}
 						
-						Print("[TRADER] READING CATEGORY ENTRY..");
+						TraderServerLogs.PrintS("[TRADER] READING CATEGORY ENTRY..");
 						line_content.Replace("<Category>", "");
 						m_Trader_Categorys.Insert(FileReadHelper.TrimComment(line_content));
 						m_Trader_CategorysTraderKey.Insert(traderCounter);
@@ -406,11 +410,11 @@ modded class DayZPlayerImplement
 				int traderID = -1;
 				int categoryId = -1;
 				
-				//Print("[TRADER] DEBUG START");
+				//TraderServerLogs.PrintS("[TRADER] DEBUG START");
 				line_content = "";
-				while ( itemCounter <= 5000 && char_count != -1 && line_content.Contains("<TraderEnd>") == false)
+				while ( itemCounter <= 5000 && char_count != -1 && line_content.Contains("<FileEnd>") == false)
 				{
-					Print("[TRADER] READING ITEM ENTRY..");
+					TraderServerLogs.PrintS("[TRADER] READING ITEM ENTRY..");
 					char_count = FGets( file_index,  line_content );
 					
 					line_content = FileReadHelper.TrimComment(line_content);
@@ -493,10 +497,10 @@ modded class DayZPlayerImplement
 				int markerCounter = 0;
 				
 				line_content = "";
-				while ( markerCounter <= 5000 && line_content.Contains("<TraderEnd>") == false)
+				while ( markerCounter <= 5000 && line_content.Contains("<FileEnd>") == false)
 				{
 					// Get Trader Marker Trader ID --------------------------------------------------------------------------------------
-					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarker>", "<TraderEnd>");
+					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarker>", "<FileEnd>");
 					
 					if (!line_content.Contains("<TraderMarker>"))
 						continue;
@@ -505,12 +509,12 @@ modded class DayZPlayerImplement
 					line_content = FileReadHelper.TrimComment(line_content);
 					line_content = FileReadHelper.TrimSpaces(line_content);
 					
-					Print("[TRADER] READING MARKER ID ENTRY..");
+					TraderServerLogs.PrintS("[TRADER] READING MARKER ID ENTRY..");
 										
 					m_Trader_TraderIDs.Insert(line_content.ToInt());
 					
 					// Get Trader Marker Position ---------------------------------------------------------------------------------------			
-					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarkerPosition>", "<TraderEnd>");
+					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarkerPosition>", "<FileEnd>");
 					
 					line_content.Replace("<TraderMarkerPosition>", "");
 					line_content = FileReadHelper.TrimComment(line_content);
@@ -532,19 +536,19 @@ modded class DayZPlayerImplement
 					markerPosition[1] = traderMarkerPosY.ToFloat();
 					markerPosition[2] = traderMarkerPosZ.ToFloat();
 					
-					Print("[TRADER] READING MARKER POSITION ENTRY..");
+					TraderServerLogs.PrintS("[TRADER] READING MARKER POSITION ENTRY..");
 					
 					m_Trader_TraderPositions.Insert(markerPosition);
 					
 					// Get Trader Marker Safezone Radius --------------------------------------------------------------------------------
 					
-					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarkerSafezone>", "<TraderEnd>");
+					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarkerSafezone>", "<FileEnd>");
 					
 					line_content.Replace("<TraderMarkerSafezone>", "");
 					line_content = FileReadHelper.TrimComment(line_content);
 					line_content = FileReadHelper.TrimSpaces(line_content);
 					
-					Print("[TRADER] READING MARKER SAFEZONE ENTRY..");
+					TraderServerLogs.PrintS("[TRADER] READING MARKER SAFEZONE ENTRY..");
 					
 					m_Trader_TraderSafezones.Insert(line_content.ToInt());
 					
@@ -554,39 +558,39 @@ modded class DayZPlayerImplement
 				CloseFile(file_index);
 				
 				//------------------------------------------------------------------------------------
-				Print("[TRADER] DONE READING!");
+				TraderServerLogs.PrintS("[TRADER] DONE READING!");
 				
 				Param1<string> crp1 = new Param1<string>( m_Trader_CurrencyItemType );
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCYTYPE_ENTRY, crp1, true, player.GetIdentity());
-				Print("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyItemType);
+				TraderServerLogs.PrintS("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyItemType);
 				
 				int i = 0;
 				for ( i = 0; i < m_Trader_TraderNames.Count(); i++ )
 				{
 					Param1<string> crp2 = new Param1<string>( m_Trader_TraderNames.Get(i) );
 					GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_NAME_ENTRY, crp2, true, player.GetIdentity());
-					Print("[TRADER] TRADERNAME: " + m_Trader_TraderNames.Get(i));
+					TraderServerLogs.PrintS("[TRADER] TRADERNAME: " + m_Trader_TraderNames.Get(i));
 				}
 				
 				for ( i = 0; i < m_Trader_Categorys.Count(); i++ )
 				{
 					Param2<string, int> crp3 = new Param2<string, int>( m_Trader_Categorys.Get(i), m_Trader_CategorysTraderKey.Get(i) );
 					GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CATEGORY_ENTRY, crp3, true, player.GetIdentity());
-					Print("[TRADER] TRADERCATEGORY: " + m_Trader_Categorys.Get(i) + ", " + m_Trader_CategorysTraderKey.Get(i));
+					TraderServerLogs.PrintS("[TRADER] TRADERCATEGORY: " + m_Trader_Categorys.Get(i) + ", " + m_Trader_CategorysTraderKey.Get(i));
 				}
 				
 				for ( i = 0; i < m_Trader_ItemsClassnames.Count(); i++ )
 				{
 					Param6<int, int, string, int, int, int> crp4 = new Param6<int, int, string, int, int, int>( m_Trader_ItemsTraderId.Get(i), m_Trader_ItemsCategoryId.Get(i), m_Trader_ItemsClassnames.Get(i), m_Trader_ItemsQuantity.Get(i), m_Trader_ItemsBuyValue.Get(i), m_Trader_ItemsSellValue.Get(i) );
 					GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_ITEM_ENTRY, crp4, true, player.GetIdentity());
-					Print("[TRADER] ITEMENTRY: " + m_Trader_ItemsTraderId.Get(i) + ", " + m_Trader_ItemsCategoryId.Get(i) + ", " + m_Trader_ItemsClassnames.Get(i) + ", " + m_Trader_ItemsQuantity.Get(i) + ", " + m_Trader_ItemsBuyValue.Get(i) + ", " + m_Trader_ItemsSellValue.Get(i));
+					TraderServerLogs.PrintS("[TRADER] ITEMENTRY: " + m_Trader_ItemsTraderId.Get(i) + ", " + m_Trader_ItemsCategoryId.Get(i) + ", " + m_Trader_ItemsClassnames.Get(i) + ", " + m_Trader_ItemsQuantity.Get(i) + ", " + m_Trader_ItemsBuyValue.Get(i) + ", " + m_Trader_ItemsSellValue.Get(i));
 				}
 				
 				for ( i = 0; i < m_Trader_TraderPositions.Count(); i++ )
 				{
 					Param3<int, vector, int> crp5 = new Param3<int, vector, int>( m_Trader_TraderIDs.Get(i), m_Trader_TraderPositions.Get(i), m_Trader_TraderSafezones.Get(i) );
 					GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_MARKER_ENTRY, crp5, true, player.GetIdentity());
-					Print("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i));
+					TraderServerLogs.PrintS("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i));
 				}
 				
 				// confirm that all data was sended.
@@ -594,11 +598,12 @@ modded class DayZPlayerImplement
 				
 				Param1<bool> crpConf = new Param1<bool>( true );
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION, crpConf, true, player.GetIdentity());
-				Print("[TRADER] DEBUG END");
+				TraderServerLogs.PrintS("[TRADER] DEBUG END");
 				
 				m_Trader_IsReadingTraderFileEntrys = false;
 			}
 			
+#ifdef Trader_Debug
 			if (rpc_type == TRPCs.RPC_DEBUG_TELEPORT)
 			{
 				Param2<PlayerBase, vector> rp7 = new Param2<PlayerBase, vector>( NULL, "0 0 0" );
@@ -679,6 +684,7 @@ modded class DayZPlayerImplement
 					CloseFile(file);
 				}
 			}
+#endif
 		}
 		else ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// CLIENT RPC ///////////////////////////////////////////////////////////
 		{
@@ -778,12 +784,14 @@ modded class DayZPlayerImplement
 					m_Trader_PlayerDiedInSafezone = safezoneDied_rp.param1;
 				break;
 				
+#ifdef Trader_Debug
 				case TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT:
 				Param1<Object> rptcc1 = new Param1<Object>( NULL );
 				ctx.Read(rptcc1);
 				
 				TEST_PreviewObj = rptcc1.param1;
 				break;
+#endif
 			}
 		}
 	}

@@ -1123,14 +1123,14 @@ class TraderMenu extends UIScriptedMenu
 		m_XComboboxCategorys.ClearAll();
 		m_Categorys = new array<string>;		
 		int categoryCounter = 0;
-		line_content = TrimComment(SearchForNextTermInFile(file_index, "<Category>", "<TraderEnd>"));
-		while (categoryCounter <= 500 && line_content != "<TraderEnd>")
+		line_content = TrimComment(SearchForNextTermInFile(file_index, "<Category>", "<FileEnd>"));
+		while (categoryCounter <= 500 && line_content != "<FileEnd>")
 		{
 			line_content.Replace("<Category>", "");
 			m_XComboboxCategorys.AddItem(TrimComment(line_content));
 			m_Categorys.Insert(TrimComment(line_content));
 			
-			line_content = TrimComment(SearchForNextTermInFile(file_index, "<Category>", "<TraderEnd>"));
+			line_content = TrimComment(SearchForNextTermInFile(file_index, "<Category>", "<FileEnd>"));
 			categoryCounter++;
 		}
 		

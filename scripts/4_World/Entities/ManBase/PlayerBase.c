@@ -134,7 +134,22 @@ modded class PlayerBase
 	override void EEHitBy(TotalDamageResult damageResult, int damageType, EntityAI source, int component, string dmgZone, string ammo, vector modelPos)
 	{
 		if ( m_Trader_IsInSafezone )
+		{
+			DayZInfected sourceInfected;
+			Class.CastTo(sourceInfected, source);
+
+			DayZAnimal sourceAnimal;
+			Class.CastTo(sourceAnimal, source);
+
+			if (sourceInfected || sourceAnimal)
+			{
+				//GetGame().ObjectDelete(source);
+				source.SetHealth( "", "", 0 );
+				source.SetHealth( "", "Blood", 0 );
+			}
+
 			return;
+		}
 
 		super.EEHitBy(damageResult, damageType, source, component, dmgZone, ammo, modelPos);
 		if( damageResult != null && damageResult.GetDamage(dmgZone, "Shock") > 0)
