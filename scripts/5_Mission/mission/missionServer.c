@@ -6,8 +6,6 @@ modded class MissionServer
 	ref array<vector> m_Trader_SpawnedTraderCharactersDirections;
 	float m_Trader_PlayerHiveUpdateTime = 0;
 	
-	//ref array<Object> objectstoSynchronize = new array<Object>;
-	
 	override void OnInit()
 	{		
 		SpawnTraderObjects();
@@ -38,11 +36,8 @@ modded class MissionServer
 				{
 					for ( int l = 0; l < m_Trader_SpawnedTraderCharacters.Count(); l++ )
 					{
-						//TraderServerLogs.PrintS("DIRARRAYENTRYS: " + m_Trader_SpawnedTraderCharactersDirections.Count());
 						m_Trader_SpawnedTraderCharacters.Get(l).SetDirection(m_Trader_SpawnedTraderCharactersDirections.Get(l));
-						//TraderServerLogs.PrintS("TRADERDIR: " + m_Trader_SpawnedTraderCharacters.Get(l).GetDirection());
 						m_Trader_SpawnedTraderCharacters.Get(l).SetOrientation(m_Trader_SpawnedTraderCharacters.Get(l).GetOrientation());
-						//TraderServerLogs.PrintS("TRADERORI: " + m_Trader_SpawnedTraderCharacters.Get(l).GetOrientation());
 					}
 					
 					player.m_Trader_TraderCharacterSynchronizationHandled = true;
@@ -82,7 +77,6 @@ modded class MissionServer
 				}
 			}
 			
-			//if (!player.m_Trader_TraderModIsLoaded || !player.m_Trader_RecievedAllData) // m_Trader_RecievedAllData unnoetig?
 			if (!player.m_Trader_RecievedAllData)
 				continue;	
 			
@@ -97,38 +91,20 @@ modded class MissionServer
 			if (player.m_Trader_IsInSafezone == false && isInSafezone == true)
 			{
 				player.m_Trader_IsInSafezone = true;
-				//player.SetAllowDamage(false);
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( true ), true, player.GetIdentity());
 				player.m_Trader_HealthEnteredSafeZone = player.GetHealth( "", "");
 				player.m_Trader_HealthBloodEnteredSafeZone = player.GetHealth( "", "Blood" );
 				
-				//Param1<string> msgRp = new Param1<string>( " " );
-				//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp, true, player.GetIdentity());
-				
-				//msgRp.param1 = "[Trader] You entered the Safezone!";
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You entered the Safezone!" ), true, player.GetIdentity());
-				
-				//msgRp.param1 = "Press 'B'-Key to open the Trader Menu.";
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Press 'B'-Key to open the Trader Menu." ), true, player.GetIdentity());
-				
-				//msgRp.param1 = " ";
-				//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp, true, player.GetIdentity());
 			}
 			
 			if (player.m_Trader_IsInSafezone == true && isInSafezone == false)
 			{
 				player.m_Trader_IsInSafezone = false;
-				//player.SetAllowDamage(true);
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( false ), true, player.GetIdentity());
-
-				//Param1<string> msgRp2 = new Param1<string>( " " );
-				//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp2, true, player.GetIdentity());
 				
-				//msgRp2.param1 = "[Trader] You left the Safezone!";
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You left the Safezone!" ), true, player.GetIdentity());
-				
-				//msgRp2.param1 = " ";
-				//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp2, true, player.GetIdentity());
 			}
 			
 			if (isInSafezone)
@@ -144,6 +120,8 @@ modded class MissionServer
 
 				player.SetHealth( "","Shock", player.GetMaxHealth( "", "Shock" ) );
 
+				//player.GetStatStamina().Set(1000);
+
 				if (m_Trader_PlayerHiveUpdateTime == 0 && player.IsAlive())
 					GetHive().CharacterSave(player);
 			}
@@ -153,24 +131,14 @@ modded class MissionServer
 		{
 			m_Trader_SpawnedTraderCharacters.Get(i).SetHealth( m_Trader_SpawnedTraderCharacters.Get(i).GetMaxHealth( "", "" ) );
 			m_Trader_SpawnedTraderCharacters.Get(i).SetHealth( "","Blood", m_Trader_SpawnedTraderCharacters.Get(i).GetMaxHealth( "", "Blood" ) );
-			//m_Trader_SpawnedTraderCharacters.Get(i).GetStatStamina().Set(1000);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatEnergy().Set(1000);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatWater().Set(1000);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachVolume().Set(300);		
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachWater().Set(300);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachEnergy().Set(300);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatHeatComfort().Set(0);
-
 			m_Trader_SpawnedTraderCharacters.Get(i).SetHealth( "","Shock", m_Trader_SpawnedTraderCharacters.Get(i).GetMaxHealth( "", "Shock" ) );
-
-			//m_Trader_SpawnedTraderCharacters.Get(i).SetAllowDamage(false);
 		}
-		
-		/*for (int l = 0; l < objectstoSynchronize.Count(); l++)
-		{
-			vector tempDir = objectstoSynchronize.Get(l).GetOrientation();
-			objectstoSynchronize.Get(l).SetOrientation(tempDir);
-		}*/
 	}
 	
 	private void SpawnTraderObjects()
@@ -238,7 +206,6 @@ modded class MissionServer
 			
 			Object obj = GetGame().CreateObject( traderObjectType, objectPosition, false, false, true );
 			obj.SetPosition(objectPosition); // prevent automatic on ground placing
-			obj.SetAllowDamage(false); // <- funzt nicht bei Charakteren..
 			TraderServerLogs.PrintS("[TRADER] SPAWNED OBJECT '" + traderObjectType + "' AT '" + objectPosition + "'");
 			
 			bool isTrader = false;
@@ -246,26 +213,17 @@ modded class MissionServer
 			if (Class.CastTo(man, obj))
 			{
 				TraderServerLogs.PrintS("[TRADER] Object was a Man..");
-				//m_Trader_SpawnedTraderCharacters.Insert(man);
 				isTrader = true;
 			}
 			
 			// Get Object Direction -------------------------------------------------------------------------------
 			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectDirection>", "<Object>");
 			
-			if (line_content == string.Empty)
-			{
-				//TraderServerLogs.PrintS("[TRADER] SKIPPED OBJECT DIRECTION..");
-				
+			if (line_content == string.Empty)	
 				line_content = "<FileEnd>";
-			}
 			
 			if (line_content.Contains("<Object>"))
-			{
-				//TraderServerLogs.PrintS("[TRADER] SKIPPED OBJECT DIRECTION..");
-				
-				//obj.SetFlags(EntityFlags.SYNCHRONIZATION_DIRTY, true);
-				
+			{				
 				if (isTrader)
 				{
 					man.m_Trader_IsTrader = true;
@@ -304,8 +262,6 @@ modded class MissionServer
 			objectDirection[2] = traderObjectDirZ.ToFloat();
 			
 			obj.SetDirection(objectDirection);
-			//obj.SetFlags(EntityFlags.SYNCHRONIZATION_DIRTY, true);
-			//objectstoSynchronize.Insert(obj);
 			obj.SetOrientation(obj.GetOrientation()); // Thats a strange way to synchronize/update Objects.. But it works..
 			
 			if (isTrader)

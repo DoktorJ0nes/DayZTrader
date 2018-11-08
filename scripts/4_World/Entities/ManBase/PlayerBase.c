@@ -6,90 +6,38 @@ modded class PlayerBase
 	{
 		//--------------------------------------------------------------- TRADER BEGIN ------------------------------------------------------------------------
 		
+		m_Trader_PlayerDiedInSafezone = m_Trader_IsInSafezone;
+		GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_TRADER_PLAYER_DIED_IN_SAFEZONE, new Param1<bool>( m_Trader_PlayerDiedInSafezone ), true, this.GetIdentity());
+		
+		if (killer != NULL && (m_Trader_PlayerDiedInSafezone || m_Trader_IsTrader))
+		{
+			PlayerBase playerKiller;
+			Class.CastTo(playerKiller, killer);
 
-        //if (this.GetIdentity() != NULL)
-        //{
-            m_Trader_PlayerDiedInSafezone = m_Trader_IsInSafezone;
-            GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_TRADER_PLAYER_DIED_IN_SAFEZONE, new Param1<bool>( m_Trader_PlayerDiedInSafezone ), true, this.GetIdentity());
-			
-			if (killer != NULL && (m_Trader_PlayerDiedInSafezone || m_Trader_IsTrader))
+			if (playerKiller && playerKiller != this)
 			{
-				PlayerBase playerKiller;
-				Class.CastTo(playerKiller, killer);
-
-				if (playerKiller && playerKiller != this)
-				{
-					Print("[TRADER] Player with PlayerUID " + playerKiller.GetIdentity().GetId() + " killed someone in the Safezone!");
-					playerKiller.SetPosition(this.GetPosition());
-					playerKiller.SetHealth( "", "", 0 );
-					playerKiller.SetHealth( "", "Blood", 0 );
-				}
-
-				//if (playerKiller == this)
-				//	GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "IDIOT!" ), true, this.GetIdentity());
+				Print("[TRADER] Player with PlayerUID " + playerKiller.GetIdentity().GetId() + " killed someone in the Safezone!");
+				playerKiller.SetPosition(this.GetPosition());
+				playerKiller.SetHealth( "", "", 0 );
+				playerKiller.SetHealth( "", "Blood", 0 );
 			}
+		}
 
-            if (m_Trader_PlayerDiedInSafezone)
-            {
-				/*// KEEP ALIVE METHOD START
-				//GetHive().CharacterExit(this); // AUSPROBIEREN!
+		if (m_Trader_PlayerDiedInSafezone)
+		{
+			
+			this.SetHealth( "", "", this.m_Trader_HealthEnteredSafeZone );
+			this.SetHealth( "","Blood", this.m_Trader_HealthBloodEnteredSafeZone );
+			this.SetHealth( "","Shock", this.GetMaxHealth( "", "Shock" ) );
 
-				string characterName = GetGame().CreateRandomPlayer();
-				vector pos = this.GetPosition();
-
-				PlayerBase m_player;
-				Entity playerEnt;
-				playerEnt = GetGame().CreatePlayer(this.GetIdentity(), characterName, pos, 0, "NONE");
-				Class.CastTo(m_player, playerEnt);
-				//HumanInventory i = HumanInventory.Cast(GetInventory());
+			if (GetHive())
+				GetHive().CharacterExit(this);
 				
-				GetGame().SelectPlayer(this.GetIdentity(), m_player);
-				//GetGame().SelectPlayer(this.GetIdentity(), this);
-				
-				if( player ) player.OnConnect();		
-				// Send list of players at all clients
-				SyncEvents.SendPlayerList();
+			if (!this.IsAlive())
+				SetPosition(vector.Zero);
 
-				//GetHive().CharacterKill(this);
-				GetHive().CharacterSave(m_player);
-				//GetHive().CharacterExit(m_player);
-				//GetGame().DisconnectPlayer(m_player.GetIdentity(), m_player.GetIdentity().GetId());
-				//m_player.Delete();
-				////this.Delete();
-				
-				//GetGame().RPCSingleParam(m_player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "CHAR IS VALID!" ), true, m_player.GetIdentity());
-				// KEEP ALIVE METHOD END*/
-				
-				this.SetHealth( "", "", this.m_Trader_HealthEnteredSafeZone );
-				this.SetHealth( "","Blood", this.m_Trader_HealthBloodEnteredSafeZone );
-				this.SetHealth( "","Shock", this.GetMaxHealth( "", "Shock" ) );
-
-				if (GetHive())
-					GetHive().CharacterExit(this);
-					
-				if (!this.IsAlive())
-					SetPosition(vector.Zero);
-				
-				//GetGame().SelectPlayer(this.GetIdentity(), this);
-				//GetHive().CharacterSave(this);
-
-				// RELOG METHOD START
-                //GetHumanInventory().LockInventory(LOCK_FROM_SCRIPT);
-
-                //if (GetHive())
-                //    GetHive().CharacterExit(this);
-
-                ////GetGame().ObjectDelete(player);
-				////GetGame().ObjectDelete(this);
-				////this.Delete();
-				//SetPosition(vector.Zero);
-
-				//this.OnConnect();
-				// RELOG METHOD END
-
-                return;
-            }
-		//}
+			return;
+		}
 		
 		if (m_Trader_IsTrader) // TODO!
 			return;
@@ -133,6 +81,7 @@ modded class PlayerBase
 
 	override void EEHitBy(TotalDamageResult damageResult, int damageType, EntityAI source, int component, string dmgZone, string ammo, vector modelPos)
 	{
+		//--------------------------------------------------------------- TRADER BEGIN ------------------------------------------------------------------------
 		if ( m_Trader_IsInSafezone )
 		{
 			DayZInfected sourceInfected;
@@ -150,6 +99,7 @@ modded class PlayerBase
 
 			return;
 		}
+		//---------------------------------------------------------------- TRADER END -------------------------------------------------------------------------
 
 		super.EEHitBy(damageResult, damageType, source, component, dmgZone, ammo, modelPos);
 		if( damageResult != null && damageResult.GetDamage(dmgZone, "Shock") > 0)

@@ -11,36 +11,11 @@ class FileReadHelper
 			line_content = TrimComment(line_content);
 
 			if (line_content.Contains(searchTerm) || (line_content.Contains(abortTerm) && abortTerm != ""))
-			{
-				//HasComment(line_content);
 				return line_content;
-			}
 		}
 		
 		return string.Empty;
 	}
-
-	/*static bool HasComment(string line)
-	{
-		int to_substring_end = line.Length();
-		
-		//if (to_substring_end <= 0)
-		//	return false;
-
-		for (int i = 0; i < to_substring_end; i++)
-		{
-			string sign = line.Get(i);
-			if ( sign == "/" && i + 1 < to_substring_end)
-			{
-				if (line.Get(i + 1) == "/")
-				{
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}*/
 	
 	static string TrimComment(string line)
 	{

@@ -33,18 +33,4 @@ modded class TrapBase
             SetActive();
         }
 	}
-    
-    /*override void StartActivate( PlayerBase player )
-	{
-        if (player.m_Trader_IsInSafezone)
-            return;
-
-		super.StartActivate( player );
-		
-		if (GetGame().IsClient())
-		{
-			PlaySound("landmine_safetyPin", 3);
-			m_TimerLoop = PlaySoundLoop("landmine_timer2", 3);
-		}
-	}*/
 }

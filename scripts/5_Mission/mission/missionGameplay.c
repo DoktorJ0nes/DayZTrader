@@ -1,22 +1,8 @@
-//#define Trader_Debug
+#define Trader_Debug
 
 modded class MissionGameplay
-{
-	//bool handledFirstInput = true;//false;
-	
+{	
 	float traderModIsLoadedReplicationTimer = 0.1;
-	
-	/*override void OnMissionStart()
-	{
-		//does not display HUD until player is fully loaded
-		//m_hud_root_widget.Show(true);
-		GetUIManager().ShowUICursor(false);
-		g_Game.SetMissionState( DayZGame.MISSION_STATE_GAME );
-		
-		//Param1<PlayerBase> rp4 = new Param1<PlayerBase>( g_Game.GetPlayer() );
-		//GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TRADER_MOD_IS_LOADED, new Param1<bool>( false ), true); // TO SERVER: traderModIsLoaded();
-		//Print("[TRADER] Mod is loaded!");
-	}*/
 
 	override void OnInit()
   	{
@@ -25,9 +11,6 @@ modded class MissionGameplay
 		g_Game.SetProfileOption( EDayZProfilesOptions.PLAYER_MESSAGES, 0 );
 
 		super.OnInit();
-
-		//Param1<PlayerBase> rp1 = new Param1<PlayerBase>( g_Game.GetPlayer() );
-		//GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_REQUEST_TRADER_DATA, rp1, true); // TO SERVER: requestTraderData();
 	}
 	
 	void TickScheduler(float timeslice)
@@ -40,8 +23,7 @@ modded class MissionGameplay
 		//---------------------------------------------- TRADER BEGIN ----------------------------
 		
 		if ( player )
-		{		
-			//player.OnTick();
+		{
 			
 			traderModIsLoadedReplicationTimer -= timeslice;			
 			if (traderModIsLoadedReplicationTimer > 0)
@@ -50,24 +32,14 @@ modded class MissionGameplay
 			
 			if (!GetGame().IsServer() && !player.m_Trader_TraderModIsLoadedHandled)
 			{
-				GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_TRADER_MOD_IS_LOADED, new Param1<PlayerBase>( GetGame().GetPlayer() ), true); // TO SERVER: traderModIsLoaded();
+				GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_TRADER_MOD_IS_LOADED, new Param1<PlayerBase>( GetGame().GetPlayer() ), true);
 			}
 
 			if (!player.m_Trader_RecievedAllData)
-				GetGame().RPCSingleParam(player, TRPCs.RPC_REQUEST_TRADER_DATA, new Param1<PlayerBase>( player ), true); // TO SERVER: requestTraderData();
-
-			//if ( player.GetActionManager() )	 player.GetActionManager().DisableActions();
-			////player.GetInventory().LockInventory(LOCK_FROM_SCRIPT);
-			//player.m_InventorySoftLocked = true;
-
-			//player.GetInputController().OverrideAimChangeX(true,0);
-			//player.GetInputController().OverrideAimChangeY(true,0);
-			//player.OverrideShootFromCamera(true);
-			//player.GetInputController().OverrideRaise(true, false);
+				GetGame().RPCSingleParam(player, TRPCs.RPC_REQUEST_TRADER_DATA, new Param1<PlayerBase>( player ), true);
 		}
 		
 #ifdef Trader_Debug
-		// TEST ///
 		if(!player.TEST_ClassnamesInitialized)
 			TEST_InitialClassnames();
 		
@@ -84,7 +56,7 @@ modded class MissionGameplay
 		if (player.TEST_PreviewObjectIsCreated)
 		{
 			Param2<Object, vector> rps1 = new Param2<Object, vector>( player.TEST_PreviewObj, player.TEST_PreviewObjectPosition );
-			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_REPOS_OBJECT, rps1, true); // TO SERVER
+			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_REPOS_OBJECT, rps1, true);
 			
 			if (player.TEST_updateDir)
 			{
@@ -94,7 +66,7 @@ modded class MissionGameplay
 				dir[0] = player.TEST_PreviewObjDirOffset;
 				
 				Param2<Object, vector> rps2 = new Param2<Object, vector>( player.TEST_PreviewObj, dir );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_REDIR_OBJECT, rps2, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_REDIR_OBJECT, rps2, true);
 			}
 		}
 #endif
@@ -183,79 +155,21 @@ modded class MissionGameplay
 		
 		PlayerBase player = g_Game.GetPlayer();
 		
-		/*if (handledFirstInput == false)
-		{
-			//player.MessageImportant("Welcome to Kraxus Gaming!");
-			//player.MessageImportant("Press 'B'-Key to open the Trader.");
-			//player.MessageImportant(" ");
-			
-			if (player.m_Trader_RecievedAllData == false)
-			{
-				Param1<PlayerBase> rp1 = new Param1<PlayerBase>( g_Game.GetPlayer() );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_REQUEST_TRADER_DATA, rp1, true); // TO SERVER: requestTraderData();
-			}
-			
-			handledFirstInput = true;
-		}*/
-		
 #ifdef Trader_Debug
 		if ( key == KeyCode.KC_T )
 		{
-			//vector teleportPosition = "10741.7 6.94919 2499.11";
-			//Param2<PlayerBase, vector> rp3 = new Param2<PlayerBase, vector>( player, teleportPosition );
-			//GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_DEBUG_TELEPORT, rp3, true); // TO SERVER: teleportPlayer();
-
-			/*ItemBase m_item = player.GetItemInHands();
-			if(m_item)
-			{
-				bool m_ItemIsOn = m_item.IsPilotLight();
-				if (m_ItemIsOn)
-					m_item.SetPilotLight(false);
-				m_item.SetInvisible(true);
-				//m_ItemToHands = true;
-			}*/
-
-			//player.SetSuicide(false);
-
-			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, new Param3<PlayerBase, string, int>(player, "LandMineTrap", 5), true); // TO SERVER: createInInventory(player, itemType);
+			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, new Param3<PlayerBase, string, int>(player, "LandMineTrap", 5), true);
 		}
-
-		/*vector playerPos = player.GetPosition();
-		vector orientation = player.GetOrientation();
-		vector size = "6 6 6";
-		array<Object> excluded_objects = new array<Object>;
-		array<Object> nearby_objects = new array<Object>;
-		
-		if ( key == KeyCode.KC_N )
-		{
-			if(GetGame().IsBoxColliding( playerPos, orientation, size, excluded_objects, nearby_objects))
-			{
-				for (int j = 0, c = nearby_objects.Count(); j < c; ++j)
-				{
-					player.MessageStatus("(D) DELETING: " + nearby_objects.Get(j).GetType());
-					Param1<Object> rp2 = new Param1<Object>( nearby_objects.Get(j) );
-					GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_DEBUG_DELETE_OBJECT, rp2, true); // TO SERVER: deleteObject();
-				}
-			}
-		}*/
 
 		if (key == KeyCode.KC_N)
 		{
-			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, new Param3<PlayerBase, string, int>(player, "MountainBag_Green", -1), true); // TO SERVER: createInInventory(player, itemType);
+			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, new Param3<PlayerBase, string, int>(player, "MountainBag_Green", -1), true);
 		}
 		
 		if ( key == KeyCode.KC_M && player.m_Trader_RecievedAllData)
-		{			
-			/*if(GetGame().IsBoxColliding( playerPos, orientation, size, excluded_objects, nearby_objects))
-			{
-				for (int k = 0, d = nearby_objects.Count(); k < d; ++k)
-				{
-					player.MessageStatus("(C) CLASS: " + nearby_objects.Get(k).GetType());
-				}
-			}*/
-		
+		{
 			Param3<PlayerBase, string, int> rp4 = new Param3<PlayerBase, string, int>(player, player.m_Trader_CurrencyItemType, 35);
-			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, rp4, true); // TO SERVER: createInInventory(player, itemType);
+			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, rp4, true);
 		}
 #endif
 
@@ -270,7 +184,7 @@ modded class MissionGameplay
 				player.MessageStatus("[Trader] TRYING TO GET TRADER DATA FROM SERVER..");
 				
 				Param1<PlayerBase> rp2 = new Param1<PlayerBase>( g_Game.GetPlayer() );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_REQUEST_TRADER_DATA, rp2, true); // TO SERVER: requestTraderData();
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_REQUEST_TRADER_DATA, rp2, true);
 				
 				return;
 			}
@@ -281,8 +195,6 @@ modded class MissionGameplay
 				{
 					traderNearby = true;
 					traderID = player.m_Trader_TraderIDs.Get(i);
-
-					//player.MessageStatus("DIST: " + vector.Distance(player.GetPosition(), player.m_Trader_TraderPositions.Get(i)));
 				}
 			}
 			
@@ -302,25 +214,7 @@ modded class MissionGameplay
 			}
 		}
 		
-#ifdef Trader_Debug
-		// TEST!
-		/*if ( key == KeyCode.KC_H )
-		{
-			if (!player.TEST_PreviewObjectIsCreated)
-			{
-				player.MessageStatus("START OBJECT PREVIEW");
-				
-				player.TEST_PreviewObjectIsCreated = true;
-				
-				vector dir = vector.Zero;
-				dir[0] = player.TEST_PreviewObjDirOffset;
-				
-				//player.TEST_PreviewObj = GetGame().CreateObject( "GardenPlot", TEST_PreviewObjectPosition, false, false, true );				
-				Param4<PlayerBase, string, vector, vector> rps1 = new Param4<PlayerBase, string, vector, vector>( player, "Land_BusStop_City", player.TEST_PreviewObjectPosition, dir );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps1, true); // TO SERVER
-			}
-		}*/
-		
+#ifdef Trader_Debug		
 		if (player.TEST_PreviewObjectIsCreated)
 		{
 			if ( key == 0x48) // Numpad 8
@@ -366,12 +260,12 @@ modded class MissionGameplay
 				player.MessageStatus("CATEGORY: " + player.TEST_ClassnameCategoryName.Get(player.TEST_ClassnameCategoryID));
 				
 				Param1<Object> rps1 = new Param1<Object>( player.TEST_PreviewObj );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps1, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps1, true);
 				
 				dir[0] = player.TEST_PreviewObjDirOffset;
 				
 				Param4<PlayerBase, string, vector, vector> rps2 = new Param4<PlayerBase, string, vector, vector>( player, GetClassname(), player.TEST_PreviewObjectPosition, dir );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps2, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps2, true);
 			}
 			if ( key == 0x49 ) // Numpad 9
 			{
@@ -383,12 +277,12 @@ modded class MissionGameplay
 				player.MessageStatus("CATEGORY: " + player.TEST_ClassnameCategoryName.Get(player.TEST_ClassnameCategoryID));
 				
 				Param1<Object> rps3 = new Param1<Object>( player.TEST_PreviewObj );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps3, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps3, true);
 				
 				dir[0] = player.TEST_PreviewObjDirOffset;
 				
 				Param4<PlayerBase, string, vector, vector> rps4 = new Param4<PlayerBase, string, vector, vector>( player, GetClassname(), player.TEST_PreviewObjectPosition, dir );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps4, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps4, true);
 			}
 			
 			if ( key == 0x4F) // Numpad 1
@@ -396,12 +290,12 @@ modded class MissionGameplay
 				DecreaseClassnameID();
 				
 				Param1<Object> rps5 = new Param1<Object>( player.TEST_PreviewObj );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps5, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps5, true);
 				
 				dir[0] = player.TEST_PreviewObjDirOffset;
 				
 				Param4<PlayerBase, string, vector, vector> rps6 = new Param4<PlayerBase, string, vector, vector>( player, GetClassname(), player.TEST_PreviewObjectPosition, dir );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps6, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps6, true);
 				
 			}
 			if ( key == 0x51) // Numpad 3
@@ -409,12 +303,12 @@ modded class MissionGameplay
 				IncreaseClassnameID();
 				
 				Param1<Object> rps7 = new Param1<Object>( player.TEST_PreviewObj );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps7, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps7, true);
 				
 				dir[0] = player.TEST_PreviewObjDirOffset;
 				
 				Param4<PlayerBase, string, vector, vector> rps8 = new Param4<PlayerBase, string, vector, vector>( player, GetClassname(), player.TEST_PreviewObjectPosition, dir );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps8, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps8, true);
 			}
 		}
 #endif
@@ -460,21 +354,21 @@ modded class MissionGameplay
 		{
 			vector teleportPosition1 = "11876.8 140.012 12467";
 			Param2<PlayerBase, vector> rpt1 = new Param2<PlayerBase, vector>( player, teleportPosition1 );
-			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_DEBUG_TELEPORT, rpt1, true); // TO SERVER: teleportPlayer();
+			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_DEBUG_TELEPORT, rpt1, true);
 		}
 		
 		if ( key == 0x3C ) // F2
 		{
 			vector teleportPosition2 = "8316.31 292.012 5975.25";
 			Param2<PlayerBase, vector> rpt2 = new Param2<PlayerBase, vector>( player, teleportPosition2 );
-			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_DEBUG_TELEPORT, rpt2, true); // TO SERVER: teleportPlayer();
+			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_DEBUG_TELEPORT, rpt2, true);
 		}
 		
 		if ( key == 0x3D ) // F3
 		{
 			vector teleportPosition3 = "3702.01 402.012 5991.82";
 			Param2<PlayerBase, vector> rpt3 = new Param2<PlayerBase, vector>( player, teleportPosition3 );
-			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_DEBUG_TELEPORT, rpt3, true); // TO SERVER: teleportPlayer();
+			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_DEBUG_TELEPORT, rpt3, true);
 		}
 
 		if ( key == 0x3E ) // F4
@@ -493,18 +387,16 @@ modded class MissionGameplay
 				
 				vector dir = vector.Zero;
 				dir[0] = player.TEST_PreviewObjDirOffset;
-				
-				//player.TEST_PreviewObj = GetGame().CreateObject( "GardenPlot", TEST_PreviewObjectPosition, false, false, true );				
+								
 				Param4<PlayerBase, string, vector, vector> rps1 = new Param4<PlayerBase, string, vector, vector>( player, GetClassname(), player.TEST_PreviewObjectPosition, dir );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps1, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rps1, true);
 			}
 			else
 			{			
 				player.MessageStatus("END OBJECT PREVIEW");
 				
-				//GetGame().ObjectDelete(player.TEST_PreviewObj);
 				Param1<Object> rps2 = new Param1<Object>( player.TEST_PreviewObj );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps2, true); // TO SERVER
+				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_DELETE_OBJECT, rps2, true);
 				
 				player.TEST_PreviewObjectIsCreated = false;
 			}

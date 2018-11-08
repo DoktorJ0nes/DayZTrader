@@ -14,10 +14,7 @@ class TraderMenu extends UIScriptedMenu
 	
 	ref InspectMenuNew menu;
 	
-	
-	//static const string m_TraderType = "ZmbM_SoldierNormal"; //"SurvivorM_Boris";
 	static const string filePath = "DZ/Trader/scripts/5_Mission/mission/TraderConfig.txt";
-	//static const string filePath = "$profile:TraderConfig.txt";
 	
 	int m_TraderID = -1;
 	
@@ -51,8 +48,7 @@ class TraderMenu extends UIScriptedMenu
 	}
 
     override Widget Init()
-    {		
-        //layoutRoot = GetGame().GetWorkspace().CreateWidgets( "scripts/5_Mission/mission/TraderMenu.layout" );
+    {
 		layoutRoot = GetGame().GetWorkspace().CreateWidgets( "DZ/Trader/scripts/5_Mission/mission/TraderMenu.layout" );
 
         m_BtnBuy = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_buy" ) );
@@ -94,39 +90,19 @@ class TraderMenu extends UIScriptedMenu
 			updatePlayerCurrencyAmount();				
 			updateItemListboxColors();
 			
-			PlayerBase m_Player = GetGame().GetPlayer();
-			
 			m_UiUpdateTimer = 0;
 		}
 		else
 		{
 			m_UiUpdateTimer = m_UiUpdateTimer + timeslice;
 		}
-	}
 
-    override void OnShow()
-    {
-        super.OnShow();
 		
-		/*PlayerBase player = g_Game.GetPlayer();
-		if (player.m_Trader_RecievedAllData == false)
-		{			
-			player.MessageStatus("[Trader] MISSING TRADER DATA FROM SERVER!");
-			player.MessageStatus("[Trader] TRYING TO GET TRADER DATA FROM SERVER..");
-			
-			Param1<PlayerBase> rp1 = new Param1<PlayerBase>( g_Game.GetPlayer() );
-			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_REQUEST_TRADER_DATA, rp1, true); // TO SERVER: requestTraderData();
-			
-			GetGame().GetUIManager().Back();
-		}*/
-    }
+	}
 
     override void OnHide()
     {
         super.OnHide();
-		
-		//PlayerBase m_Player = g_Game.GetPlayer();
-		//m_Player.MessageStatus("+was hided!!!");
 		
 		Close();
     }
@@ -142,10 +118,7 @@ class TraderMenu extends UIScriptedMenu
 		int itemQuantity = m_ListboxItemsQuantity.Get(row_index);
 		
 		if ( w == m_BtnBuy )
-		{	
-			//string itemCostsStr = "";
-			//m_ListboxItems.GetItemText( row_index, 1, itemCostsStr );
-			//int itemCosts = itemCostsStr.ToInt();
+		{
 			int itemCosts = m_ListboxItemsBuyValue.Get(row_index);
 			
 			int playerCurrencyAmountBeforePurchase = m_Player_CurrencyAmount;
@@ -156,13 +129,9 @@ class TraderMenu extends UIScriptedMenu
 				return true;
 			}
 			
-			//EntityAI entity = g_Game.GetPlayer().SpawnEntityOnGroundPos(itemType, m_Player.GetPosition()); // ghostitem to check if there is space in inventory // nicht sichtbar fuer clients?
-			
-			//if (m_Player.GetHumanInventory().CanAddEntityToInventory(entity))
 			if (canCreateItemInPlayerInventory(itemType))
 			{
 				m_Player.MessageStatus("Trader: " + getItemDisplayName(itemType) + " was added to your Inventory!");
-				//entity.Delete();
 				
 				createItemInPlayerInventory(itemType, itemQuantity);
 			}
@@ -180,15 +149,10 @@ class TraderMenu extends UIScriptedMenu
 			deductPlayerCurrency(itemCosts);
 			updatePlayerCurrencyAmount();
 			updateItemListboxColors();
-			//m_UiUpdateTimer = m_UiUpdateTimerInterval;
 			
-			//if (playerCurrencyAmountBeforePurchase == m_Player_CurrencyAmount) // only at the first purchase m_Player_CurrencyAmount stays like before, when UI keeps open.. WTF?! (EnumerateInventory() seems to be the reason)
-			//{
-				//m_Player.MessageStatus("FIXING BALANCE AND UI..");
 			m_Player_CurrencyAmount = playerCurrencyAmountBeforePurchase - itemCosts;
 			updatePlayerCurrencyAmount();				
 			updateItemListboxColors();
-			//}
 
 			return true;
 		}
@@ -210,14 +174,10 @@ class TraderMenu extends UIScriptedMenu
 			increasePlayerCurrency(itemSellValue);
 			updatePlayerCurrencyAmount();
 			updateItemListboxColors();
-			//m_UiUpdateTimer = m_UiUpdateTimerInterval;
-			
-			//if (playerCurrencyAmountBeforeSale == m_Player_CurrencyAmount) // only at the first sale m_Player_CurrencyAmount stays like before, when UI keeps open.. WTF?! (EnumerateInventory() seems to be the reason)
-			//{
+
 			m_Player_CurrencyAmount = playerCurrencyAmountBeforeSale + itemSellValue;
 			updatePlayerCurrencyAmount();			
 			updateItemListboxColors();
-			//}
 			
 			return true;
 		}
@@ -262,38 +222,10 @@ class TraderMenu extends UIScriptedMenu
 		if (!finished) return false;
 		
 		m_CategorysCurrentIndex = m_XComboboxCategorys.GetCurrentItem();
-		
-		//PlayerBase m_Player = g_Game.GetPlayer();
-		//m_Player.MessageStatus("ONCHANGE! " + m_CategorysCurrentIndex);
-		
-		//if(!GetGame().IsClient())
-		//	return false;
-		
-		//updateItemListboxContent();
 		updateListbox = true;
-
-		/*PlayerBase m_Player = g_Game.GetPlayer();
-		EntityAI entityInHands = m_Player.GetHumanInventory().GetEntityInHands();
-		if (entityInHands)
-		{
-			m_Player.MessageStatus("SOMETHING IN HANDS!");
-			bool testIA = IsAttachment(entityInHands, "AK_Suppressor");
-			m_Player.MessageStatus("ISATTACHMENT = " + testIA);
-		}
-		else
-			m_Player.MessageStatus("NOTHING IN HANDS!");*/
 		
 		return false;
 	}
-	
-	/*override bool OnUpdate(Widget w)
-	{
-		if (updateListbox)
-		{
-			updateListbox = false;
-			updateItemListboxContent();
-		}
-	}*/
 	
 	private void updateItemListboxContent()
 	{		
@@ -321,12 +253,10 @@ class TraderMenu extends UIScriptedMenu
 			
 			if (m_Player_CurrencyAmount >= itemCosts)
 			{
-				//m_ListboxItems.SetItemColor(i, 0, ARGBF(1, 1, 1, 1) );
 				m_ListboxItems.SetItemColor(i, 1, ARGBF(1, 1, 1, 1) );
 			}
 			else
 			{
-				//m_ListboxItems.SetItemColor(i, 0, ARGBF(1, 1, 0, 0) );
 				m_ListboxItems.SetItemColor(i, 1, ARGBF(1, 1, 0, 0) );
 			}
 			
@@ -342,7 +272,6 @@ class TraderMenu extends UIScriptedMenu
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(1, 1, 1, 1) );
 			}
 
-			//PlayerBase m_Player = g_Game.GetPlayer();
 			EntityAI entityInHands = g_Game.GetPlayer().GetHumanInventory().GetEntityInHands();
 			if (entityInHands)
 			{
@@ -388,7 +317,7 @@ class TraderMenu extends UIScriptedMenu
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
 		Param4<PlayerBase, string, vector, int> rp2 = new Param4<PlayerBase, string, vector, int>(m_Player, itemType, position, amount);
-		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_SPAWN_ITEM_ON_GROUND, rp2, true); // TO SERVER: spawnEntityOnGround(itemType, m_Player.GetPosition());
+		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_SPAWN_ITEM_ON_GROUND, rp2, true);
 	}
 	
 	private void createItemInPlayerInventory(string itemType, int amount)
@@ -396,10 +325,7 @@ class TraderMenu extends UIScriptedMenu
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
 		Param3<PlayerBase, string, int> rp1 = new Param3<PlayerBase, string, int>(m_Player, itemType, amount);
-		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, rp1, true); // TO SERVER: createInInventory(m_Player, itemType);
-		
-		//ref Param3<string, float, float> params = new Param3<string, float, float>(itemType, 100, amount);
-		//m_Player.RPCSingleParam(ERPCs.DEV_RPC_SPAWN_ITEM_IN_INVENTORY, params, true);
+		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, rp1, true);
 		
 		m_Player.UpdateInventoryMenu();
 	}
@@ -413,10 +339,6 @@ class TraderMenu extends UIScriptedMenu
 		array<EntityAI> itemsArray = new array<EntityAI>;
 		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 
-		/*EntityAI entityInHands = m_Player.GetHumanInventory().GetEntityInHands();
-		if (entityInHands)
-			itemsArray.Insert(entityInHands);*/
-
 		ItemBase item;
 		
 		for (int i = 0; i < itemsArray.Count(); i++)
@@ -424,23 +346,9 @@ class TraderMenu extends UIScriptedMenu
 			Class.CastTo(item, itemsArray.Get(i));
 			if(item && item.GetType() == m_Player.m_Trader_CurrencyItemType)
 			{
-				//currencyAmount += QuantityConversions.GetItemQuantity(item);
 				currencyAmount += getItemAmount(item);
 			}
 		}
-		
-		/*
-		// remove double counted items because item was also in hand
-		ItemBase entityInHands;
-		Class.CastTo(entityInHands, m_Player.GetHumanInventory().GetEntityInHands());
-		if(entityInHands && entityInHands.GetType() == m_Player.m_Trader_CurrencyItemType)
-			currencyAmount -= getItemAmount(entityInHands);	
-		//EntityAI entityInHands = m_Player.GetHumanInventory().GetEntityInHands();
-		//if(item && item.GetType() == m_Player.m_Trader_CurrencyItemType)
-			//currencyAmount -= QuantityConversions.GetItemQuantity(entityInHands);	
-		
-		//m_Player.MessageStatus("currencyAmount: " + currencyAmount);	
-		*/	
 		
 		return currencyAmount;
 	}
@@ -448,8 +356,6 @@ class TraderMenu extends UIScriptedMenu
 	private bool isInPlayerInventory(string itemClassname, int amount)
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
-		
-		//int currencyAmount = 0;
 		
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
@@ -490,13 +396,13 @@ class TraderMenu extends UIScriptedMenu
 					Class.CastTo(itemToDelete, itemsArray.Get(i));
 					
 					Param1<ItemBase> rp1 = new Param1<ItemBase>(itemToDelete);
-					GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_ITEM, rp1, true); // TO SERVER: deleteItem(item);
+					GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_ITEM, rp1, true);
 					
 					m_Player.UpdateInventoryMenu();
 					return true;
 				}
 				
-				setItemAmount(item, itemAmount - amount); // TO SERVER: deductItemAmount(item, amount);
+				setItemAmount(item, itemAmount - amount);
 				
 				m_Player.UpdateInventoryMenu();
 				return true;
@@ -512,11 +418,11 @@ class TraderMenu extends UIScriptedMenu
 		Magazine mgzn = Magazine.Cast(item);
 				
 		int itemAmount = 0;
-		if( item.IsMagazine() ) // is a magazine
+		if( item.IsMagazine() )
 		{
 			itemAmount = mgzn.GetAmmoCount();
 		}
-		else // is not a magazine
+		else
 		{
 			itemAmount = QuantityConversions.GetItemQuantity(item);
 		}
@@ -527,74 +433,17 @@ class TraderMenu extends UIScriptedMenu
 	private void setItemAmount(ItemBase item, int amount)
 	{
 		Param2<ItemBase, int> rp1 = new Param2<ItemBase, int>(item, amount);
-		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_SET_ITEM_AMOUNT, rp1, true); // TO SERVER: setItemAmount(item, amount);
+		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_SET_ITEM_AMOUNT, rp1, true);
 		
 		g_Game.GetPlayer().UpdateInventoryMenu();
 	}
-	
-	/*private int getItemMaxAmount(ItemBase item) // wird das noch iwo benutzt?
-	{
-		Magazine mgzn = Magazine.Cast(item);
-				
-		int itemMaxAmount = 0;
-		if( item.IsMagazine() ) // is a magazine
-		{
-			itemMaxAmount = mgzn.GetAmmoMax();
-		}
-		else // is not a magazine
-		{
-			itemMaxAmount = item.GetQuantityMax();
-		}
-		
-		return itemMaxAmount;
-	}*/
 	
 	private void increasePlayerCurrency(int currencyAmount)
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
 		Param3<PlayerBase, string, int> rp1 = new Param3<PlayerBase, string, int>( m_Player, m_Player.m_Trader_CurrencyItemType, currencyAmount);
-		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_INCREASE_PLAYER_CURRENCY, rp1, true); // TO SERVER: increasePlayerCurrency(player, currencyType, currencyAmount);
-		
-		/*while (currencyAmount > 0)
-		{
-			EntityAI entity = m_Player.SpawnEntityOnGroundPos(m_Player.m_Trader_CurrencyItemType, m_Player.GetPosition());
-			
-			ItemBase item;
-			Class.CastTo(item, entity);			
-			int itemMaxAmount = getItemMaxAmount(item);
-			m_Player.MessageStatus("AMOUNTMAX: " + itemMaxAmount + "!");
-			
-			if (m_Player.GetHumanInventory().CanAddEntityToInventory(entity))
-			{
-				createItemInPlayerInventory(m_Player.m_Trader_CurrencyItemType, currencyAmount)
-			}
-			else
-			{
-				m_Player.MessageStatus("Your Inventory is full! Your Currencys were placed on Ground!");
-				
-				spawnItemOnGround(m_Player.m_Trader_CurrencyItemType, m_Player.GetPosition(), currencyAmount);
-				GetGame().GetUIManager().Back();
-			}
-			GetGame().ObjectDelete(entity);
-			
-			//--------------------------------------------
-			ItemBase item;
-			Class.CastTo(item, entity);
-			
-			int itemMaxAmount = getItemMaxAmount(item);
-			
-			if (currencyAmount > itemMaxAmount)
-			{
-				setItemAmount(item, itemMaxAmount);
-				currencyAmount -= itemMaxAmount;
-			}
-			else
-			{
-				setItemAmount(item, currencyAmount);
-				currencyAmount = 0;
-			}
-		}*/
+		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_INCREASE_PLAYER_CURRENCY, rp1, true);
 	}
 	
 	private void deductPlayerCurrency(int currencyAmount)
@@ -610,43 +459,17 @@ class TraderMenu extends UIScriptedMenu
 			Class.CastTo(item, itemsArray.Get(i));
 			if(item && item.GetType() == m_Player.m_Trader_CurrencyItemType)
 			{
-				/*Magazine mgzn = Magazine.Cast(item);
-				
-				int itemCurrencyAmount = 0;
-				if( item.IsMagazine() ) // is a magazine //////////// <- falsch herum? A tauschen mit B?
-				{
-					//itemCurrencyAmount = QuantityConversions.GetItemQuantity(item); // A
-					itemCurrencyAmount = mgzn.GetAmmoCount(); // B
-				}
-				else // is not a magazine
-				{
-					//itemCurrencyAmount = mgzn.GetAmmoCount(); // B
-					itemCurrencyAmount = QuantityConversions.GetItemQuantity(item); // A
-				}*/
 				int itemCurrencyAmount = getItemAmount(item);
 				
 				if(itemCurrencyAmount > currencyAmount)
 				{
-					/*if( item.IsMagazine() ) // is a magazine
-					{
-						m_Player.MessageStatus("Currency is Magazine!");	
-						mgzn.ServerSetAmmoCount(itemCurrencyAmount - currencyAmount);
-						return;
-					}
-					else // is not a magazine
-					{
-						m_Player.MessageStatus("Currency is NO Magazine!");
-						item.SetQuantity(itemCurrencyAmount - currencyAmount);
-						return;
-					}*/
 					setItemAmount(item, itemCurrencyAmount - currencyAmount);
 					return;
 				}
 				else
 				{
-					//GetGame().ObjectDelete(itemsArray.Get(i));
 					Param1<ItemBase> rp1 = new Param1<ItemBase>(itemsArray.Get(i));
-					GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_ITEM, rp1, true); // TO SERVER: deleteItem(item);
+					GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_ITEM, rp1, true);
 					
 					m_Player.UpdateInventoryMenu();
 					
@@ -666,33 +489,27 @@ class TraderMenu extends UIScriptedMenu
 	
 		if (displayName == "")
 		{
-			//GetGame().ConfigGetFullPath("CfgAmmo " + itemClassname, itemInfos);
 			cfg = "CfgAmmo " + itemClassname + " displayName";
 			GetGame().ConfigGetText(cfg, displayName);
 		}
 		
 		if (displayName == "")
 		{
-			//GetGame().ConfigGetFullPath("CfgMagazines " + itemClassname, itemInfos);
 			cfg = "CfgMagazines " + itemClassname + " displayName";
 			GetGame().ConfigGetText(cfg, displayName);
 		}
 		
 		if (displayName == "")
 		{
-			//GetGame().ConfigGetFullPath("cfgWeapons " + itemClassname, itemInfos);
 			cfg = "cfgWeapons " + itemClassname + " displayName";
 			GetGame().ConfigGetText(cfg, displayName);
 		}
 	
 		if (displayName == "")
 		{
-			//GetGame().ConfigGetFullPath("CfgNonAIVehicles " + itemClassname, itemInfos);
 			cfg = "CfgNonAIVehicles " + itemClassname + " displayName";
 			GetGame().ConfigGetText(cfg, displayName);
 		}
-		
-		
 		
 		
 		if (displayName != "")
@@ -715,8 +532,6 @@ class TraderMenu extends UIScriptedMenu
 
 	private bool IsAttachment(EntityAI parentEntity, string attachmentClassname)
 	{
-		//PlayerBase m_Player = g_Game.GetPlayer();
-
 		// Check chamberable Ammunitions
 		string type_name = parentEntity.GetType();
 		TStringArray cfg_chamberables = new TStringArray;
@@ -889,7 +704,7 @@ class TraderMenu extends UIScriptedMenu
 		return false;*/
 	}
 
-	private string GetItemInventorySlot(string itemClassname)
+	/*private string GetItemInventorySlot(string itemClassname)
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_VEHICLESPATH );
@@ -931,21 +746,21 @@ class TraderMenu extends UIScriptedMenu
 			if ( GetGame().ConfigIsExisting( path ) )
 			{
 				g_Game.ConfigGetTextArray( path + " attachments", attachments_slots );
-				/*if ( parentEntity.IsWeapon() )
-				{
-					attachments_slots.Insert( "magazine" );
-				}*/
+				//if ( parentEntity.IsWeapon() )
+				//{
+				//	attachments_slots.Insert( "magazine" );
+				//}
 			}
 		}
-		/*if ( parentEntity.IsWeapon() )
-		{
-			attachments_slots.Insert( "magazine" );
-		}*/
+		//if ( parentEntity.IsWeapon() )
+		//{
+		//	attachments_slots.Insert( "magazine" );
+		//}
 
 		//TEST();
 
 		return attachments_slots;
-	}
+	}*/
 
 	/*private void TEST()
 	{
@@ -1089,54 +904,6 @@ class TraderMenu extends UIScriptedMenu
 			m_CategorysKey.Insert(i);
 		}
 		
-		//----------------------------------------------------------------------
-		
-		/*PlayerBase m_Player = g_Game.GetPlayer();	
-		
-		m_FileContent.Clear();
-		//string filePath = "com/trader/scripts/5_Mission/mission/TraderConfig.txt";
-		FileHandle file_index = OpenFile(filePath, FileMode.READ);
-		
-		if ( file_index == 0 )
-		{
-			m_Player.MessageStatus("FOUND NO TRADERCONFIG FILE!");
-			return false;
-		}
-		
-		//m_Player.MessageStatus("FOUND FILE!");
-		
-		string line_content = "";
-		
-		
-		line_content = SearchForNextTermInFile(file_index, "<Currency>", "");
-		line_content.Replace("<Currency>", "");
-		line_content = TrimComment(line_content);
-		m_CurrencyItemType = line_content;
-				
-		
-		line_content = SearchForNextTermInFile(file_index, "<Trader>", "");
-		line_content.Replace("<Trader>", "");
-		line_content = TrimComment(line_content);
-		m_TraderName.SetText(line_content);
-		
-		
-		m_XComboboxCategorys.ClearAll();
-		m_Categorys = new array<string>;		
-		int categoryCounter = 0;
-		line_content = TrimComment(SearchForNextTermInFile(file_index, "<Category>", "<FileEnd>"));
-		while (categoryCounter <= 500 && line_content != "<FileEnd>")
-		{
-			line_content.Replace("<Category>", "");
-			m_XComboboxCategorys.AddItem(TrimComment(line_content));
-			m_Categorys.Insert(TrimComment(line_content));
-			
-			line_content = TrimComment(SearchForNextTermInFile(file_index, "<Category>", "<FileEnd>"));
-			categoryCounter++;
-		}
-		
-		
-		CloseFile(file_index);*/
-		
 		return true;
 	}
 	
@@ -1150,10 +917,7 @@ class TraderMenu extends UIScriptedMenu
 		m_ListboxItemsSellValue = new array<int>;
 			
 		for ( int i = 0; i < m_Player.m_Trader_ItemsClassnames.Count(); i++ )
-		{
-			//if ( m_Player.m_Trader_ItemsTraderId.Get(i) != m_CategorysTraderKey.Get(m_CategorysCurrentIndex))
-			//	continue;
-			
+		{			
 			if ( m_Player.m_Trader_ItemsCategoryId.Get(i) == m_CategorysKey.Get(m_CategorysCurrentIndex) )
 			{
 				m_ListboxItemsClassnames.Insert(m_Player.m_Trader_ItemsClassnames.Get(i));
@@ -1163,145 +927,9 @@ class TraderMenu extends UIScriptedMenu
 			}
 		}
 		
-		/*int lineCount = 1;		
-		
-		m_FileContent.Clear();
-		//string filePath = "com/trader/scripts/5_Mission/mission/TraderConfig.txt";
-		
-		FileHandle file_index = OpenFile(filePath, FileMode.READ);
-		
-		if ( file_index == 0 )
-		{
-			//m_Player.MessageStatus("FOUND NO FILE!");
-			return false;
-		}
-		//m_Player.MessageStatus("FOUND FILE!");
-		
-		
-		//m_Player.MessageStatus("CATEGORY = " + m_Categorys.Get(m_CategorysCurrentIndex));
-		bool categoryFound = false;
-		int itemCounter = 0;
-		while (itemCounter <= 5000 && !categoryFound)
-		{
-			string line_content = TrimComment(SearchForNextTermInFile(file_index, "<Category>", ""));
-			line_content.Replace("<Category>", "");
-			line_content = TrimComment(line_content);
-			
-			if (line_content != m_Categorys.Get(m_CategorysCurrentIndex))
-			{
-				//m_Player.MessageStatus("CONTINUED CATEGORY " + line_content);
-				continue;
-			}
-			
-			//m_Player.MessageStatus("FOUND CATEGORY " + line_content);
-			categoryFound = true;
-			
-			
-			
-			m_ListboxItemsClassnames = new array<string>;
-			m_ListboxItemsBuyValue = new array<int>;
-			m_ListboxItemsSellValue = new array<int>;
-			
-			int char_count = 0;
-			while ( itemCounter <= 5000 && char_count != -1 )
-			{			
-				char_count = FGets( file_index,  line_content );
-				
-				if (line_content.Contains("<Category>"))
-					return true;
-				
-				line_content = TrimComment(line_content);
-				
-				if (!line_content.Contains(","))
-					continue;
-			
-				TStringArray strs = new TStringArray;
-				line_content.Split( ",", strs );
-				
-				string item = strs.Get(0);
-				item = TrimSpaces(item);
-				
-				string buy = strs.Get(1);
-				buy = TrimSpaces(buy);
-				
-				string sell = strs.Get(2);
-				sell = TrimSpaces(sell);
-				
-				//m_Player.MessageStatus("ITEM \"" + item + "\"");
-				//m_Player.MessageStatus("BUY \"" + buy + "\"");
-				//m_Player.MessageStatus("SELL \"" + sell + "\"");
-				m_ListboxItemsClassnames.Insert(item);
-				m_ListboxItemsBuyValue.Insert(buy.ToInt());
-				m_ListboxItemsSellValue.Insert(sell.ToInt());
-				
-				itemCounter++;
-			}		
-			
-			itemCounter++;
-		}
-		
-		
-		CloseFile(file_index);*/
-		
 		return true;
 	}
 	
-	/*private string SearchForNextTermInFile(FileHandle file_index, string searchTerm, string abortTerm)
-	{
-		int char_count = 0;
-		while ( char_count != -1 )
-		{			
-			string line_content = "";
-			char_count = FGets( file_index,  line_content );
-			
-			if (line_content.Contains(searchTerm) || (line_content.Contains(abortTerm) && abortTerm != ""))
-			{
-				return line_content;
-			}
-		}
-		
-		return "";
-	}
-	
-	private string TrimComment(string line)
-	{
-		int to_substring_end = line.Length();
-		
-		for (int i = 0; i < to_substring_end; i++)
-		{
-			string sign = line.Get(i);
-			if ( sign == "/" && i + 1 < to_substring_end)
-			{
-				if (line.Get(i + 1) == "/")
-				{
-					to_substring_end = i;
-					break;
-				}
-			}
-		}
-		
-		string lineOut = line.Substring(0, to_substring_end);
-		
-		return TrimSpaces(lineOut);
-	}
-	
-	private string TrimSpaces(string line)
-	{
-		line.Replace("	", ""); // Replace Tabs("\t" or "	") with nothing.
-		
-		bool hasSpaces = true;		
-		while(hasSpaces)
-		{
-			line = line.Trim();
-			
-			if (line.Length() > 0)
-				hasSpaces = line.Get(0) == " " || line.Get(line.Length() - 1) == " ";
-			else
-				hasSpaces = false;
-		}
-		
-		return line;
-	}*/
 	
 	private void InspectItem(EntityAI itemToInspect)
 	{

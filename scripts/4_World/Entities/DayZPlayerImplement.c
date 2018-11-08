@@ -1,9 +1,8 @@
-//#define Trader_Debug
+#define Trader_Debug
 
 modded class DayZPlayerImplement
 {
 	// ------------- TRADERVARS -------------------------
-	//static const string m_Trader_ConfigFilePath = "DZ/Trader/scripts/5_Mission/mission/TraderConfig.txt";
 	static const string m_Trader_ConfigFilePath = "$profile:Trader/TraderConfig.txt";
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
 	
@@ -17,10 +16,6 @@ modded class DayZPlayerImplement
 	float m_Trader_HealthEnteredSafeZone;
 	float m_Trader_HealthBloodEnteredSafeZone;
 	bool m_Trader_PlayerDiedInSafezone = false;
-
-	//bool m_Trader_OnKilledWasInSafezone = false;
-	//EntityAI m_Trader_OnKilledItemInHands;
-	//EntityAI m_Trader_OnKilledItemOnBack;
 	
 	bool m_Trader_IsReadingTraderFileEntrys = false;
 	bool m_Trader_RecievedAllData = false;
@@ -28,7 +23,7 @@ modded class DayZPlayerImplement
 	string m_Trader_CurrencyItemType;
 	
 	ref array<string> m_Trader_TraderNames;
-	ref array<vector> m_Trader_TraderPositions; // = {"10740.1 6.58953 2495.5", "0 0 0"};
+	ref array<vector> m_Trader_TraderPositions;
 	ref array<int> m_Trader_TraderIDs;
 	ref array<int> m_Trader_TraderSafezones;
 	
@@ -43,7 +38,6 @@ modded class DayZPlayerImplement
 	ref array<int> m_Trader_ItemsSellValue;	
 	
 #ifdef Trader_Debug
-	// TEST!
 	Object TEST_PreviewObj;
 	vector TEST_PreviewObjectPosition;
 	bool TEST_PreviewObjectIsCreated = false;
@@ -123,7 +117,6 @@ modded class DayZPlayerImplement
 				player = rp0.param1;
 				
 				m_Trader_TraderModIsLoaded = true;
-				TraderServerLogs.PrintS("[TRADER] Someone uses the Mod!"); // weg damit!
 				
 				GetGame().RPCSingleParam(player, TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM, new Param1<PlayerBase>( player ), true, player.GetIdentity());
 			}
@@ -140,20 +133,6 @@ modded class DayZPlayerImplement
 				
 				entity = player.SpawnEntityOnGroundPos(itemType, position);
 				Class.CastTo(item, entity);
-				
-				/*if (amount != -1)
-				{
-					mgzn = Magazine.Cast(item);
-						
-					if( item.IsMagazine() ) // is a magazine
-					{
-						mgzn.ServerSetAmmoCount(amount);
-					}
-					else // is not a magazine
-					{
-						item.SetQuantity(amount);
-					}
-				}*/
 			}
 			
 			if (rpc_type == TRPCs.RPC_CREATE_ITEM_IN_INVENTORY)
@@ -173,11 +152,11 @@ modded class DayZPlayerImplement
 				{
 					mgzn = Magazine.Cast(item);
 						
-					if( item.IsMagazine() ) // is a magazine
+					if( item.IsMagazine() )
 					{
 						mgzn.ServerSetAmmoCount(amount);
 					}
-					else // is not a magazine
+					else
 					{
 						item.SetQuantity(amount);
 					}
@@ -191,10 +170,7 @@ modded class DayZPlayerImplement
 				
 				item = rp3.param1;
 				
-				//EEDelete
 				item.Delete();
-				//GetGame().ObjectDelete(item);
-				//item.AddQuantity( -1 );
 			}
 			
 			if (rpc_type == TRPCs.RPC_SET_ITEM_AMOUNT)
@@ -210,11 +186,11 @@ modded class DayZPlayerImplement
 				{
 					mgzn = Magazine.Cast(item);
 						
-					if( item.IsMagazine() ) // is a magazine
+					if( item.IsMagazine() )
 					{
 						mgzn.ServerSetAmmoCount(amount);
 					}
-					else // is not a magazine
+					else
 					{
 						item.SetQuantity(amount);
 					}
@@ -230,8 +206,7 @@ modded class DayZPlayerImplement
 				string m_CurrencyItemType = rp5.param2;
 				int currencyAmount = rp5.param3;
 				
-				
-				// get currency item max amount
+				// get currency item max amount: TODO: GetFromConfig!
 				vector ghostItemPosition = "0 0 0";
 				EntityAI ghostEntity = player.SpawnEntityOnGroundPos(m_CurrencyItemType, ghostItemPosition);
 				Class.CastTo(item, ghostEntity);			
@@ -246,32 +221,24 @@ modded class DayZPlayerImplement
 				
 				while (currencyAmount > 0)
 				{
-					//ghostEntity = player.SpawnEntityOnGroundPos(m_CurrencyItemType, ghostItemPosition);
 					bool freeSpaceForItem = false;
 					InventoryLocation il = new InventoryLocation;		
 					if (player.GetInventory().FindFirstFreeLocationForNewEntity(m_CurrencyItemType, FindInventoryLocationType.ANY, il))
 						freeSpaceForItem = true;
 					
-					//if (player.GetHumanInventory().CanAddEntityToInventory(ghostEntity))
 					if (freeSpaceForItem)
-					{
-						//Param1<string> msgRp2 = new Param1<string>( "Your Currencys were placed in your Inventory!" );
-						//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp2, true, player.GetIdentity());
-						
+					{						
 						entity = player.GetHumanInventory().CreateInInventory(m_CurrencyItemType);
 					}
 					else
 					{
-						//player.MessageStatus("Your Inventory is full! Your Currencys were placed on Ground!"); // TODO
 						Param1<string> msgRp = new Param1<string>( "Trader: Your Inventory is full! Your Currencys were placed on Ground!" );
 						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp, true, player.GetIdentity());
 						
 						entity = player.SpawnEntityOnGroundPos(m_CurrencyItemType, player.GetPosition());
 					}
 					
-					//GetGame().ObjectDelete(ghostEntity);
-					
-					// set currency amount of item
+					// set currency amount of item:
 					if (currencyAmount > itemMaxAmount)
 					{
 						//setItemAmount(item, itemMaxAmount); // TODO (unnoetig, da items immer mix maxammount gespawnt werden!
@@ -305,10 +272,9 @@ modded class DayZPlayerImplement
 				
 				player = rp6.param1;
 				
-				// clear all data here !!!
+				// clear all data here:
 				m_Trader_RecievedAllData = false;	
 				m_Trader_CurrencyItemType = "";
-				//m_Trader_TraderType;
 				m_Trader_TraderNames = new array<string>;
 				m_Trader_TraderPositions = new array<vector>;
 				m_Trader_TraderIDs = new array<int>;
@@ -322,11 +288,11 @@ modded class DayZPlayerImplement
 				m_Trader_ItemsBuyValue = new array<int>;
 				m_Trader_ItemsSellValue = new array<int>;
 				
-				// request that client also clears all data
+				// request that client also clears all data:
 				Param1<bool> crpClr = new Param1<bool>( true );
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CLEAR, crpClr, true, player.GetIdentity());
 				
-				//------------------------------------------------------------------------------------
+
 				TraderServerLogs.PrintS("[TRADER] DEBUG START");
 				
 				FileHandle file_index = OpenFile(m_Trader_ConfigFilePath, FileMode.READ);
@@ -363,11 +329,6 @@ modded class DayZPlayerImplement
 					line_content = FileReadHelper.TrimComment(line_content);
 					
 					m_Trader_TraderNames.Insert(line_content);
-					
-					/*line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Classname>", "");
-					line_content.Replace("<Classname>", "");
-					line_content = FileReadHelper.TrimComment(line_content);
-					m_Trader_TraderType = line_content;*/
 						
 					int categoryCounter = 0;
 					
@@ -410,7 +371,6 @@ modded class DayZPlayerImplement
 				int traderID = -1;
 				int categoryId = -1;
 				
-				//TraderServerLogs.PrintS("[TRADER] DEBUG START");
 				line_content = "";
 				while ( itemCounter <= 5000 && char_count != -1 && line_content.Contains("<FileEnd>") == false)
 				{
@@ -432,8 +392,7 @@ modded class DayZPlayerImplement
 						
 						continue;
 					}
-					
-					//line_content = FileReadHelper.TrimComment(line_content);
+				
 					
 					if (!line_content.Contains(","))
 						continue;
@@ -499,7 +458,7 @@ modded class DayZPlayerImplement
 				line_content = "";
 				while ( markerCounter <= 5000 && line_content.Contains("<FileEnd>") == false)
 				{
-					// Get Trader Marker Trader ID --------------------------------------------------------------------------------------
+					// Get Trader Marker Trader ID:
 					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarker>", "<FileEnd>");
 					
 					if (!line_content.Contains("<TraderMarker>"))
@@ -513,7 +472,7 @@ modded class DayZPlayerImplement
 										
 					m_Trader_TraderIDs.Insert(line_content.ToInt());
 					
-					// Get Trader Marker Position ---------------------------------------------------------------------------------------			
+					// Get Trader Marker Position:		
 					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarkerPosition>", "<FileEnd>");
 					
 					line_content.Replace("<TraderMarkerPosition>", "");
@@ -540,8 +499,7 @@ modded class DayZPlayerImplement
 					
 					m_Trader_TraderPositions.Insert(markerPosition);
 					
-					// Get Trader Marker Safezone Radius --------------------------------------------------------------------------------
-					
+					// Get Trader Marker Safezone Radius:					
 					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarkerSafezone>", "<FileEnd>");
 					
 					line_content.Replace("<TraderMarkerSafezone>", "");
@@ -593,7 +551,7 @@ modded class DayZPlayerImplement
 					TraderServerLogs.PrintS("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i));
 				}
 				
-				// confirm that all data was sended.
+				// confirm that all data was sended:
 				m_Trader_RecievedAllData = true;
 				
 				Param1<bool> crpConf = new Param1<bool>( true );
@@ -745,10 +703,9 @@ modded class DayZPlayerImplement
 				break;
 				
 				case TRPCs.RPC_SEND_TRADER_CLEAR:
-					// clear all data here !!!
+					// clear all data here:
 					m_Trader_RecievedAllData = false;	
 					m_Trader_CurrencyItemType = "";
-					//m_Trader_TraderType;
 					m_Trader_TraderNames = new array<string>;
 					m_Trader_TraderPositions = new array<vector>;
 					m_Trader_TraderIDs = new array<int>;
@@ -796,71 +753,10 @@ modded class DayZPlayerImplement
 		}
 	}
 
-	//-------------------------------------------------------------------------------------------------------------------------
 
-
-	/*bool	HandleDeath(int pCurrentCommandID)
-	{
-		//if (m_Trader_IsInSafezone)
-		//{
-		//	//PlayerBase player = PlayerBase.Cast( this );
-		//
-		//	//	player.m_IsRestrained = false;
-		//	//	player.m_InventorySoftLocked = false;
-		//	//
-		//	//	if( player.GetInventory() ) 
-		//	//		player.GetInventory().UnlockInventory(LOCK_FROM_SCRIPT);
-		//
-        //    return false;
-		//}
-
-		if (m_Trader_IsInSafezone)
-			return false;
-
-		if (pCurrentCommandID == DayZPlayerConstants.COMMANDID_DEATH)
-		{
-			return true;
-		}
-		
-		if ( ((GetGame().IsMultiplayer() && !GetGame().IsServer()) || (!GetGame().IsMultiplayer())) && GetGame().GetUIManager().ScreenFadeVisible())
-		{
-			return true;
-		}
-
-		if (!IsAlive() && g_Game.GetMissionState() == g_Game.MISSION_STATE_GAME)
-		{
-			//GetGame().GetCallQueue(CALL_CATEGORY_GUI).CallLater(ShowDeadScreen, DEAD_SCREEN_DELAY, false, true);
-			//GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(ShowDeadScreen, true);
-			//if (IsPlayerSelected()) 	GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(SimulateDeath, true);
-			
-			if (!m_Suicide) 	StartCommand_Death();
-			//StartCommand_Death();
-			
-			// disable voice communication
-			GetGame().GetWorld().SetVoiceOn(false);
-			
-			if( GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_CLIENT && !GetGame().GetUIManager().IsMenuOpen(MENU_INGAME))
-			{
-				//AbstractSoundScene asc = GetGame().GetSoundScene();
-				//asc.SetSoundVolume(0,5);
-				
-				// hide exit dialog if displayed
-				GetGame().GetUIManager().CloseDialog();
-			}
-			return true;
-		}
-
-		return false;
-	}*/
-	
-	//static const int DEAD_SCREEN_DELAY = 1000;
 
 	void ShowDeadScreen(bool show, float duration)
 	{
-		//if (m_Trader_IsInSafezone)
-		//if (m_Trader_PlayerDiedInSafezone)
-        //   return;
-
 	#ifndef NO_GUI
 		if (show && IsPlayerSelected())
 		{
@@ -884,94 +780,4 @@ modded class DayZPlayerImplement
 			GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(StopDeathDarkeningEffect);
 	#endif
 	}
-	
-	/*void SimulateDeath(bool state)
-	{
-		//if (m_Trader_IsInSafezone)
-		//if (m_Trader_PlayerDiedInSafezone)
-        //    return;
-
-		if (g_Game.GetMissionState() != DayZGame.MISSION_STATE_GAME)	 return;
-		//Print("Calling simulate death in state: " + state)
-		//controlls
-		LockControls(state);
-		
-		//video
-		ShowDeadScreen(state);
-		
-		//audio
-		if (state == true)
-		{
-			GetGame().GetSoundScene().SetSoundVolume(0,0);
-			GetGame().GetSoundScene().SetSpeechExVolume(0,0);
-			GetGame().GetSoundScene().SetMusicVolume(0,0);
-			GetGame().GetSoundScene().SetVOIPVolume(0,0);
-			GetGame().GetSoundScene().SetRadioVolume(0,0);
-		}
-		else
-		{
-			GetGame().GetSoundScene().SetSoundVolume(g_Game.m_volume_sound,1);
-			GetGame().GetSoundScene().SetSpeechExVolume(g_Game.m_volume_speechEX,1);
-			GetGame().GetSoundScene().SetMusicVolume(g_Game.m_volume_music,1);
-			GetGame().GetSoundScene().SetVOIPVolume(g_Game.m_volume_VOIP,1);
-			GetGame().GetSoundScene().SetRadioVolume(g_Game.m_volume_radio,1);
-		}
-	}*/
-	
-	/*private string SearchForNextTermInFile(FileHandle file_index, string searchTerm, string abortTerm)
-	{
-		int char_count = 0;
-		while ( char_count != -1 )
-		{			
-			string line_content = "";
-			char_count = FGets( file_index,  line_content );
-			
-			if (line_content.Contains(searchTerm) || (line_content.Contains(abortTerm) && abortTerm != ""))
-			{
-				return line_content;
-			}
-		}
-		
-		return "";
-	}
-	
-	private string TrimComment(string line)
-	{
-		int to_substring_end = line.Length();
-		
-		for (int i = 0; i < to_substring_end; i++)
-		{
-			string sign = line.Get(i);
-			if ( sign == "/" && i + 1 < to_substring_end)
-			{
-				if (line.Get(i + 1) == "/")
-				{
-					to_substring_end = i;
-					break;
-				}
-			}
-		}
-		
-		string lineOut = line.Substring(0, to_substring_end);
-		
-		return TrimSpaces(lineOut);
-	}
-	
-	private string TrimSpaces(string line)
-	{
-		line.Replace("	", ""); // Replace Tabs("\t" or "	") with nothing.
-		
-		bool hasSpaces = true;		
-		while(hasSpaces)
-		{
-			line = line.Trim();
-			
-			if (line.Length() > 0)
-				hasSpaces = line.Get(0) == " " || line.Get(line.Length() - 1) == " ";
-			else
-				hasSpaces = false;
-		}
-		
-		return line;
-	}*/
 }
