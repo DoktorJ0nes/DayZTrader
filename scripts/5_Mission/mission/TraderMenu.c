@@ -45,6 +45,8 @@ class TraderMenu extends UIScriptedMenu
 	
 	void ~TraderMenu()
 	{
+		PlayerBase player = g_Game.GetPlayer();
+		player.GetInputController().SetDisabled(false);
 	}
 
     override Widget Init()
@@ -96,18 +98,38 @@ class TraderMenu extends UIScriptedMenu
 		{
 			m_UiUpdateTimer = m_UiUpdateTimer + timeslice;
 		}
-
-		//PlayerBase player = g_Game.GetPlayer();
-		//player.GetInputController().OverrideAimChangeX(true,0);
-		//player.GetInputController().OverrideAimChangeY(true,0);
 	}
 
-    override void OnHide()
+	override void OnShow()
+	{
+		super.OnShow();
+
+		PPEffects.SetBlurMenu(0.5);
+
+		PlayerBase player = g_Game.GetPlayer();
+		player.GetInputController().SetDisabled(true);
+
+		SetFocus( layoutRoot );
+	}
+
+	override void OnHide()
+	{
+		super.OnHide();
+
+		PPEffects.SetBlurMenu(0);
+
+		PlayerBase player = g_Game.GetPlayer();
+		player.GetInputController().SetDisabled(false);
+
+		Close();
+	}
+
+    /*override void OnHide()
     {
         super.OnHide();
 		
 		Close();
-    }
+    }*/
 
 	override bool OnClick( Widget w, int x, int y, int button )
 	{
@@ -130,22 +152,33 @@ class TraderMenu extends UIScriptedMenu
 				m_Player.MessageStatus("Trader: Sorry, but you can't afford that!");
 				return true;
 			}
-			
-			if (canCreateItemInPlayerInventory(itemType))
+
+			if (itemQuantity == -2) // Is a Vehicle
 			{
-				m_Player.MessageStatus("Trader: " + getItemDisplayName(itemType) + " was added to your Inventory!");
-				
-				createItemInPlayerInventory(itemType, itemQuantity);
-			}
-			else
-			{
-				m_Player.MessageStatus("Trader: Your Inventory is full! " + getItemDisplayName(itemType) + " was placed on Ground!");
-				
-				vector playerPosition = m_Player.GetPosition();
-				
-				spawnItemOnGround(itemType, playerPosition, itemQuantity);
-				
+				m_Player.MessageStatus("Trader: " + getItemDisplayName(itemType) + " was parked next to you!");
+
+				GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SPAWN_VEHICLE, new Param1<string>(itemType), true);
+
 				GetGame().GetUIManager().Back();
+			}
+			else // Is not a Vehicle
+			{			
+				if (canCreateItemInPlayerInventory(itemType))
+				{
+					m_Player.MessageStatus("Trader: " + getItemDisplayName(itemType) + " was added to your Inventory!");
+					
+					createItemInPlayerInventory(itemType, itemQuantity);
+				}
+				else
+				{
+					m_Player.MessageStatus("Trader: Your Inventory is full! " + getItemDisplayName(itemType) + " was placed on Ground!");
+					
+					vector playerPosition = m_Player.GetPosition();
+					
+					spawnItemOnGround(itemType, playerPosition, itemQuantity);
+					
+					GetGame().GetUIManager().Back();
+				}
 			}
 			
 			deductPlayerCurrency(itemCosts);
