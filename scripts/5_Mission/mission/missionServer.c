@@ -71,8 +71,8 @@ modded class MissionServer
 				player.m_Trader_WelcomeMessageTimer -= timeslice;
 				if (player.m_Trader_WelcomeMessageTimer < -5)
 				{
-					player.SetHealth( "", "", 0 );
-					player.SetHealth( "", "Blood", 0 );
+					//player.SetHealth( "", "", 0 );
+					//player.SetHealth( "", "Blood", 0 );
 				}
 			}
 			
