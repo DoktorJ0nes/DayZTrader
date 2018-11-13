@@ -116,19 +116,29 @@ modded class DayZPlayerImplement
 				vector objectDirection = rpv.param2;
 				string vehicleType = rpv.param3;
 
+				// Get all Players to synchronize Things:
+				ref array<Man> m_Players = new array<Man>;
+				GetGame().GetWorld().GetPlayerList(m_Players);
+				PlayerBase currentPlayer;
+
 				// Spawn:
 				obj = GetGame().CreateObject( vehicleType, objectPosition, false, false, true );
 
 				obj.SetOrientation(objectDirection);
 				obj.SetDirection(obj.GetDirection());
-				GetGame().RPCSingleParam(this, TRPCs.RPC_SYNC_OBJECT_ORIENTATION, new Param2<Object, vector>( obj, objectDirection ), true, this.GetIdentity());
+
+				for (int i = 0; i < m_Players.Count(); i++)
+				{
+					currentPlayer = PlayerBase.Cast(m_Players.Get(i));
+					GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_OBJECT_ORIENTATION, new Param2<Object, vector>( obj, objectDirection ), true, currentPlayer.GetIdentity());
+				}
 				
 				// Attach Parts:
 				EntityAI vehicle;
 				Class.CastTo(vehicle, obj);
 
 				int vehicleId = -1;
-				for (int i = 0; i < m_Trader_Vehicles.Count(); i++)
+				for (i = 0; i < m_Trader_Vehicles.Count(); i++)
 				{
 					if (vehicleType == m_Trader_Vehicles.Get(i))
 						vehicleId = i;
@@ -140,12 +150,16 @@ modded class DayZPlayerImplement
 						vehicle.GetInventory().CreateAttachment(m_Trader_VehiclesParts.Get(j));
 				}
 
-				// Fill Fuel:
+				// Try to fill Fuel and lock Vehicle:
 				Car car;
 				Class.CastTo(car, vehicle);
 				if (car)
 				{
 					car.Fill( CarFluid.FUEL, car.GetFluidCapacity( CarFluid.FUEL ));
+
+					CarScript carScript;
+					if (Class.CastTo(carScript, vehicle))
+						carScript.m_Trader_OwnerPlayerUID = this.GetIdentity().GetId();
 				}
 			}
 
