@@ -4,12 +4,12 @@ modded class DayZPlayerImplement
 {
 	static const string m_Trader_ConfigFilePath = "$profile:Trader/TraderConfig.txt";
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
+	static const string m_Trader_VehiclePartsFilePath = "$profile:Trader/TraderVehicleParts.txt";
 	
 	float m_Trader_WelcomeMessageTimer = 5.0;
 	float m_Trader_WelcomeMessageHandled = false;
 	bool m_Trader_TraderModIsLoaded = false;
 	bool m_Trader_TraderModIsLoadedHandled = false;
-	bool m_Trader_TraderCharacterSynchronizationHandled = false;
 	
 	bool m_Trader_IsInSafezone = false;
 	float m_Trader_HealthEnteredSafeZone;
@@ -25,6 +25,8 @@ modded class DayZPlayerImplement
 	ref array<vector> m_Trader_TraderPositions;
 	ref array<int> m_Trader_TraderIDs;
 	ref array<int> m_Trader_TraderSafezones;
+	ref array<vector> m_Trader_TraderVehicleSpawns;
+	ref array<vector> m_Trader_TraderVehicleSpawnsOrientation;
 	
 	ref array<string> m_Trader_Categorys;
 	ref array<int> m_Trader_CategorysTraderKey;
@@ -35,6 +37,10 @@ modded class DayZPlayerImplement
 	ref array<int> m_Trader_ItemsQuantity;
 	ref array<int> m_Trader_ItemsBuyValue;
 	ref array<int> m_Trader_ItemsSellValue;	
+
+	ref array<string> m_Trader_Vehicles;
+	ref array<string> m_Trader_VehiclesParts;
+	ref array<int> m_Trader_VehiclesPartsVehicleId;
 	
 #ifdef Trader_Debug
 	Object TEST_PreviewObj;
@@ -98,6 +104,48 @@ modded class DayZPlayerImplement
 				m_Trader_TraderModIsLoaded = true;
 				
 				GetGame().RPCSingleParam(player, TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM, new Param1<PlayerBase>( player ), true, player.GetIdentity());
+			}
+
+			if (rpc_type == TRPCs.RPC_SPAWN_VEHICLE)
+			{
+				Param3<vector, vector, string> rpv = new Param3<vector, vector, string>( "0 0 0", "0 0 0", "" );
+				ctx.Read(rpv);
+
+				vector objectPosition = rpv.param1;
+				vector objectDirection = rpv.param2;
+				itemType = rpv.param3;
+
+				// Spawn:
+				Object obj = GetGame().CreateObject( itemType, objectPosition, false, false, true );
+
+				obj.SetOrientation(objectDirection);
+				obj.SetDirection(obj.GetDirection());
+				GetGame().RPCSingleParam(this, TRPCs.RPC_SYNC_OBJECT_ORIENTATION, new Param2<Object, vector>( obj, objectDirection ), true, this.GetIdentity());
+				
+				// Attach Parts:
+				EntityAI vehicle;
+				Class.CastTo(vehicle, obj);
+
+				int vehicleId = -1;
+				for (int i = 0; i < m_Trader_Vehicles.Count(); i++)
+				{
+					if (itemType == m_Trader_Vehicles.Get(i))
+						vehicleId = i;
+				}
+
+				for (int j = 0; j < m_Trader_VehiclesParts.Count(); j++)
+				{
+					if (m_Trader_VehiclesPartsVehicleId.Get(j) == vehicleId)
+						vehicle.GetInventory().CreateAttachment(m_Trader_VehiclesParts.Get(j));
+				}
+
+				// Fill Fuel:
+				Car car;
+				Class.CastTo(car, vehicle);
+				if (car)
+				{
+					car.Fill( CarFluid.FUEL, car.GetFluidCapacity( CarFluid.FUEL ));
+				}
 			}
 			
 			if (rpc_type == TRPCs.RPC_SPAWN_ITEM_ON_GROUND)
@@ -258,6 +306,8 @@ modded class DayZPlayerImplement
 				m_Trader_TraderPositions = new array<vector>;
 				m_Trader_TraderIDs = new array<int>;
 				m_Trader_TraderSafezones = new array<int>;
+				m_Trader_TraderVehicleSpawns = new array<vector>;
+				m_Trader_TraderVehicleSpawnsOrientation = new array<vector>;
 				m_Trader_Categorys = new array<string>;
 				m_Trader_CategorysTraderKey = new array<int>;
 				m_Trader_ItemsTraderId = new array<int>;
@@ -266,6 +316,9 @@ modded class DayZPlayerImplement
 				m_Trader_ItemsQuantity = new array<int>;
 				m_Trader_ItemsBuyValue = new array<int>;
 				m_Trader_ItemsSellValue = new array<int>;
+				m_Trader_Vehicles = new array<string>;
+				m_Trader_VehiclesParts = new array<string>;
+				m_Trader_VehiclesPartsVehicleId = new array<int>;
 				
 				// request that client also clears all data:
 				Param1<bool> crpClr = new Param1<bool>( true );
@@ -402,6 +455,11 @@ modded class DayZPlayerImplement
 						
 						item.Delete();
 					}
+
+					if (qntStr.Contains("V") || qntStr.Contains("v"))
+					{
+						qntStr = "-2";
+					}
 					
 					string buyStr = strs.Get(2);
 					buyStr = FileReadHelper.TrimSpaces(buyStr);
@@ -432,13 +490,17 @@ modded class DayZPlayerImplement
 					return;
 				}
 				
-				int markerCounter = 0;
-				
+				bool skipLine = false;
+				int markerCounter = 0;				
+
 				line_content = "";
 				while ( markerCounter <= 5000 && line_content.Contains("<FileEnd>") == false)
 				{
 					// Get Trader Marker Trader ID:
-					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarker>", "<FileEnd>");
+					if (!skipLine)
+						line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarker>", "<FileEnd>");
+					else
+						skipLine = false;					
 					
 					if (!line_content.Contains("<TraderMarker>"))
 						continue;
@@ -488,20 +550,166 @@ modded class DayZPlayerImplement
 					TraderServerLogs.PrintS("[TRADER] READING MARKER SAFEZONE ENTRY..");
 					
 					m_Trader_TraderSafezones.Insert(line_content.ToInt());
+
+					// Get Trader Marker Vehicle Spawnpoint:					
+					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<VehicleSpawn>", "<TraderMarker>");
+
+					if(line_content == string.Empty)
+						break;
+
+					if (line_content.Contains("<TraderMarker>"))
+					{
+						skipLine = true;
+						m_Trader_TraderVehicleSpawns.Insert("0 0 0");
+						m_Trader_TraderVehicleSpawnsOrientation.Insert("0 0 0");
+						continue;
+					}
+
+					line_content.Replace("<VehicleSpawn>", "");
+					line_content = FileReadHelper.TrimComment(line_content);
+
+					TStringArray strtmv = new TStringArray;
+					line_content.Split( ",", strtmv );
 					
+					string traderMarkerVehiclePosX = strtmv.Get(0);
+					traderMarkerVehiclePosX = FileReadHelper.TrimSpaces(traderMarkerVehiclePosX);
+					
+					string traderMarkerVehiclePosY = strtmv.Get(1);
+					traderMarkerVehiclePosY = FileReadHelper.TrimSpaces(traderMarkerVehiclePosY);
+					
+					string traderMarkerVehiclePosZ = strtmv.Get(2);
+					traderMarkerVehiclePosZ = FileReadHelper.TrimSpaces(traderMarkerVehiclePosZ);
+					
+					vector markerVehiclePosition = "0 0 0";
+					markerVehiclePosition[0] = traderMarkerVehiclePosX.ToFloat();
+					markerVehiclePosition[1] = traderMarkerVehiclePosY.ToFloat();
+					markerVehiclePosition[2] = traderMarkerVehiclePosZ.ToFloat();
+
+					TraderServerLogs.PrintS("[TRADER] READING MARKER VEHICLE ENTRY..");
+
+					m_Trader_TraderVehicleSpawns.Insert(markerVehiclePosition);
+
+					// Get Trader Marker Vehicle Orientation:
+					line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<VehicleSpawnOri>", "<TraderMarker>");
+
+					if(line_content == string.Empty)
+						break;
+
+					if (line_content.Contains("<TraderMarker>"))
+					{
+						skipLine = true;
+						m_Trader_TraderVehicleSpawnsOrientation.Insert("0 0 0");
+						continue;
+					}
+
+					line_content.Replace("<VehicleSpawnOri>", "");
+					line_content = FileReadHelper.TrimComment(line_content);
+
+					TStringArray strtmvd = new TStringArray;
+					line_content.Split( ",", strtmvd );
+					
+					string traderMarkerVehicleOriX = strtmvd.Get(0);
+					traderMarkerVehicleOriX = FileReadHelper.TrimSpaces(traderMarkerVehicleOriX);
+					
+					string traderMarkerVehicleOriY = strtmvd.Get(1);
+					traderMarkerVehicleOriY = FileReadHelper.TrimSpaces(traderMarkerVehicleOriY);
+					
+					string traderMarkerVehicleOriZ = strtmvd.Get(2);
+					traderMarkerVehicleOriZ = FileReadHelper.TrimSpaces(traderMarkerVehicleOriZ);
+					
+					vector markerVehicleOrientation = "0 0 0";
+					markerVehicleOrientation[0] = traderMarkerVehicleOriX.ToFloat();
+					markerVehicleOrientation[1] = traderMarkerVehicleOriY.ToFloat();
+					markerVehicleOrientation[2] = traderMarkerVehicleOriZ.ToFloat();
+
+					m_Trader_TraderVehicleSpawnsOrientation.Insert(markerVehicleOrientation);
+
+
 					markerCounter++;
 				}
 				
 				CloseFile(file_index);
 				
 				//------------------------------------------------------------------------------------
+				
+				file_index = OpenFile(m_Trader_VehiclePartsFilePath, FileMode.READ);
+				
+				if ( file_index == 0 )
+				{
+					Param1<string> msgRp4 = new Param1<string>( "[Trader] FOUND NO VEHICLEPARTS FILE!" );
+					GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp4, true, player.GetIdentity());
+					return;
+				}
+				
+				skipLine = false;
+				int vehicleCounter = 0;
+				
+				line_content = "";
+				while ( vehicleCounter <= 5000 && line_content.Contains("<FileEnd>") == false)
+				{
+					// Get Vehicle Name Entrys:
+					if (!skipLine)
+						line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<VehicleParts>", "<FileEnd>");
+					else
+						skipLine = false;
+					
+					if (!line_content.Contains("<VehicleParts>"))
+						continue;
+					
+					line_content.Replace("<VehicleParts>", "");
+					line_content = FileReadHelper.TrimComment(line_content);
+					line_content = FileReadHelper.TrimSpaces(line_content);
+					
+					TraderServerLogs.PrintS("[TRADER] READING VEHICLE NAME ENTRY..");
+
+					m_Trader_Vehicles.Insert(line_content);
+
+					char_count = 0;
+					int vehiclePartsCounter = 0;
+					//while ( vehiclePartsCounter <= 5000  && char_count != -1 && line_content.Contains("<FileEnd>") == false)
+					while (true)
+					{
+						// Get Vehicle Parts Entrys:
+						char_count = FGets( file_index,  line_content );
+
+						line_content = FileReadHelper.TrimComment(line_content);
+						line_content = FileReadHelper.TrimSpaces(line_content);
+
+						if (line_content == "")
+							continue;
+
+						if (line_content.Contains("<VehicleParts>"))
+						{
+							skipLine = true;						
+							break;
+						}
+
+						if (line_content.Contains("<FileEnd>") || char_count == -1 || vehiclePartsCounter > 5000)
+						{
+							line_content = "<FileEnd>";
+							break;
+						}
+
+						m_Trader_VehiclesParts.Insert(line_content);
+						m_Trader_VehiclesPartsVehicleId.Insert(vehicleCounter);
+
+						vehiclePartsCounter++;
+					}
+					
+					vehicleCounter++;
+				}
+				
+				CloseFile(file_index);
+				
+				//------------------------------------------------------------------------------------
+
 				TraderServerLogs.PrintS("[TRADER] DONE READING!");
 				
 				Param1<string> crp1 = new Param1<string>( m_Trader_CurrencyItemType );
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCYTYPE_ENTRY, crp1, true, player.GetIdentity());
 				TraderServerLogs.PrintS("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyItemType);
 				
-				int i = 0;
+				//int i = 0;
 				for ( i = 0; i < m_Trader_TraderNames.Count(); i++ )
 				{
 					Param1<string> crp2 = new Param1<string>( m_Trader_TraderNames.Get(i) );
@@ -525,9 +733,23 @@ modded class DayZPlayerImplement
 				
 				for ( i = 0; i < m_Trader_TraderPositions.Count(); i++ )
 				{
-					Param3<int, vector, int> crp5 = new Param3<int, vector, int>( m_Trader_TraderIDs.Get(i), m_Trader_TraderPositions.Get(i), m_Trader_TraderSafezones.Get(i) );
+					Param5<int, vector, int, vector, vector> crp5 = new Param5<int, vector, int, vector, vector>( m_Trader_TraderIDs.Get(i), m_Trader_TraderPositions.Get(i), m_Trader_TraderSafezones.Get(i), m_Trader_TraderVehicleSpawns.Get(i), m_Trader_TraderVehicleSpawnsOrientation.Get(i) );
 					GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_MARKER_ENTRY, crp5, true, player.GetIdentity());
-					TraderServerLogs.PrintS("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i));
+					TraderServerLogs.PrintS("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i) + ", " + m_Trader_TraderVehicleSpawns.Get(i) + ", " + m_Trader_TraderVehicleSpawnsOrientation.Get(i));
+				}
+
+				for ( i = 0; i < m_Trader_Vehicles.Count(); i++ )
+				{
+					Param1<string> crp6 = new Param1<string>( m_Trader_Vehicles.Get(i) );
+					//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLE_ENTRY, crp6, true, player.GetIdentity());
+					TraderServerLogs.PrintS("[TRADER] VEHICLEENTRY: " + m_Trader_Vehicles.Get(i));
+				}
+
+				for ( i = 0; i < m_Trader_VehiclesParts.Count(); i++ )
+				{
+					Param2<string, int> crp7 = new Param2<string, int>( m_Trader_VehiclesParts.Get(i), m_Trader_VehiclesPartsVehicleId.Get(i) );
+					//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLEPART_ENTRY, crp7, true, player.GetIdentity());
+					TraderServerLogs.PrintS("[TRADER] VEHICLEPARTENTRY: " + m_Trader_VehiclesPartsVehicleId.Get(i) + ", " + m_Trader_VehiclesParts.Get(i));
 				}
 				
 				// confirm that all data was sended:
@@ -666,12 +888,14 @@ modded class DayZPlayerImplement
 				break;
 				
 				case TRPCs.RPC_SEND_TRADER_MARKER_ENTRY:
-					ref Param3<int, vector, int> markerEntry = new Param3<int, vector, int>( 0, "0 0 0", 0 );
+					ref Param5<int, vector, int, vector, vector> markerEntry = new Param5<int, vector, int, vector, vector>( 0, "0 0 0", 0, "0 0 0", "0 0 0" );
 					ctx.Read( markerEntry );					
 					
 					m_Trader_TraderIDs.Insert(markerEntry.param1);
 					m_Trader_TraderPositions.Insert(markerEntry.param2);
 					m_Trader_TraderSafezones.Insert(markerEntry.param3);
+					m_Trader_TraderVehicleSpawns.Insert(markerEntry.param4);
+					m_Trader_TraderVehicleSpawnsOrientation.Insert(markerEntry.param5);
 				break;
 				
 				case TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION:
@@ -689,6 +913,8 @@ modded class DayZPlayerImplement
 					m_Trader_TraderPositions = new array<vector>;
 					m_Trader_TraderIDs = new array<int>;
 					m_Trader_TraderSafezones = new array<int>;
+					m_Trader_TraderVehicleSpawns = new array<vector>;
+					m_Trader_TraderVehicleSpawnsOrientation = new array<vector>;
 					m_Trader_Categorys = new array<string>;
 					m_Trader_CategorysTraderKey = new array<int>;
 					m_Trader_ItemsTraderId = new array<int>;
@@ -697,6 +923,9 @@ modded class DayZPlayerImplement
 					m_Trader_ItemsQuantity = new array<int>;
 					m_Trader_ItemsBuyValue = new array<int>;
 					m_Trader_ItemsSellValue = new array<int>;
+					m_Trader_Vehicles = new array<string>;
+					m_Trader_VehiclesParts = new array<string>;
+					m_Trader_VehiclesPartsVehicleId = new array<int>;
 				break;
 				
 				case TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM:
@@ -718,6 +947,18 @@ modded class DayZPlayerImplement
 					ctx.Read( safezoneDied_rp );
 					
 					m_Trader_PlayerDiedInSafezone = safezoneDied_rp.param1;
+				break;
+
+				case TRPCs.RPC_SYNC_OBJECT_ORIENTATION:
+					ref Param2<Object, vector> syncObject_rp = new Param2<Object, vector>( NULL, "0 0 0" );
+					ctx.Read( syncObject_rp );
+					
+					Object objectToSync = syncObject_rp.param1;
+					vector objectToSyncOrientation  = syncObject_rp.param2;
+					objectToSyncOrientation[2] = 45;
+
+					objectToSync.SetOrientation(objectToSyncOrientation);
+					//objectToSync.SetDirection(objectToSync.GetDirection()); // Thats a strange way to synchronize/update Objects.. But it works..
 				break;
 				
 #ifdef Trader_Debug

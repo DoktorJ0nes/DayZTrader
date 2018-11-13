@@ -17,6 +17,8 @@ class TraderMenu extends UIScriptedMenu
 	static const string filePath = "DZ/Trader/scripts/5_Mission/mission/TraderConfig.txt";
 	
 	int m_TraderID = -1;
+	vector m_TraderVehicleSpawn = "0 0 0";
+	vector m_TraderVehicleSpawnOrientation = "0 0 0";
 	
 	int m_Player_CurrencyAmount;
 	int m_ColorBuyable;
@@ -155,9 +157,15 @@ class TraderMenu extends UIScriptedMenu
 
 			if (itemQuantity == -2) // Is a Vehicle
 			{
+				if (!IsVehicleSpawnFree())
+				{
+					m_Player.MessageStatus("Trader: Something is blocking the Way!");
+					return true;
+				}
+
 				m_Player.MessageStatus("Trader: " + getItemDisplayName(itemType) + " was parked next to you!");
 
-				GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SPAWN_VEHICLE, new Param1<string>(itemType), true);
+				GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SPAWN_VEHICLE, new Param3<vector, vector, string>( m_TraderVehicleSpawn, m_TraderVehicleSpawnOrientation ,itemType), true);
 
 				GetGame().GetUIManager().Back();
 			}
@@ -551,6 +559,15 @@ class TraderMenu extends UIScriptedMenu
 			return displayName;
 		else
 			return itemClassname;
+	}
+
+	private bool IsVehicleSpawnFree()
+	{
+		vector size = "3 5 9";
+		array<Object> excluded_objects = new array<Object>;
+		array<Object> nearby_objects = new array<Object>;
+
+		return !(GetGame().IsBoxColliding( m_TraderVehicleSpawn, m_TraderVehicleSpawnOrientation, size, excluded_objects, nearby_objects));
 	}
 
 	private bool IsAttached(EntityAI parentEntity, string attachmentClassname)

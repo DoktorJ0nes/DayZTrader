@@ -99,6 +99,8 @@ modded class MissionGameplay
 		{			
 			bool traderNearby = false;
 			int traderID = -1;
+			vector traderVehicleSpawn = "0 0 0";
+			vector traderVehicleSpawnOrientation = "0 0 0";
 			
 			if (player.m_Trader_RecievedAllData == false)
 			{			
@@ -117,6 +119,8 @@ modded class MissionGameplay
 				{
 					traderNearby = true;
 					traderID = player.m_Trader_TraderIDs.Get(i);
+					traderVehicleSpawn = player.m_Trader_TraderVehicleSpawns.Get(i);
+					traderVehicleSpawnOrientation = player.m_Trader_TraderVehicleSpawnsOrientation.Get(i);
 				}
 			}
 			
@@ -131,6 +135,8 @@ modded class MissionGameplay
 			{					
 				ref TraderMenu m_TraderMenu = new TraderMenu;
 				m_TraderMenu.m_TraderID = traderID;
+				m_TraderMenu.m_TraderVehicleSpawn = traderVehicleSpawn;
+				m_TraderMenu.m_TraderVehicleSpawnOrientation = traderVehicleSpawnOrientation;
 				m_TraderMenu.Init();
 				GetGame().GetUIManager().ShowScriptedMenu( m_TraderMenu, NULL );
 			}
@@ -246,7 +252,7 @@ modded class MissionGameplay
 #ifdef Trader_Debug
 		if ( key == 0x3B ) // F1
 		{
-			vector teleportPosition1 = "11876.8 140.012 12467";
+			vector teleportPosition1 = "3720.84 402.012 5996.08";//"11876.8 140.012 12467";
 			Param2<PlayerBase, vector> rpt1 = new Param2<PlayerBase, vector>( player, teleportPosition1 );
 			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_DEBUG_TELEPORT, rpt1, true);
 		}
