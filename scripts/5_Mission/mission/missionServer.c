@@ -3,7 +3,6 @@ modded class MissionServer
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
 		
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
-	ref array<vector> m_Trader_SpawnedTraderCharactersDirections;
 	float m_Trader_PlayerHiveUpdateTime = 0;
 	
 	override void OnInit()
@@ -30,18 +29,7 @@ modded class MissionServer
 				continue;
 			
 			if ( !player.m_Trader_WelcomeMessageHandled )
-			{
-				if (player.m_Trader_WelcomeMessageTimer < 5.0 && !player.m_Trader_TraderCharacterSynchronizationHandled)
-				{
-					for ( int l = 0; l < m_Trader_SpawnedTraderCharacters.Count(); l++ )
-					{
-						m_Trader_SpawnedTraderCharacters.Get(l).SetDirection(m_Trader_SpawnedTraderCharactersDirections.Get(l));
-						m_Trader_SpawnedTraderCharacters.Get(l).SetOrientation(m_Trader_SpawnedTraderCharacters.Get(l).GetOrientation());
-					}
-					
-					player.m_Trader_TraderCharacterSynchronizationHandled = true;
-				}
-				
+			{				
 				if (player.m_Trader_WelcomeMessageTimer > 0)
 					player.m_Trader_WelcomeMessageTimer -= timeslice;
 				else
@@ -143,7 +131,6 @@ modded class MissionServer
 	private void SpawnTraderObjects()
 	{
 		m_Trader_SpawnedTraderCharacters = new array<PlayerBase>;
-		m_Trader_SpawnedTraderCharactersDirections = new array<vector>;
 		
 		TraderServerLogs.PrintS("[TRADER] DEBUG START");
 		
@@ -215,8 +202,8 @@ modded class MissionServer
 				isTrader = true;
 			}
 			
-			// Get Object Direction -------------------------------------------------------------------------------
-			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectDirection>", "<Object>");
+			// Get Object Orientation -------------------------------------------------------------------------------
+			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectOrientation>", "<Object>");
 			
 			if (line_content == string.Empty)	
 				line_content = "<FileEnd>";
@@ -226,7 +213,6 @@ modded class MissionServer
 				if (isTrader)
 				{
 					man.m_Trader_IsTrader = true;
-					m_Trader_SpawnedTraderCharactersDirections.Insert(obj.GetDirection());
 					m_Trader_SpawnedTraderCharacters.Insert(man);
 				}
 				
@@ -235,41 +221,40 @@ modded class MissionServer
 				continue;
 			}
 			
-			if (!line_content.Contains("<ObjectDirection>"))
+			if (!line_content.Contains("<ObjectOrientation>"))
 				continue;
 			
-			line_content.Replace("<ObjectDirection>", "");
+			line_content.Replace("<ObjectOrientation>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
 			
-			TraderServerLogs.PrintS("[TRADER] READING OBJECT DIRECTION ENTRY..");
+			TraderServerLogs.PrintS("[TRADER] READING OBJECT ORIENTATION ENTRY..");
 			
 			TStringArray strsod = new TStringArray;
 			line_content.Split( ",", strsod );
 			
-			string traderObjectDirX = strsod.Get(0);
-			traderObjectDirX = FileReadHelper.TrimSpaces(traderObjectDirX);
+			string traderObjectOriX = strsod.Get(0);
+			traderObjectOriX = FileReadHelper.TrimSpaces(traderObjectOriX);
 			
-			string traderObjectDirY = strsod.Get(1);
-			traderObjectDirY = FileReadHelper.TrimSpaces(traderObjectDirY);
+			string traderObjectOriY = strsod.Get(1);
+			traderObjectOriY = FileReadHelper.TrimSpaces(traderObjectOriY);
 			
-			string traderObjectDirZ = strsod.Get(2);
-			traderObjectDirZ = FileReadHelper.TrimSpaces(traderObjectDirZ);
+			string traderObjectOriZ = strsod.Get(2);
+			traderObjectOriZ = FileReadHelper.TrimSpaces(traderObjectOriZ);
 			
-			vector objectDirection = vector.Zero;
-			objectDirection[0] = traderObjectDirX.ToFloat();
-			objectDirection[1] = traderObjectDirY.ToFloat();
-			objectDirection[2] = traderObjectDirZ.ToFloat();
+			vector objectOrientation = vector.Zero;
+			objectOrientation[0] = traderObjectOriX.ToFloat();
+			objectOrientation[1] = traderObjectOriY.ToFloat();
+			objectOrientation[2] = traderObjectOriZ.ToFloat();
 			
-			obj.SetDirection(objectDirection);
-			obj.SetOrientation(obj.GetOrientation()); // Thats a strange way to synchronize/update Objects.. But it works..
-			
+			obj.SetOrientation(objectOrientation);
+
 			if (isTrader)
 			{
-				m_Trader_SpawnedTraderCharactersDirections.Insert(obj.GetDirection());
+				man.m_Trader_IsInSafezone = true;
 				m_Trader_SpawnedTraderCharacters.Insert(man);
 			}
 			
-			TraderServerLogs.PrintS("[TRADER] OBJECT DIRECTION = '" + obj.GetDirection() + "'");
+			TraderServerLogs.PrintS("[TRADER] OBJECT ORIENTATION = '" + obj.GetOrientation() + "'");
 			
 			markerCounter++;
 		}
