@@ -955,7 +955,6 @@ modded class DayZPlayerImplement
 					
 					Object objectToSync = syncObject_rp.param1;
 					vector objectToSyncOrientation  = syncObject_rp.param2;
-					objectToSyncOrientation[2] = 45;
 
 					objectToSync.SetOrientation(objectToSyncOrientation);
 					//objectToSync.SetDirection(objectToSync.GetDirection()); // Thats a strange way to synchronize/update Objects.. But it works..
