@@ -82,6 +82,7 @@ modded class DayZPlayerImplement
 			
 		
 		PlayerBase player;
+		Object obj;
 		string itemType;
 		ItemBase item;
 		EntityAI entity;
@@ -113,10 +114,10 @@ modded class DayZPlayerImplement
 
 				vector objectPosition = rpv.param1;
 				vector objectDirection = rpv.param2;
-				itemType = rpv.param3;
+				string vehicleType = rpv.param3;
 
 				// Spawn:
-				Object obj = GetGame().CreateObject( itemType, objectPosition, false, false, true );
+				obj = GetGame().CreateObject( vehicleType, objectPosition, false, false, true );
 
 				obj.SetOrientation(objectDirection);
 				obj.SetDirection(obj.GetDirection());
@@ -129,7 +130,7 @@ modded class DayZPlayerImplement
 				int vehicleId = -1;
 				for (int i = 0; i < m_Trader_Vehicles.Count(); i++)
 				{
-					if (itemType == m_Trader_Vehicles.Get(i))
+					if (vehicleType == m_Trader_Vehicles.Get(i))
 						vehicleId = i;
 				}
 
@@ -146,6 +147,16 @@ modded class DayZPlayerImplement
 				{
 					car.Fill( CarFluid.FUEL, car.GetFluidCapacity( CarFluid.FUEL ));
 				}
+			}
+
+			if (rpc_type == TRPCs.RPC_DELETE_VEHICLE)
+			{
+				Param1<Object> rpdv = new Param1<Object>( NULL );
+				ctx.Read(rpdv);
+
+				obj = rpdv.param1;
+
+				GetGame().ObjectDelete(obj);
 			}
 			
 			if (rpc_type == TRPCs.RPC_SPAWN_ITEM_ON_GROUND)

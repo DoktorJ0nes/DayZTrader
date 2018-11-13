@@ -201,8 +201,11 @@ class TraderMenu extends UIScriptedMenu
 		}
 		
 		if ( w == m_BtnSell )
-		{			
-			if (!isInPlayerInventory(itemType, itemQuantity))
+		{		
+			Object vehicleToSell = GetVehicleToSell(itemType);
+			bool isValidVehicle = (itemQuantity == -2 && vehicleToSell);
+
+			if (!isInPlayerInventory(itemType, itemQuantity) && !isValidVehicle)
 			{
 				m_Player.MessageStatus("Trader: Sorry, but you can't sell that!");
 				return true;
@@ -211,7 +214,11 @@ class TraderMenu extends UIScriptedMenu
 			int playerCurrencyAmountBeforeSale = m_Player_CurrencyAmount;
 			
 			m_Player.MessageStatus("Trader: " + getItemDisplayName(itemType) + " was sold!");
-			removeFromPlayerInventory(itemType, itemQuantity);
+
+			if (isValidVehicle)
+				sellVehicle(vehicleToSell);
+			else
+				removeFromPlayerInventory(itemType, itemQuantity);
 			
 			int itemSellValue = m_ListboxItemsSellValue.Get(row_index);
 			increasePlayerCurrency(itemSellValue);
@@ -306,7 +313,7 @@ class TraderMenu extends UIScriptedMenu
 			string itemClassname = m_ListboxItemsClassnames.Get(i);
 			int itemQuantity = m_ListboxItemsQuantity.Get(i);
 			
-			if (isInPlayerInventory(itemClassname, itemQuantity))
+			if (isInPlayerInventory(itemClassname, itemQuantity) || (itemQuantity == -2 && GetVehicleToSell(itemClassname)))
 			{
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(1, 0, 1, 0) );
 			}
@@ -568,6 +575,44 @@ class TraderMenu extends UIScriptedMenu
 		array<Object> nearby_objects = new array<Object>;
 
 		return !(GetGame().IsBoxColliding( m_TraderVehicleSpawn, m_TraderVehicleSpawnOrientation, size, excluded_objects, nearby_objects));
+	}
+
+	private Object GetVehicleToSell(string vehicleClassname)
+	{
+		vector size = "3 5 9";
+		array<Object> excluded_objects = new array<Object>;
+		array<Object> nearby_objects = new array<Object>;
+
+		if (GetGame().IsBoxColliding( m_TraderVehicleSpawn, m_TraderVehicleSpawnOrientation, size, excluded_objects, nearby_objects))
+		{
+			for (int i = 0; i < nearby_objects.Count(); i++)
+			{
+				if (nearby_objects.Get(i).GetType() == vehicleClassname)
+				{
+					// TODO: Check if there is any Player in the Vehicle
+
+					Car car;
+					Class.CastTo(car, nearby_objects.Get(i));
+					if (car)
+					{
+						/*CarController carController = car.GetController();
+
+						if (carController.GetGear() == CarGear.NEUTRAL)
+							return nearby_objects.Get(i);*/
+
+						if (car.IsEngineOn())
+							return nearby_objects.Get(i);
+					}					
+				}					
+			}
+		}
+
+		return NULL;
+	}
+
+	private void sellVehicle(Object vehicleToSell)
+	{
+		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_VEHICLE, new Param1<Object>(vehicleToSell), true);
 	}
 
 	private bool IsAttached(EntityAI parentEntity, string attachmentClassname)
