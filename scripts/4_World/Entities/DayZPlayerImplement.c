@@ -150,12 +150,20 @@ modded class DayZPlayerImplement
 						vehicle.GetInventory().CreateAttachment(m_Trader_VehiclesParts.Get(j));
 				}
 
-				// Try to fill Fuel and lock Vehicle:
+				// Try to fill Fuel, Oil, Brakeliquid, Coolantliquid and lock Vehicle:
 				Car car;
 				Class.CastTo(car, vehicle);
 				if (car)
 				{
 					car.Fill( CarFluid.FUEL, car.GetFluidCapacity( CarFluid.FUEL ));
+					car.Fill( CarFluid.OIL, car.GetFluidCapacity( CarFluid.OIL ));
+					car.Fill( CarFluid.BRAKE, car.GetFluidCapacity( CarFluid.BRAKE ));
+					car.Fill( CarFluid.COOLANT, car.GetFluidCapacity( CarFluid.COOLANT ));
+
+					car.Fill( CarFluid.USER1, car.GetFluidCapacity( CarFluid.USER1 ));
+					car.Fill( CarFluid.USER2, car.GetFluidCapacity( CarFluid.USER2 ));
+					car.Fill( CarFluid.USER3, car.GetFluidCapacity( CarFluid.USER3 ));
+					car.Fill( CarFluid.USER4, car.GetFluidCapacity( CarFluid.USER4 ));
 
 					CarScript carScript;
 					if (Class.CastTo(carScript, vehicle))
