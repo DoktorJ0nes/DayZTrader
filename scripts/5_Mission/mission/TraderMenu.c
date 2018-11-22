@@ -600,7 +600,7 @@ class TraderMenu extends UIScriptedMenu
 						if (carController.GetGear() == CarGear.NEUTRAL)
 							return nearby_objects.Get(i);*/
 
-						if (car.IsEngineOn())
+						if (car.EngineIsOn())
 							return nearby_objects.Get(i);
 					}					
 				}					
