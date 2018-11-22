@@ -589,17 +589,33 @@ class TraderMenu extends UIScriptedMenu
 			{
 				if (nearby_objects.Get(i).GetType() == vehicleClassname)
 				{
-					// TODO: Check if there is any Player in the Vehicle
+					// Check if there is any Player in the Vehicle:
+					bool vehicleIsEmpty = true;
 
+					Transport transport;
+					Class.CastTo(transport, nearby_objects.Get(i))
+					if (transport)
+					{
+						int crewSize = transport.CrewSize();
+						for (int c = 0; c < crewSize; c++)
+						{
+							if (transport.CrewMember(c))
+								vehicleIsEmpty = false;
+						}
+					}
+					else
+					{
+						continue;
+					}
+
+					if (!vehicleIsEmpty)
+						continue;
+
+					// Check if Engine is running:
 					Car car;
 					Class.CastTo(car, nearby_objects.Get(i));
-					if (car)
+					if (car && vehicleIsEmpty)
 					{
-						/*CarController carController = car.GetController();
-
-						if (carController.GetGear() == CarGear.NEUTRAL)
-							return nearby_objects.Get(i);*/
-
 						if (car.EngineIsOn())
 							return nearby_objects.Get(i);
 					}					
