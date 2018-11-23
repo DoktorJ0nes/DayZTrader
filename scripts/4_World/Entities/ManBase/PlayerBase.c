@@ -6,15 +6,15 @@ modded class PlayerBase
 	{		
 		m_Trader_PlayerDiedInSafezone = m_Trader_IsInSafezone;
 		GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_TRADER_PLAYER_DIED_IN_SAFEZONE, new Param1<bool>( m_Trader_PlayerDiedInSafezone ), true, this.GetIdentity());
-		
-		if (killer != NULL && (m_Trader_PlayerDiedInSafezone || m_Trader_IsTrader))
-		{
-			PlayerBase playerKiller;
-			Class.CastTo(playerKiller, killer);
 
+		PlayerBase playerKiller = PlayerBase.Cast( EntityAI.Cast(killer).GetHierarchyParent() );
+
+		if (playerKiller && (m_Trader_PlayerDiedInSafezone || m_Trader_IsTrader))
+		{
 			if (playerKiller && playerKiller != this)
 			{
 				Print("[TRADER] Player with PlayerUID " + playerKiller.GetIdentity().GetId() + " killed someone in the Safezone!");
+				Print("[TRADER] Player who got killed: " + this.GetIdentity().GetId());
 				playerKiller.SetPosition(this.GetPosition());
 				playerKiller.SetHealth( "", "", 0 );
 				playerKiller.SetHealth( "", "Blood", 0 );
