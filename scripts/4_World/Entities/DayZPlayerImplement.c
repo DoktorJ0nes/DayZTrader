@@ -6,7 +6,7 @@ modded class DayZPlayerImplement
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
 	static const string m_Trader_VehiclePartsFilePath = "$profile:Trader/TraderVehicleParts.txt";
 	
-	float m_Trader_WelcomeMessageTimer = 5.0;
+	float m_Trader_WelcomeMessageTimer = 25.0;
 	float m_Trader_WelcomeMessageHandled = false;
 	bool m_Trader_TraderModIsLoaded = false;
 	bool m_Trader_TraderModIsLoadedHandled = false;

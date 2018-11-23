@@ -28,7 +28,7 @@ modded class MissionServer
 			if ( !player )
 				continue;
 			
-			if ( !player.m_Trader_WelcomeMessageHandled )
+			if ( !player.m_Trader_WelcomeMessageHandled && player.IsAlive() )
 			{				
 				if (player.m_Trader_WelcomeMessageTimer > 0)
 					player.m_Trader_WelcomeMessageTimer -= timeslice;
@@ -47,6 +47,8 @@ modded class MissionServer
 						
 						msgRp0.param1 = " ";
 						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
+
+						Print("PLAYER WITHOUT TRADER MOD DETECTED!")
 					}
 					
 					player.m_Trader_WelcomeMessageHandled = true;
@@ -54,13 +56,16 @@ modded class MissionServer
 			}
 
 			// Kill player after some Time when not have the Mod loaded:
-			if (player.m_Trader_WelcomeMessageHandled && !player.m_Trader_TraderModIsLoaded)
+			if (player.m_Trader_WelcomeMessageHandled && !player.m_Trader_TraderModIsLoaded && player.IsAlive())
 			{
 				player.m_Trader_WelcomeMessageTimer -= timeslice;
 				if (player.m_Trader_WelcomeMessageTimer < -5)
 				{
-					//player.SetHealth( "", "", 0 );
-					//player.SetHealth( "", "Blood", 0 );
+					player.m_Trader_WelcomeMessageHandled = false;
+					player.m_Trader_WelcomeMessageTimer = 25;
+
+					player.SetHealth( "", "", 0 );
+					player.SetHealth( "", "Blood", 0 );
 				}
 			}
 			
