@@ -4,15 +4,16 @@ class TraderMenu extends UIScriptedMenu
     ButtonWidget m_BtnBuy;
 	ButtonWidget m_BtnSell;
 	ButtonWidget m_BtnCancel;
-	//ButtonWidget m_BtnShow;
 	TextListboxWidget m_ListboxItems;
 	TextWidget m_Saldo;
 	TextWidget m_SaldoValue;
 	TextWidget m_TraderName;
 	XComboBoxWidget m_XComboboxCategorys;
+	ItemPreviewWidget m_ItemPreviewWidget;
+	protected EntityAI previewItem;
+	MultilineTextWidget m_ItemDescription;
+	TextWidget m_ItemWeight;
 	float m_UiUpdateTimer = 0;
-	
-	ref InspectMenuNew menu;
 	
 	static const string filePath = "DZ/Trader/scripts/5_Mission/mission/TraderConfig.txt";
 	
@@ -24,6 +25,9 @@ class TraderMenu extends UIScriptedMenu
 	int m_ColorBuyable;
 	int m_ColorTooExpensive;
 	int m_CategorysCurrentIndex;
+
+	int m_LastRowIndex = -1;
+	int m_LastCategoryCurrentIndex = -1;
 	
 	bool updateListbox = false;
 	
@@ -49,6 +53,11 @@ class TraderMenu extends UIScriptedMenu
 	{
 		PlayerBase player = g_Game.GetPlayer();
 		player.GetInputController().SetDisabled(false);
+
+		if ( previewItem ) 
+		{
+			GetGame().ObjectDelete( previewItem );
+		}
 	}
 
     override Widget Init()
@@ -58,12 +67,13 @@ class TraderMenu extends UIScriptedMenu
         m_BtnBuy = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_buy" ) );
 		m_BtnSell = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_sell" ) );
 		m_BtnCancel = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_cancel" ) );
-		//m_BtnShow = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_show" ) );
 		m_ListboxItems = TextListboxWidget.Cast(layoutRoot.FindAnyWidget("txtlist_items") );
 		m_Saldo = TextWidget.Cast(layoutRoot.FindAnyWidget("text_saldo") );
 		m_SaldoValue = TextWidget.Cast(layoutRoot.FindAnyWidget("text_saldoValue") );
 		m_TraderName = TextWidget.Cast(layoutRoot.FindAnyWidget("title_text") );
 		m_XComboboxCategorys = XComboBoxWidget.Cast( layoutRoot.FindAnyWidget( "xcombobox_categorys" ) );
+		m_ItemDescription = MultilineTextWidget.Cast( layoutRoot.FindAnyWidget( "ItemDescWidget" ) );
+		m_ItemWeight = TextWidget.Cast(layoutRoot.FindAnyWidget("ItemWeight") );
 		
 		m_Categorys = new array<string>;
 		m_CategorysTraderKey = new array<int>;
@@ -93,7 +103,17 @@ class TraderMenu extends UIScriptedMenu
 		{
 			updatePlayerCurrencyAmount();				
 			updateItemListboxColors();
-			
+
+			local int row_index = m_ListboxItems.GetSelectedRow();
+			if ((m_LastRowIndex != row_index) || (m_LastCategoryCurrentIndex != m_CategorysCurrentIndex))
+			{
+				m_LastRowIndex = row_index;
+				m_LastCategoryCurrentIndex = m_CategorysCurrentIndex;
+
+				string itemType = m_ListboxItemsClassnames.Get(row_index);
+				updateItemPreview(itemType);
+			}
+
 			m_UiUpdateTimer = 0;
 		}
 		else
@@ -122,6 +142,11 @@ class TraderMenu extends UIScriptedMenu
 
 		PlayerBase player = g_Game.GetPlayer();
 		player.GetInputController().SetDisabled(false);
+
+		if ( previewItem ) 
+		{
+			GetGame().ObjectDelete( previewItem );
+		}
 
 		Close();
 	}
@@ -232,16 +257,6 @@ class TraderMenu extends UIScriptedMenu
 			return true;
 		}
 		
-		/*if ( w == m_BtnShow )
-		{
-			m_Player.MessageStatus("[Trader] Preview " + itemType);
-			EntityAI entityToInspect = g_Game.GetPlayer().SpawnEntityOnGroundPos(itemType, m_Player.GetPosition());
-			InspectItem(entityToInspect);
-			entityToInspect.Delete();
-
-			return true;
-		}*/
-		
 		if ( w == m_BtnCancel )
 		{
 			GetGame().GetUIManager().Back();
@@ -333,6 +348,81 @@ class TraderMenu extends UIScriptedMenu
 					m_ListboxItems.SetItemColor(i, 0, ARGBF(1, 1, 1, 1) );
 			}
 		}
+	}
+
+	private void updateItemPreview(string itemType)
+	{
+		if ( !m_ItemPreviewWidget )
+			{
+				Widget preview_frame = layoutRoot.FindAnyWidget("ItemFrameWidget");
+
+				if ( preview_frame ) 
+				{
+					float width;
+					float height;
+					preview_frame.GetSize(width, height);
+
+					m_ItemPreviewWidget = ItemPreviewWidget.Cast( GetGame().GetWorkspace().CreateWidget(ItemPreviewWidgetTypeID, 0, 0, 1, 1, WidgetFlags.VISIBLE, ARGB(255, 255, 255, 255), 10, preview_frame) );
+				}
+			}
+
+			if ( previewItem )
+				GetGame().ObjectDelete( previewItem );
+
+			previewItem = GetGame().CreateObject( itemType, "0 0 0", true, false, true );
+
+			m_ItemPreviewWidget.SetItem( previewItem );
+			m_ItemPreviewWidget.SetModelPosition( Vector(0,0,0.5) );
+
+			float itemx, itemy;		
+			m_ItemPreviewWidget.GetPos(itemx, itemy);
+
+			m_ItemPreviewWidget.SetSize( 1.5, 1.5 );
+
+			// align to center 
+			m_ItemPreviewWidget.SetPos( -0.225, -0.225 );
+
+			// update Item Description:
+			InventoryItem iItem = InventoryItem.Cast( previewItem );
+
+			if (iItem)
+			{
+				m_ItemWeight.SetText(GetItemWeightText());
+				m_ItemDescription.SetText(TrimUntPrefix(iItem.GetTooltip()));
+			}
+			else
+			{
+				m_ItemWeight.SetText("");
+				m_ItemDescription.SetText("...");
+			}
+	}
+
+	private string GetItemWeightText()
+	{
+		ItemBase item_IB = ItemBase.Cast( previewItem );
+
+		int weight = item_IB.GetItemWeight();
+		//string weightStr = "";
+		
+		if (weight >= 1000)
+		{
+			int kilos = Math.Round(weight / 1000.0);
+			return  "#inv_inspect_about" + " " + kilos.ToString() + " " + "#inv_inspect_kg";
+		}
+		else if (weight >= 500)
+		{
+			return "#inv_inspect_under_1";
+		} 
+		else if (weight >= 250)
+		{
+			return "#inv_inspect_under_05";
+		}
+		else 
+		{
+			return "#inv_inspect_under_025";
+		}
+
+		return "ERROR";
 	}
 	
 	private void updatePlayerCurrencyAmount()
@@ -563,7 +653,7 @@ class TraderMenu extends UIScriptedMenu
 		
 		
 		if (displayName != "")
-			return displayName;
+			return TrimUntPrefix(displayName);
 		else
 			return itemClassname;
 	}
@@ -1042,59 +1132,10 @@ class TraderMenu extends UIScriptedMenu
 		
 		return true;
 	}
-	
-	
-	private void InspectItem(EntityAI itemToInspect)
+
+	private string TrimUntPrefix(string str)
 	{
-		//InventoryItem item = InventoryItem.Cast( itemToInspect );
-		//ItemBase item = ItemBase.Cast(itemToInspect);
-		
-		//InventoryMenuNew m_inventory_menu = InventoryMenuNew.Cast( GetGame().GetUIManager().FindMenu(MENU_INVENTORY) );
-		/*InspectMenuNew inspect_menu = InspectMenuNew.Cast( menu.EnterScriptedMenu(MENU_INSPECT) );
-		if ( inspect_menu )
-		{
-			inspect_menu.SetItem(item);
-		}*/
-		
-		//GetGame().GetUIManager().ShowUICursor(true);
-		
-		/* klappt so halb.. */
-		/*ItemBase item = ItemBase.Cast(itemToInspect);
-		menu = new InspectMenuNew;
-		menu.Init();
-		menu.SetItem(item);
-		GetGame().GetUIManager().ShowScriptedMenu( menu, this );*/
-		
-		/*if ( menu )
-		{
-			menu.SetItem(item);
-		}*/
-		
-		/*if (m_inventory_menu == NULL)
-			{
-				m_inventory_menu = InventoryMenu.Cast( GetUIManager().EnterScriptedMenu(MENU_INVENTORY, NULL) );
-			}
-			else if ( GetUIManager().FindMenu(MENU_INVENTORY) == NULL )
-			{
-				GetUIManager().ShowScriptedMenu(m_inventory_menu, NULL);
-			}
-			init = true;*/
-		
-		
-		
-		
-		//InspectMenuNew inspect = InspectMenuNew.Cast( GetUIManager().FindMenu(MENU_INSPECT) );
-		//InspectMenu inspect_menu = InspectMenu.Cast( this.EnterScriptedMenu(MENU_INSPECT) );
-		//InspectMenuNew inspect_menu = InspectMenuNew.Cast( this.EnterScriptedMenu(MENU_INSPECT) );
-		//if (inspect_menu)
-		//if (inspect)
-		/*{
-			inspect_menu.SetItem(item);
-			inspect.SetItem(item);
-		}*/
-		
-		//InspectMenu inspect_menu = InspectMenu.Cast( this.EnterScriptedMenu(MENU_INSPECT) );
-		//GetGame().GetUIManager().EnterScriptedMenu(MENU_INSPECT, NULL);
-		//GetGame().GetUIManager().ShowScriptedMenu( inspect_menu, NULL );
+		str.Replace("$UNT$", "");
+		return str;
 	}
 }

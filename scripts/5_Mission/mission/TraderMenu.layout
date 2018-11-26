@@ -3,7 +3,7 @@ FrameWidgetClass TraderMenu
 	visible 0
 	color 0 0 0 0
 	position 0 0
-	size 1300 790
+	size 1300 990
 	halign center_ref
 	valign center_ref
 	hexactpos 0
@@ -16,9 +16,9 @@ FrameWidgetClass TraderMenu
         PanelWidgetClass Background
         {
 			visible 1
-			color 0 0 0 0.45
+			color 0 0 0 0.65
 			position 0 0
-			size 1300 790
+			size 1300 990
 			hexactpos 1
 			vexactpos 1
 			hexactsize 0
@@ -102,10 +102,10 @@ FrameWidgetClass TraderMenu
 		
 		TextListboxWidgetClass txtlist_items {
 		 clipchildren 0
-         position 5 55
-         size 1290 625
-		 halign right_ref
-         valign bottom_ref
+         position 5 110
+         size 1290 575
+		 halign left_ref
+         valign top_ref
          hexactpos 1
          vexactpos 1
          hexactsize 1
@@ -116,6 +116,53 @@ FrameWidgetClass TraderMenu
 		 colums "Item;70;Price Buy;15;Price Sell;15"
          font "gui/fonts/Metron22"
         }
+
+		TextWidgetClass ItemWeight {
+			position 55 740
+			size 835 40
+			halign left_ref
+            valign top_ref
+			hexactpos 1
+			vexactpos 1
+			hexactsize 1
+			vexactsize 1
+			text "1234567890"
+			"exact text" 1
+			font "gui/fonts/sdf_MetronLight24"
+			"text halign" left
+		}
+
+		MultilineTextWidgetClass ItemDescWidget {
+         clipchildren 0
+         position 55 780
+         size 835 160
+         hexactpos 1
+         vexactpos 1
+         hexactsize 1
+         vexactsize 1
+         text "A box of large kitchen matches. Contains 250 matches. Store in dry place and keep away from children."
+         font "gui/fonts/sdf_MetronLight24"
+         "exact text" 1
+         "exact text size" 24
+         "size to text h" 0
+         "size to text v" 0
+         wrap 1
+         "condense whitespace" 1
+        }
+
+		ItemPreviewWidgetClass ItemFrameWidget {
+			visible 1
+			color 0 0 0 0.8
+			position 945 685
+			size 300 250
+			halign left_ref
+        	valign top_ref
+			hexactpos 1
+			vexactpos 1
+			hexactsize 1
+			vexactsize 1
+			style rover_sim_colorable
+		}
 		
 		ButtonWidgetClass btn_cancel
         {
@@ -128,19 +175,6 @@ FrameWidgetClass TraderMenu
             hexactsize 1
             vexactsize 1
             text "Cancel"
-        }
-		
-		ButtonWidgetClass btn_show
-        {
-            position 335 5
-            size 0 0
-            halign right_ref
-            valign bottom_ref
-            hexactpos 1
-            vexactpos 1
-            hexactsize 1
-            vexactsize 1
-            text "Show"
         }
 		
 		ButtonWidgetClass btn_buy
