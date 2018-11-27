@@ -193,6 +193,17 @@ modded class DayZPlayerImplement
 				
 				entity = player.SpawnEntityOnGroundPos(itemType, position);
 				Class.CastTo(item, entity);
+
+				mgzn = Magazine.Cast(item);
+						
+				if( item.IsMagazine() )
+				{
+					mgzn.ServerSetAmmoCount(amount);
+				}
+				else
+				{
+					item.SetQuantity(amount);
+				}
 			}
 			
 			if (rpc_type == TRPCs.RPC_CREATE_ITEM_IN_INVENTORY)
@@ -207,20 +218,19 @@ modded class DayZPlayerImplement
 				entity = player.GetHumanInventory().CreateInInventory(itemType);
 				Class.CastTo(item, entity);
 				
-				// Unnoetig?:
-				if (amount != -1)
+				//if (amount != -1)
+				//{
+				mgzn = Magazine.Cast(item);
+					
+				if( item.IsMagazine() )
 				{
-					mgzn = Magazine.Cast(item);
-						
-					if( item.IsMagazine() )
-					{
-						mgzn.ServerSetAmmoCount(amount);
-					}
-					else
-					{
-						item.SetQuantity(amount);
-					}
+					mgzn.ServerSetAmmoCount(amount);
 				}
+				else
+				{
+					item.SetQuantity(amount);
+				}
+				//}
 			}
 			
 			if (rpc_type == TRPCs.RPC_DELETE_ITEM)
@@ -267,7 +277,7 @@ modded class DayZPlayerImplement
 				int currencyAmount = rp5.param3;
 				
 				// get currency item max amount: TODO: GetFromConfig!
-				vector ghostItemPosition = "0 0 0";
+				/*vector ghostItemPosition = "0 0 0";
 				EntityAI ghostEntity = player.SpawnEntityOnGroundPos(m_CurrencyItemType, ghostItemPosition);
 				Class.CastTo(item, ghostEntity);			
 				mgzn = Magazine.Cast(item);
@@ -276,7 +286,9 @@ modded class DayZPlayerImplement
 					itemMaxAmount = mgzn.GetAmmoMax();
 				else
 					itemMaxAmount = item.GetQuantityMax();
-				GetGame().ObjectDelete(ghostEntity);
+				GetGame().ObjectDelete(ghostEntity);*/
+
+				int itemMaxAmount = GetItemMaxQuantity(m_CurrencyItemType);
 				
 				
 				while (currencyAmount > 0)
@@ -301,7 +313,21 @@ modded class DayZPlayerImplement
 					// set currency amount of item:
 					if (currencyAmount > itemMaxAmount)
 					{
-						//setItemAmount(item, itemMaxAmount); // TODO (unnoetig, da items immer mix maxammount gespawnt werden!
+						//setItemAmount(item, itemMaxAmount); // TODO: Funktion daraus machen!
+						// unnoetig, da items immer mix maxammount gespawnt werden! // Nachtrag: Nicht in jedem Fall!
+
+						Class.CastTo(item, entity);
+						mgzn = Magazine.Cast(item);
+						
+						if( item.IsMagazine() )
+						{
+							mgzn.ServerSetAmmoCount(itemMaxAmount);
+						}
+						else
+						{
+							item.SetQuantity(itemMaxAmount);
+						}
+
 						currencyAmount -= itemMaxAmount;
 					}
 					else
@@ -488,7 +514,7 @@ modded class DayZPlayerImplement
 						
 						item.Delete();*/
 
-						qntStr = GetItemMaxQuantity(itemStr);
+						qntStr = GetItemMaxQuantity(itemStr).ToString();
 					}
 
 					if (qntStr.Contains("V") || qntStr.Contains("v"))
@@ -1007,7 +1033,7 @@ modded class DayZPlayerImplement
 		}
 	}
 
-	private string GetItemMaxQuantity(string itemClassname)
+	private int GetItemMaxQuantity(string itemClassname)
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
@@ -1020,11 +1046,11 @@ modded class DayZPlayerImplement
 
 			if ( GetGame().ConfigIsExisting( path ) )
 			{
-				return g_Game.ConfigGetInt( path ).ToString();
+				return g_Game.ConfigGetInt( path );
 			}
 		}
 
-		return "0";
+		return 0;
 	}
 
 
