@@ -207,7 +207,7 @@ modded class DayZPlayerImplement
 				entity = player.GetHumanInventory().CreateInInventory(itemType);
 				Class.CastTo(item, entity);
 				
-				
+				// Unnoetig?:
 				if (amount != -1)
 				{
 					mgzn = Magazine.Cast(item);
@@ -473,7 +473,7 @@ modded class DayZPlayerImplement
 					
 					if (qntStr.Contains("*") || qntStr.Contains("-1"))
 					{
-						entity = player.SpawnEntityOnGroundPos(itemStr, vector.Zero);
+						/*entity = player.SpawnEntityOnGroundPos(itemStr, vector.Zero);
 						Class.CastTo(item, entity);
 						
 						int itemQuantityMax = -1;
@@ -486,7 +486,9 @@ modded class DayZPlayerImplement
 						
 						qntStr = itemQuantityMax.ToString();	
 						
-						item.Delete();
+						item.Delete();*/
+
+						qntStr = GetItemMaxQuantity(itemStr);
 					}
 
 					if (qntStr.Contains("V") || qntStr.Contains("v"))
@@ -1003,6 +1005,26 @@ modded class DayZPlayerImplement
 #endif
 			}
 		}
+	}
+
+	private string GetItemMaxQuantity(string itemClassname)
+	{
+		TStringArray searching_in = new TStringArray;
+		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
+		//searching_in.Insert( CFG_WEAPONSPATH );
+		searching_in.Insert( CFG_VEHICLESPATH + " " + itemClassname + " varQuantityMax");
+
+		for ( int s = 0; s < searching_in.Count(); ++s )
+		{
+			string path = searching_in.Get( s );
+
+			if ( GetGame().ConfigIsExisting( path ) )
+			{
+				return g_Game.ConfigGetInt( path ).ToString();
+			}
+		}
+
+		return "0";
 	}
 
 
