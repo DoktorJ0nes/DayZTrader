@@ -3,6 +3,7 @@
 modded class MissionGameplay
 {	
 	float traderModIsLoadedReplicationTimer = 0.1;
+	float traderRequestTraderDataTimer = -0.4;
 
 	override void OnInit()
   	{
@@ -32,6 +33,11 @@ modded class MissionGameplay
 			{
 				GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_TRADER_MOD_IS_LOADED, new Param1<PlayerBase>( GetGame().GetPlayer() ), true);
 			}
+
+			traderRequestTraderDataTimer += 0.5;
+			if (traderRequestTraderDataTimer < 2)
+				return;			
+			traderRequestTraderDataTimer = 0;
 
 			if (!player.m_Trader_RecievedAllData)
 				GetGame().RPCSingleParam(player, TRPCs.RPC_REQUEST_TRADER_DATA, new Param1<PlayerBase>( player ), true);
