@@ -2,6 +2,10 @@
 
 modded class DayZPlayerImplement
 {
+	// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
+	bool serverIsReadingTheTraderConfigFile = false;
+	// WORKAROUND PREVENT SIMULTAIN FILE READING END
+
 	static const string m_Trader_ConfigFilePath = "$profile:Trader/TraderConfig.txt";
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
 	static const string m_Trader_VehiclePartsFilePath = "$profile:Trader/TraderVehicleParts.txt";
@@ -351,6 +355,11 @@ modded class DayZPlayerImplement
 			
 			if (rpc_type == TRPCs.RPC_REQUEST_TRADER_DATA && m_Trader_IsReadingTraderFileEntrys == false)
 			{
+				// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
+				if (serverIsReadingTheTraderConfigFile)
+					return;
+				// WORKAROUND PREVENT SIMULTAIN FILE READING END
+
 				m_Trader_IsReadingTraderFileEntrys = true;
 				
 				Param1<PlayerBase> rp6 = new Param1<PlayerBase>( NULL );

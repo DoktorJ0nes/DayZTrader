@@ -1,6 +1,10 @@
 modded class MissionServer
 {
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
+
+	// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
+	bool IsReadingTraderConfigFile = false;
+	// WORKAROUND PREVENT SIMULTAIN FILE READING END
 		
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
 	float m_Trader_PlayerHiveUpdateTime = 0;
@@ -21,12 +25,33 @@ modded class MissionServer
 		if (m_Trader_PlayerHiveUpdateTime >= 1)
 			m_Trader_PlayerHiveUpdateTime = 0;
 		
+		// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
+		bool somePlayerIsReadingTraderConfigFile = false;
+		for (int z = 0; z < m_Players.Count(); z++)
+		{
+			PlayerBase playerz = PlayerBase.Cast(m_Players.Get(z));
+
+			if (playerz.m_Trader_IsReadingTraderFileEntrys)
+			{
+				somePlayerIsReadingTraderConfigFile = true;
+				break;
+			}
+		}
+		// WORKAROUND PREVENT SIMULTAIN FILE READING END
+
 		for (int j = 0; j < m_Players.Count(); j++)
 		{
 			PlayerBase player = PlayerBase.Cast(m_Players.Get(j));
 			
 			if ( !player )
 				continue;
+
+			// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
+			if (somePlayerIsReadingTraderConfigFile)
+				player.serverIsReadingTheTraderConfigFile = true;
+			else
+				player.serverIsReadingTheTraderConfigFile = false;
+			// WORKAROUND PREVENT SIMULTAIN FILE READING END
 			
 			if ( !player.m_Trader_WelcomeMessageHandled && player.IsAlive() )
 			{				
@@ -69,7 +94,7 @@ modded class MissionServer
 				}
 			}
 			
-			if (!player.m_Trader_RecievedAllData)
+			if (!player.m_Trader_RecievedAllData) // TODO: Wenn Server die TraderPositions und Safezoneradien kennt, dann immer zulassen! 
 				continue;	
 			
 			bool isInSafezone = false;
