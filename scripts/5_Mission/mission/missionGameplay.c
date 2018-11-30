@@ -5,6 +5,10 @@ modded class MissionGameplay
 	float traderModIsLoadedReplicationTimer = 0.1;
 	float traderRequestTraderDataTimer = -0.4;
 
+	#ifdef Trader_Debug
+	string toCopy = "";
+	#endif
+
 	override void OnInit()
   	{
 		g_Game.SetProfileOption( EDayZProfilesOptions.GAME_MESSAGES, 0 );
@@ -314,7 +318,12 @@ modded class MissionGameplay
 			
 			Param3<string, vector, vector> rps3 = new Param3<string, vector, vector>( player.TEST_PreviewObj.GetType(), player.TEST_PreviewObj.GetPosition(), player.TEST_PreviewObj.GetDirection() );
 			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_OBJECT, rps3, true);
-			
+
+			toCopy = tocopy + "<Object>\t\t\t" + player.TEST_PreviewObj.GetType();
+			toCopy = tocopy + "\n<ObjectPosition>\t" + player.TEST_PreviewObj.GetPosition()[0] + ",\t" + player.TEST_PreviewObj.GetPosition()[1] + ",\t" + player.TEST_PreviewObj.GetPosition()[2]);
+			toCopy = tocopy + "\n<ObjectOrientation>\t" + player.TEST_PreviewObj.GetOrientation()[0] + ",\t" + player.TEST_PreviewObj.GetOrientation()[1] + ",\t" + player.TEST_PreviewObj.GetOrientation()[2]);
+			toCopy = tocopy + "\n"
+
 			player.TEST_PreviewObjectFreeze = false;
 		}
 		
@@ -325,7 +334,9 @@ modded class MissionGameplay
 		
 		if ( key == KeyCode.KC_MULTIPLY ) // Numpad *
 		{
-			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_SAVE_OBJECTS, new Param1<bool>( false ), true);
+			//GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_SAVE_OBJECTS, new Param1<bool>( false ), true);
+
+			GetGame().CopyToClipboard( toCopy );
 		}
 #endif
 	}
@@ -490,7 +501,7 @@ modded class MissionGameplay
 		ref array<string> TEST_ClassnameCategoryName = { "Residential", "Industrial", "Military", "Wrecks", "Plants", "Walls", "Rail", "Specific" };
 		player.TEST_ClassnameCategoryName = TEST_ClassnameCategoryName;
 		
-		ref array<string> TEST_ClassnamesResidential = { "GardenPlot", "Polytunnel", "Land_BusStation_building", "Land_BusStation_wall_bench", "Land_BusStop_City", "Land_City_FireStation", "Land_HouseBlock_1F_Corner", "Land_HouseBlock_1F1", "Land_HouseBlock_1F2", "Land_HouseBlock_1F3", "Land_HouseBlock_1F4", "Land_HouseBlock_2F_Corner", "Land_HouseBlock_2F1", "Land_HouseBlock_2F2", "Land_HouseBlock_2F3", "Land_HouseBlock_2F4", "Land_HouseBlock_2F5", "Land_HouseBlock_2F6", "Land_HouseBlock_2F7", "Land_HouseBlock_2F8", "Land_HouseBlock_2F9", "Land_HouseBlock_3F_Corner1", "Land_HouseBlock_3F_Corner2", "Land_HouseBlock_3F1", "Land_HouseBlock_3F2", "Land_HouseBlock_5F", "Land_City_Stand_FastFood", "Land_City_Stand_Grocery", "Land_City_Stand_News1", "Land_City_Stand_News2", "Land_House_1B01_Pub", "Land_House_1W01", "Land_House_1W02", "Land_House_1W03", "Land_House_1W04", "Land_House_1W05", "Land_House_1W06", "Land_House_1W07", "Land_House_1W08", "Land_House_1W09", "Land_House_1W10", "Land_House_1W11", "Land_House_1W12", "Land_House_2B01", "Land_House_2B02", "Land_House_2B03", "Land_House_2B04", "Land_House_2W01", "Land_House_2W02", "Land_House_2W03", "Land_House_2W04", "Land_Village_Pub", "Land_City_Hospital", "Land_Village_HealthCare", "Land_Ladder", "Land_Ladder_Half", "Land_Misc_FeedShack", "Land_Misc_DogHouse", "Land_Misc_DeerStand2", "Land_Misc_DeerStand1", "Land_Misc_Greenhouse", "Land_Misc_Toilet_Mobile", "Land_Misc_Toilet_Dry", "Land_Misc_Well_Pump_Yellow", "Land_Misc_Well_Pump_Blue", "Land_Lamp_City1_amp", "Land_Office_Municipal1", "Land_Office_Municipal2", "Land_Office1", "Land_Office2", "Land_Village_PoliceStation", "Land_City_PoliceStation", "Land_City_School", "Land_Shed_M1", "Land_Shed_M3", "Land_Shed_M4", "Land_Shed_W1", "Land_Shed_W2", "Land_Shed_W3", "Land_Shed_W4", "Land_Shed_W5", "Land_Shed_W6", "Land_City_Store", "Land_Village_store", "Land_Tenement_Big", "Land_Tenement_Small" };
+		ref array<string> TEST_ClassnamesResidential = { "Land_RoadCone", "GardenPlot", "Polytunnel", "Land_BusStation_building", "Land_BusStation_wall_bench", "Land_BusStop_City", "Land_City_FireStation", "Land_HouseBlock_1F_Corner", "Land_HouseBlock_1F1", "Land_HouseBlock_1F2", "Land_HouseBlock_1F3", "Land_HouseBlock_1F4", "Land_HouseBlock_2F_Corner", "Land_HouseBlock_2F1", "Land_HouseBlock_2F2", "Land_HouseBlock_2F3", "Land_HouseBlock_2F4", "Land_HouseBlock_2F5", "Land_HouseBlock_2F6", "Land_HouseBlock_2F7", "Land_HouseBlock_2F8", "Land_HouseBlock_2F9", "Land_HouseBlock_3F_Corner1", "Land_HouseBlock_3F_Corner2", "Land_HouseBlock_3F1", "Land_HouseBlock_3F2", "Land_HouseBlock_5F", "Land_City_Stand_FastFood", "Land_City_Stand_Grocery", "Land_City_Stand_News1", "Land_City_Stand_News2", "Land_House_1B01_Pub", "Land_House_1W01", "Land_House_1W02", "Land_House_1W03", "Land_House_1W04", "Land_House_1W05", "Land_House_1W06", "Land_House_1W07", "Land_House_1W08", "Land_House_1W09", "Land_House_1W10", "Land_House_1W11", "Land_House_1W12", "Land_House_2B01", "Land_House_2B02", "Land_House_2B03", "Land_House_2B04", "Land_House_2W01", "Land_House_2W02", "Land_House_2W03", "Land_House_2W04", "Land_Village_Pub", "Land_City_Hospital", "Land_Village_HealthCare", "Land_Ladder", "Land_Ladder_Half", "Land_Misc_FeedShack", "Land_Misc_DogHouse", "Land_Misc_DeerStand2", "Land_Misc_DeerStand1", "Land_Misc_Greenhouse", "Land_Misc_Toilet_Mobile", "Land_Misc_Toilet_Dry", "Land_Misc_Well_Pump_Yellow", "Land_Misc_Well_Pump_Blue", "Land_Lamp_City1_amp", "Land_Office_Municipal1", "Land_Office_Municipal2", "Land_Office1", "Land_Office2", "Land_Village_PoliceStation", "Land_City_PoliceStation", "Land_City_School", "Land_Shed_M1", "Land_Shed_M3", "Land_Shed_M4", "Land_Shed_W1", "Land_Shed_W2", "Land_Shed_W3", "Land_Shed_W4", "Land_Shed_W5", "Land_Shed_W6", "Land_City_Store", "Land_Village_store", "Land_Tenement_Big", "Land_Tenement_Small" };
 		player.TEST_ClassnamesResidential = TEST_ClassnamesResidential;
 		ref array<string> TEST_ClassnamesIndustrial = { "Land_Cementworks_Conveyorhall", "Land_CementWorks_SiloBig1A", "Land_CementWorks_ExpeditionA", "Land_CementWorks_Hall1", "Land_CementWorks_Hall2_Brick", "Land_CementWorks_Hall2_Grey", "Land_CementWorks_MillA", "Land_CementWorks_MillB", "Land_CementWorks_MillC", "Land_CementWorks_RotFurnace", "Land_CementWorks_ExpeditionB", "Land_CementWorks_ExpeditionC", "Land_Construction_Building", "Land_Construction_Crane", "Land_Construction_House1", "Land_Construction_House2", "Land_Container_1Aoh", "Land_Container_1Bo", "Land_Container_1Mo", "Land_Container_1Moh", "Land_Dam_Concrete_20_Floodgate", "Land_Barn_Brick1", "Land_Barn_Brick2", "Land_Barn_Wood1", "Land_Barn_Wood2", "Land_Barn_Metal_Big", "Land_Farm_CowshedA", "Land_Farm_CowshedB", "Land_Farm_CowshedC", "Land_Farm_Hopper", "Land_Farm_Watertower", "Land_Farm_WaterTower_Small", "Land_Garage_Big", "Land_Garage_Row_Big", "Land_Garage_Row_Small", "Land_Garage_Office", "Land_Garage_Small", "Land_Boathouse", "Land_Lighthouse", "Land_Pier_Crane_A", "Land_Pier_Crane_B", "Land_Factory_Lathes", "Land_Factory_Small", "Land_Guardhouse", "Land_Repair_Center", "Land_Water_Station", "Land_Workshop1", "Land_Workshop2", "Land_Workshop3", "Land_Workshop4", "Land_Workshop5", "Land_Mine_Building", "Land_Misc_Scaffolding", "Land_Pipe_Big_BuildR", "Land_Pipe_Big_BuildL", "Land_Pipe_Big_CornerL", "Land_Pipe_Big_CornerR", "Land_Pipe_Big_Ground1", "Land_Pipe_Big_Ground2", "Land_Power_Station", "Land_Power_Transformer_Build", "Land_Power_Pole_Conc1_Amp", "Land_Power_Pole_Conc4_Lamp_Amp", "Land_Power_Pole_Wood1_Amp", "Land_Power_Pole_Wood1_Lamp_Amp", "Land_Quarry_Main", "Land_Sawmill_Building", "Land_Sawmill_Illuminanttower", "Land_Shed_Closed", "Land_Smokestack_Big", "Land_Smokestack_Brick", "Land_Smokestack_Metal", "Land_Tank_Big", "Land_Tank_Medium_Stairs", "Land_CoalPlant_Main", "Land_Smokestack_Medium" };
 		player.TEST_ClassnamesIndustrial = TEST_ClassnamesIndustrial;
