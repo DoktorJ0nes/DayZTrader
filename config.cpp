@@ -49,4 +49,11 @@ class CfgVehicles
 			};
 		};
 	};
+	
+	class HouseNoDestruct;
+	class Land_RoadCone: HouseNoDestruct
+	{
+		scope = 2;
+		model = "DZ\Trader\scripts\Road_Cone.p3d";
+	};
 };
