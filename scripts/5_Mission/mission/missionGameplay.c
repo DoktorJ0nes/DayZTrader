@@ -319,10 +319,10 @@ modded class MissionGameplay
 			Param3<string, vector, vector> rps3 = new Param3<string, vector, vector>( player.TEST_PreviewObj.GetType(), player.TEST_PreviewObj.GetPosition(), player.TEST_PreviewObj.GetDirection() );
 			GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_TEST_PLACE_OBJECT, rps3, true);
 
-			toCopy = tocopy + "<Object>\t\t\t" + player.TEST_PreviewObj.GetType();
-			toCopy = tocopy + "\n<ObjectPosition>\t" + player.TEST_PreviewObj.GetPosition()[0] + ",\t" + player.TEST_PreviewObj.GetPosition()[1] + ",\t" + player.TEST_PreviewObj.GetPosition()[2]);
-			toCopy = tocopy + "\n<ObjectOrientation>\t" + player.TEST_PreviewObj.GetOrientation()[0] + ",\t" + player.TEST_PreviewObj.GetOrientation()[1] + ",\t" + player.TEST_PreviewObj.GetOrientation()[2]);
-			toCopy = tocopy + "\n"
+			toCopy = toCopy + "<Object>\t\t\t" + player.TEST_PreviewObj.GetType();
+			toCopy = toCopy + "\n<ObjectPosition>\t" + player.TEST_PreviewObj.GetPosition()[0] + ",\t" + player.TEST_PreviewObj.GetPosition()[1] + ",\t" + player.TEST_PreviewObj.GetPosition()[2];
+			toCopy = toCopy + "\n<ObjectOrientation>\t" + player.TEST_PreviewObj.GetOrientation()[0] + ",\t" + player.TEST_PreviewObj.GetOrientation()[1] + ",\t" + player.TEST_PreviewObj.GetOrientation()[2];
+			toCopy = toCopy + "\n"
 
 			player.TEST_PreviewObjectFreeze = false;
 		}
