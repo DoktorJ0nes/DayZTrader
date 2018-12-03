@@ -1,4 +1,4 @@
-#define Trader_Debug
+//#define Trader_Debug
 
 modded class MissionGameplay
 {	
@@ -100,7 +100,7 @@ modded class MissionGameplay
 		
 		if ( key == KeyCode.KC_M && player.m_Trader_RecievedAllData)
 		{
-			Param3<PlayerBase, string, int> rp4 = new Param3<PlayerBase, string, int>(player, player.m_Trader_CurrencyItemType, 35);
+			Param3<PlayerBase, string, int> rp4 = new Param3<PlayerBase, string, int>(player, player.m_Trader_CurrencyItemType, 350);
 			GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, rp4, true);
 		}
 #endif

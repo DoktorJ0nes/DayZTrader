@@ -1,4 +1,4 @@
-#define Trader_Debug
+//#define Trader_Debug
 
 modded class DayZPlayerImplement
 {
