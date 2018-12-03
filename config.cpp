@@ -32,7 +32,7 @@ class CfgVehicles
 		weight=1;
 		varQuantityInit=1;
 		varQuantityMin=0;
-		varQuantityMax=350;
+		varQuantityMax=500;
 		varQuantityDestroyOnMin=1;
 		destroyOnEmpty=1;
 		absorbency=1;
