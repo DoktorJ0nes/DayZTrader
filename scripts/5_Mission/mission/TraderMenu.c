@@ -233,6 +233,10 @@ class TraderMenu extends UIScriptedMenu
 			if (!isInPlayerInventory(itemType, itemQuantity) && !isValidVehicle)
 			{
 				m_Player.MessageStatus("Trader: Sorry, but you can't sell that!");
+
+				if (itemQuantity == -2)
+					m_Player.MessageStatus("Trader: Turn the Engine on and place it inside the Traffic Cones!");
+
 				return true;
 			}
 			
