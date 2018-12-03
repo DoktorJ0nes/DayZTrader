@@ -111,6 +111,7 @@ modded class MissionServer
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( true ), true, player.GetIdentity());
 				player.m_Trader_HealthEnteredSafeZone = player.GetHealth( "", "");
 				player.m_Trader_HealthBloodEnteredSafeZone = player.GetHealth( "", "Blood" );
+				player.GetInputController().OverrideRaise(true, false);
 				
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You entered the Safezone!" ), true, player.GetIdentity());
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Press 'B'-Key to open the Trader Menu." ), true, player.GetIdentity());
@@ -120,6 +121,7 @@ modded class MissionServer
 			{
 				player.m_Trader_IsInSafezone = false;
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( false ), true, player.GetIdentity());
+				player.GetInputController().OverrideRaise(false, false);
 				
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You left the Safezone!" ), true, player.GetIdentity());
 			}
