@@ -6,7 +6,7 @@ modded class ActionGetInTransport
 	{
 		if (GetGame().IsServer())
 		{
-			Class.CastTo(m_transportClone, target.GetObject())
+			Class.CastTo(m_transportClone, target.GetObject());
 
 			CarScript carScript;
 			if ( Class.CastTo(carScript, target.GetObject()) )
