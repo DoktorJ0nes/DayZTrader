@@ -1062,7 +1062,16 @@ modded class DayZPlayerImplement
 		return 0;
 	}
 
+	override void SetSuicide(bool state)
+	{
+		if (m_Trader_IsInSafezone)
+		{
+			m_Suicide = false;
+			return;
+		}
 
+		super.SetSuicide(state);
+	}
 
 	void ShowDeadScreen(bool show, float duration)
 	{
