@@ -73,7 +73,7 @@ modded class MissionServer
 						msgRp0.param1 = " ";
 						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
 
-						Print("PLAYER WITHOUT TRADER MOD DETECTED!")
+						Print("PLAYER WITHOUT TRADER MOD DETECTED!");
 					}
 					
 					player.m_Trader_WelcomeMessageHandled = true;

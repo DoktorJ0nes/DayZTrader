@@ -687,7 +687,7 @@ class TraderMenu extends UIScriptedMenu
 					bool vehicleIsEmpty = true;
 
 					Transport transport;
-					Class.CastTo(transport, nearby_objects.Get(i))
+					Class.CastTo(transport, nearby_objects.Get(i));
 					if (transport)
 					{
 						int crewSize = transport.CrewSize();
