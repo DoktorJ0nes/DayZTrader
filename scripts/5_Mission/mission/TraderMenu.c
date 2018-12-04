@@ -501,15 +501,18 @@ class TraderMenu extends UIScriptedMenu
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
+		bool isMagazine = false;
+		if (amount == -3)
+			isMagazine = true;
+
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
-		ItemBase item;
-		
+		ItemBase item;		
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			if(item && item.GetType() == itemClassname && getItemAmount(item) >= amount)
+			if(item && item.GetType() == itemClassname && ((getItemAmount(item) >= amount && !isMagazine) || isMagazine))
 			{
 				return true;
 			}
@@ -521,6 +524,10 @@ class TraderMenu extends UIScriptedMenu
 	private bool removeFromPlayerInventory(string itemClassname, int amount)
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
+
+		bool isMagazine = false;
+		if (amount == -3)
+			isMagazine = true;
 		
 		array<EntityAI> itemsArray = new array<EntityAI>;
 		ItemBase item;
@@ -529,27 +536,25 @@ class TraderMenu extends UIScriptedMenu
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			if(item && item.GetType() == itemClassname && getItemAmount(item) >= amount)
-			{				
-				int itemAmount = 0;
-				itemAmount = getItemAmount(item);
+			if(item && item.GetType() == itemClassname && ((getItemAmount(item) >= amount && !isMagazine) || isMagazine))
+			{
+				int itemAmount = getItemAmount(item);
 				
-				if (itemAmount <= amount)
-				{
-					ItemBase itemToDelete;
-					Class.CastTo(itemToDelete, itemsArray.Get(i));
-					
-					Param1<ItemBase> rp1 = new Param1<ItemBase>(itemToDelete);
+				if (itemAmount == amount || isMagazine)
+				{					
+					Param1<ItemBase> rp1 = new Param1<ItemBase>(item);
 					GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_ITEM, rp1, true);
 					
 					m_Player.UpdateInventoryMenu();
 					return true;
 				}
+				else
+				{
+					setItemAmount(item, itemAmount - amount);
 				
-				setItemAmount(item, itemAmount - amount);
-				
-				m_Player.UpdateInventoryMenu();
-				return true;
+					m_Player.UpdateInventoryMenu();
+					return true;
+				}
 			}
 		}
 		

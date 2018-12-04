@@ -194,6 +194,9 @@ modded class DayZPlayerImplement
 				itemType = rp1.param2;
 				position = rp1.param3;
 				amount = rp1.param4;
+
+				if (amount == -3)
+					amount = 0;
 				
 				entity = player.SpawnEntityOnGroundPos(itemType, position);
 				Class.CastTo(item, entity);
@@ -218,6 +221,9 @@ modded class DayZPlayerImplement
 				player = rp2.param1;
 				itemType = rp2.param2;
 				amount = rp2.param3;
+
+				if (amount == -3)
+					amount = 0;
 				
 				entity = player.GetHumanInventory().CreateInInventory(itemType);
 				Class.CastTo(item, entity);
@@ -529,6 +535,11 @@ modded class DayZPlayerImplement
 					if (qntStr.Contains("V") || qntStr.Contains("v"))
 					{
 						qntStr = "-2";
+					}
+
+					if (qntStr.Contains("M") || qntStr.Contains("m"))
+					{
+						qntStr = "-3";
 					}
 					
 					string buyStr = strs.Get(2);
