@@ -197,6 +197,9 @@ modded class DayZPlayerImplement
 
 				if (amount == -3)
 					amount = 0;
+
+				if (amount == -4)
+					amount = 0;
 				
 				entity = player.SpawnEntityOnGroundPos(itemType, position);
 				Class.CastTo(item, entity);
@@ -223,6 +226,9 @@ modded class DayZPlayerImplement
 				amount = rp2.param3;
 
 				if (amount == -3)
+					amount = 0;
+
+				if (amount == -4)
 					amount = 0;
 				
 				entity = player.GetHumanInventory().CreateInInventory(itemType);
@@ -533,14 +539,13 @@ modded class DayZPlayerImplement
 					}
 
 					if (qntStr.Contains("V") || qntStr.Contains("v"))
-					{
 						qntStr = "-2";
-					}
 
 					if (qntStr.Contains("M") || qntStr.Contains("m"))
-					{
 						qntStr = "-3";
-					}
+
+					if (qntStr.Contains("W") || qntStr.Contains("w"))
+						qntStr = "-4";
 					
 					string buyStr = strs.Get(2);
 					buyStr = FileReadHelper.TrimSpaces(buyStr);

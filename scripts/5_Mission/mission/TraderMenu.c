@@ -505,6 +505,10 @@ class TraderMenu extends UIScriptedMenu
 		if (amount == -3)
 			isMagazine = true;
 
+		bool isWeapon = false;
+		if (amount == -4)
+			isWeapon = true;
+
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
@@ -512,7 +516,7 @@ class TraderMenu extends UIScriptedMenu
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			if(item && item.GetType() == itemClassname && ((getItemAmount(item) >= amount && !isMagazine) || isMagazine))
+			if(item && item.GetType() == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
 			{
 				return true;
 			}
@@ -528,6 +532,10 @@ class TraderMenu extends UIScriptedMenu
 		bool isMagazine = false;
 		if (amount == -3)
 			isMagazine = true;
+
+		bool isWeapon = false;
+		if (amount == -4)
+			isWeapon = true;
 		
 		array<EntityAI> itemsArray = new array<EntityAI>;
 		ItemBase item;
@@ -536,11 +544,11 @@ class TraderMenu extends UIScriptedMenu
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			if(item && item.GetType() == itemClassname && ((getItemAmount(item) >= amount && !isMagazine) || isMagazine))
+			if(item && item.GetType() == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
 			{
 				int itemAmount = getItemAmount(item);
 				
-				if (itemAmount == amount || isMagazine)
+				if (itemAmount == amount || isMagazine || isWeapon)
 				{					
 					Param1<ItemBase> rp1 = new Param1<ItemBase>(item);
 					GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_ITEM, rp1, true);
