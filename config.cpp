@@ -18,7 +18,7 @@ class CfgVehicles
 	{
 		scope=2;
 		displayName="Ruble";
-		descriptionShort="This Currency was used in Russia before the Disase. It is now only used for trading.";
+		descriptionShort="This Currency was used in Russia before the Disease. It is now only used for trading.";
 		model="DZ\Trader\scripts\Money_Ruble.p3d";
 		canBeSplit=1;
 		rotationFlags = 16;
