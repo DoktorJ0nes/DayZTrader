@@ -4,7 +4,11 @@ modded class PlayerBase
 
     override void EEKilled( Object killer )
 	{		
-		m_Trader_PlayerDiedInSafezone = m_Trader_IsInSafezone;
+		if (m_Suicide)
+			m_Trader_PlayerDiedInSafezone = false;
+		else
+			m_Trader_PlayerDiedInSafezone = m_Trader_IsInSafezone;
+
 		GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_TRADER_PLAYER_DIED_IN_SAFEZONE, new Param1<bool>( m_Trader_PlayerDiedInSafezone ), true, this.GetIdentity());
 
 		PlayerBase playerKiller = PlayerBase.Cast( EntityAI.Cast(killer).GetHierarchyParent() );

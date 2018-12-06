@@ -93,6 +93,9 @@ modded class MissionServer
 					player.SetHealth( "", "Blood", 0 );
 				}
 			}
+
+			if (!player.IsAlive())
+				continue;
 			
 			if (!player.m_Trader_RecievedAllData) // TODO: Wenn Server die TraderPositions und Safezoneradien kennt, dann immer zulassen! 
 				continue;	
