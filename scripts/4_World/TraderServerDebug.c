@@ -1,4 +1,4 @@
-#define Trader_ShowServerLogs
+//#define Trader_ShowServerLogs
 
 class TraderServerLogs
 {
