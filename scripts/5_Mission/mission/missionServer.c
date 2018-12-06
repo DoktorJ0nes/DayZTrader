@@ -7,7 +7,10 @@ modded class MissionServer
 	// WORKAROUND PREVENT SIMULTAIN FILE READING END
 		
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
+	ref array<BarrelHoles_ColorBase> m_Trader_SpawnedFireBarrels;
+
 	float m_Trader_PlayerHiveUpdateTime = 0;
+	float m_Trader_SpawnedFireBarrelsUpdateTimer = 0;
 	
 	override void OnInit()
 	{		
@@ -161,11 +164,48 @@ modded class MissionServer
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatHeatComfort().Set(0);
 			m_Trader_SpawnedTraderCharacters.Get(i).SetHealth( "","Shock", m_Trader_SpawnedTraderCharacters.Get(i).GetMaxHealth( "", "Shock" ) );
 		}
+
+		m_Trader_SpawnedFireBarrelsUpdateTimer += timeslice;
+		if (m_Trader_SpawnedFireBarrelsUpdateTimer >= 1)
+		{
+			m_Trader_SpawnedFireBarrelsUpdateTimer = 0;
+
+			for (int m = 0; m < m_Trader_SpawnedFireBarrels.Count(); m++)
+			{
+				BarrelHoles_ColorBase ntarget = m_Trader_SpawnedFireBarrels.Get(m);
+
+				if (!ntarget.IsBurning() && !ntarget.IsWet())
+				{
+					ItemBase kindling;
+					kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Rag"));
+					kindling.SetQuantityMax();
+					//kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("BandageDressing"));
+					//kindling.SetQuantityMax();
+					kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Bark_Oak"));
+					kindling.SetQuantityMax();
+					kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Bark_Birch"));
+					kindling.SetQuantityMax();
+
+					ItemBase fuel;
+					fuel = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Firewood"));
+					fuel.SetQuantityMax();
+					fuel = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("WoodenStick"));
+					fuel.SetQuantityMax();
+
+					EntityAI fire_source_dummy;
+					ntarget.OnIgnitedThis(fire_source_dummy);
+				}
+
+				if (ntarget.IsWet())
+					ntarget.SetWet(ntarget.GetWetMin());
+			}
+		}
 	}
 	
 	private void SpawnTraderObjects()
 	{
 		m_Trader_SpawnedTraderCharacters = new array<PlayerBase>;
+		m_Trader_SpawnedFireBarrels = new array<BarrelHoles_ColorBase>;
 		
 		TraderServerLogs.PrintS("[TRADER] DEBUG START");
 		
@@ -224,11 +264,46 @@ modded class MissionServer
 			objectPosition[0] = traderObjectPosX.ToFloat();
 			objectPosition[1] = traderObjectPosY.ToFloat();
 			objectPosition[2] = traderObjectPosZ.ToFloat();
-			
+
+			// HANDLE TRADER FIRE BARREL BEGIN
+			string persistantObjectType = "BarrelHoles_";
+			bool isPersistant = traderObjectType.Contains(persistantObjectType);
+			if (isPersistant)
+			{
+				vector persistanceCheck_size = "1 1 1";
+				array<Object> persistanceCheck_excluded_objects = new array<Object>;
+				array<Object> persistanceCheck_nearby_objects = new array<Object>;
+
+				GetGame().IsBoxColliding( objectPosition, vector.Zero, persistanceCheck_size, persistanceCheck_excluded_objects, persistanceCheck_nearby_objects);
+
+				for (int pc = 0; pc < persistanceCheck_nearby_objects.Count(); pc++)
+				{
+					if (persistanceCheck_nearby_objects.Get(pc).GetType() == traderObjectType)
+						GetGame().ObjectDelete(persistanceCheck_nearby_objects.Get(pc));
+				}
+			}
+			// HANDLE TRADER FIRE BARREL END
+
 			Object obj = GetGame().CreateObject( traderObjectType, objectPosition, false, false, true );
 			obj.SetPosition(objectPosition); // prevent automatic on ground placing
 			TraderServerLogs.PrintS("[TRADER] SPAWNED OBJECT '" + traderObjectType + "' AT '" + objectPosition + "'");
 			
+			// HANDLE TRADER FIRE BARREL BEGIN
+			if (isPersistant)
+			{
+				BarrelHoles_ColorBase ntarget = BarrelHoles_ColorBase.Cast( obj );
+				if( ntarget )
+				{
+					ntarget.Trader_IsInSafezone = true;
+
+					ntarget.Open();
+					TraderServerLogs.PrintS("[TRADER] OPENED BARREL");
+
+					m_Trader_SpawnedFireBarrels.Insert(ntarget);
+				}
+			}
+			// HANDLE TRADER FIRE BARREL END
+
 			bool isTrader = false;
 			PlayerBase man;
 			if (Class.CastTo(man, obj))
@@ -283,13 +358,14 @@ modded class MissionServer
 			
 			obj.SetOrientation(objectOrientation);
 
+			TraderServerLogs.PrintS("[TRADER] OBJECT ORIENTATION = '" + obj.GetOrientation() + "'");
+
 			if (isTrader)
 			{
 				man.m_Trader_IsInSafezone = true;
 				m_Trader_SpawnedTraderCharacters.Insert(man);
 			}
-			
-			TraderServerLogs.PrintS("[TRADER] OBJECT ORIENTATION = '" + obj.GetOrientation() + "'");
+						
 			
 			markerCounter++;
 		}
