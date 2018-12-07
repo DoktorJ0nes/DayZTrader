@@ -118,6 +118,7 @@ modded class MissionServer
 				player.m_Trader_HealthEnteredSafeZone = player.GetHealth( "", "");
 				player.m_Trader_HealthBloodEnteredSafeZone = player.GetHealth( "", "Blood" );
 				player.GetInputController().OverrideRaise(true, false);
+				SetPlayerVehicleInSafezone( player, true );
 				
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You entered the Safezone!" ), true, player.GetIdentity());
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Press 'B'-Key to open the Trader Menu." ), true, player.GetIdentity());
@@ -128,6 +129,7 @@ modded class MissionServer
 				player.m_Trader_IsInSafezone = false;
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( false ), true, player.GetIdentity());
 				player.GetInputController().OverrideRaise(false, false);
+				SetPlayerVehicleInSafezone( player, false );
 				
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You left the Safezone!" ), true, player.GetIdentity());
 			}
@@ -372,5 +374,23 @@ modded class MissionServer
 		
 		CloseFile(file_index);
 		TraderServerLogs.PrintS("[TRADER] DEBUG END");
+	}
+
+	private void SetPlayerVehicleInSafezone( PlayerBase player, bool isInSafezone )
+	{
+		CarScript car = CarScript.Cast(player.GetParent());
+
+		if (car)
+			car.m_Trader_IsInSafezone = isInSafezone;
+
+		for (int j = 0; j < m_Players.Count(); j++)
+		{
+			PlayerBase currentPlayer = PlayerBase.Cast(m_Players.Get(j));
+			
+			if ( !currentPlayer )
+				continue;
+
+			GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE, new Param2<CarScript, bool>( car, isInSafezone ), true, currentPlayer.GetIdentity());
+		}
 	}
 }

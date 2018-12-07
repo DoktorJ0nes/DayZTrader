@@ -133,6 +133,9 @@ modded class DayZPlayerImplement
 
 				for (int i = 0; i < m_Players.Count(); i++)
 				{
+					if ( !currentPlayer )
+						continue;
+
 					currentPlayer = PlayerBase.Cast(m_Players.Get(i));
 					GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_OBJECT_ORIENTATION, new Param2<Object, vector>( obj, objectDirection ), true, currentPlayer.GetIdentity());
 				}
@@ -171,7 +174,20 @@ modded class DayZPlayerImplement
 
 					CarScript carScript;
 					if (Class.CastTo(carScript, vehicle))
+					{
 						carScript.m_Trader_OwnerPlayerUID = this.GetIdentity().GetId();
+						carScript.m_Trader_IsInSafezone = true;
+
+						for (i = 0; i < m_Players.Count(); i++)
+						{
+							currentPlayer = PlayerBase.Cast(m_Players.Get(i));
+							
+							if ( !currentPlayer )
+								continue;
+
+							GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE, new Param2<CarScript, bool>( car, true ), true, currentPlayer.GetIdentity());
+						}
+					}
 				}
 			}
 
@@ -1044,6 +1060,16 @@ modded class DayZPlayerImplement
 
 					objectToSync.SetOrientation(objectToSyncOrientation);
 					//objectToSync.SetDirection(objectToSync.GetDirection()); // Thats a strange way to synchronize/update Objects.. But it works..
+				break;
+
+				case TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE:
+					ref Param2<CarScript, bool> synccarsscript_rp = new Param2<CarScript, bool>( NULL, false );
+					ctx.Read( synccarsscript_rp );
+					
+					CarScript carToSync = synccarsscript_rp.param1;
+					//bool objectToSyncOrientation  = synccarsscript_rp.param2;
+
+					carToSync.m_Trader_IsInSafezone = synccarsscript_rp.param2;
 				break;
 				
 #ifdef Trader_Debug
