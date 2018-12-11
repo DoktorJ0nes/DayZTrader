@@ -104,11 +104,7 @@ modded class MissionGameplay
 			
 			if (player.m_Trader_RecievedAllData == false)
 			{			
-				player.MessageStatus("[Trader] MISSING TRADER DATA FROM SERVER!");
-				
-				Param1<PlayerBase> rp2 = new Param1<PlayerBase>( g_Game.GetPlayer() );
-				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_REQUEST_TRADER_DATA, rp2, true);
-				
+				player.MessageStatus("[Trader] MISSING TRADER DATA FROM SERVER!");				
 				return;
 			}
 			
