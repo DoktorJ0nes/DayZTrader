@@ -3,7 +3,7 @@
 modded class DayZPlayerImplement
 {
 	// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
-	bool serverIsReadingTheTraderConfigFile = false;
+	//bool serverIsReadingTheTraderConfigFile = false;
 	// WORKAROUND PREVENT SIMULTAIN FILE READING END
 
 	static const string m_Trader_ConfigFilePath = "$profile:Trader/TraderConfig.txt";
@@ -20,7 +20,7 @@ modded class DayZPlayerImplement
 	float m_Trader_HealthBloodEnteredSafeZone;
 	bool m_Trader_PlayerDiedInSafezone = false;
 	
-	bool m_Trader_IsReadingTraderFileEntrys = false;
+	//bool m_Trader_IsReadingTraderFileEntrys = false;
 	bool m_Trader_RecievedAllData = false;
 	
 	string m_Trader_CurrencyItemType;
@@ -96,8 +96,8 @@ modded class DayZPlayerImplement
 		
 		if (GetGame().IsServer()) //////////////////////////////////////////////////////////////////////////////////////////////////////////////// SERVER RPC ///////////////////////////////////////////////////////////
 		{
-			if (m_Trader_IsReadingTraderFileEntrys)
-				return;
+			//if (m_Trader_IsReadingTraderFileEntrys)
+			//	return;
 			
 			if (rpc_type == TRPCs.RPC_TRADER_MOD_IS_LOADED && !m_Trader_TraderModIsLoaded)
 			{
@@ -133,10 +133,11 @@ modded class DayZPlayerImplement
 
 				for (int i = 0; i < m_Players.Count(); i++)
 				{
+					currentPlayer = PlayerBase.Cast(m_Players.Get(i));
+
 					if ( !currentPlayer )
 						continue;
 
-					currentPlayer = PlayerBase.Cast(m_Players.Get(i));
 					GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_OBJECT_ORIENTATION, new Param2<Object, vector>( obj, objectDirection ), true, currentPlayer.GetIdentity());
 				}
 				
@@ -381,7 +382,7 @@ modded class DayZPlayerImplement
 				}
 			}
 			
-			if (rpc_type == TRPCs.RPC_REQUEST_TRADER_DATA && m_Trader_IsReadingTraderFileEntrys == false)
+			/*if (rpc_type == TRPCs.RPC_REQUEST_TRADER_DATA && m_Trader_IsReadingTraderFileEntrys == false)
 			{
 				// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
 				if (serverIsReadingTheTraderConfigFile)
@@ -536,21 +537,6 @@ modded class DayZPlayerImplement
 					
 					if (qntStr.Contains("*") || qntStr.Contains("-1"))
 					{
-						/*entity = player.SpawnEntityOnGroundPos(itemStr, vector.Zero);
-						Class.CastTo(item, entity);
-						
-						int itemQuantityMax = -1;
-						mgzn = Magazine.Cast(item);
-						
-						if( item.IsMagazine() )
-							itemQuantityMax = mgzn.GetAmmoMax();
-						else
-							itemQuantityMax = item.GetQuantityMax();				
-						
-						qntStr = itemQuantityMax.ToString();	
-						
-						item.Delete();*/
-
 						qntStr = GetItemMaxQuantity(itemStr).ToString();
 					}
 
@@ -862,7 +848,7 @@ modded class DayZPlayerImplement
 				TraderServerLogs.PrintS("[TRADER] DEBUG END");
 				
 				m_Trader_IsReadingTraderFileEntrys = false;
-			}
+			}*/
 			
 #ifdef Trader_Debug
 			if (rpc_type == TRPCs.RPC_DEBUG_TELEPORT)
@@ -1084,7 +1070,7 @@ modded class DayZPlayerImplement
 		}
 	}
 
-	private int GetItemMaxQuantity(string itemClassname)
+	private int GetItemMaxQuantity(string itemClassname) // TODO in seperate Class as static Method
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");

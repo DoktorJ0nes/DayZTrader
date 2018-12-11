@@ -43,8 +43,8 @@ modded class MissionGameplay
 				return;			
 			traderRequestTraderDataTimer = 0;
 
-			if (!player.m_Trader_RecievedAllData)
-				GetGame().RPCSingleParam(player, TRPCs.RPC_REQUEST_TRADER_DATA, new Param1<PlayerBase>( player ), true);
+			//if (!player.m_Trader_RecievedAllData)
+			//	GetGame().RPCSingleParam(player, TRPCs.RPC_REQUEST_TRADER_DATA, new Param1<PlayerBase>( player ), true);
 		}
 		
 #ifdef Trader_Debug

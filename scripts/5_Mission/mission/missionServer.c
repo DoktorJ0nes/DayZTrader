@@ -1,9 +1,37 @@
 modded class MissionServer
 {
+	static const string m_Trader_ConfigFilePath = "$profile:Trader/TraderConfig.txt";
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
+	static const string m_Trader_VehiclePartsFilePath = "$profile:Trader/TraderVehicleParts.txt";
+
+	//bool m_Trader_IsReadingTraderFileEntrys = false;
+	bool m_Trader_ReadAllTraderData = false;
+
+	string m_Trader_CurrencyItemType;
+	
+	ref array<string> m_Trader_TraderNames;
+	ref array<vector> m_Trader_TraderPositions;
+	ref array<int> m_Trader_TraderIDs;
+	ref array<int> m_Trader_TraderSafezones;
+	ref array<vector> m_Trader_TraderVehicleSpawns;
+	ref array<vector> m_Trader_TraderVehicleSpawnsOrientation;
+	
+	ref array<string> m_Trader_Categorys;
+	ref array<int> m_Trader_CategorysTraderKey;
+	
+	ref array<int> m_Trader_ItemsTraderId;
+	ref array<int> m_Trader_ItemsCategoryId;
+	ref array<string> m_Trader_ItemsClassnames;
+	ref array<int> m_Trader_ItemsQuantity;
+	ref array<int> m_Trader_ItemsBuyValue;
+	ref array<int> m_Trader_ItemsSellValue;	
+
+	ref array<string> m_Trader_Vehicles;
+	ref array<string> m_Trader_VehiclesParts;
+	ref array<int> m_Trader_VehiclesPartsVehicleId;
 
 	// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
-	bool IsReadingTraderConfigFile = false;
+	//bool IsReadingTraderConfigFile = false;
 	// WORKAROUND PREVENT SIMULTAIN FILE READING END
 		
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
@@ -17,6 +45,7 @@ modded class MissionServer
 		super.OnInit();
 
 		SpawnTraderObjects();
+		readTraderData();
 	}
 	
 	override void OnUpdate(float timeslice)
@@ -27,20 +56,6 @@ modded class MissionServer
 		m_Trader_PlayerHiveUpdateTime += timeslice;
 		if (m_Trader_PlayerHiveUpdateTime >= 1)
 			m_Trader_PlayerHiveUpdateTime = 0;
-		
-		// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
-		bool somePlayerIsReadingTraderConfigFile = false;
-		for (int z = 0; z < m_Players.Count(); z++)
-		{
-			PlayerBase playerz = PlayerBase.Cast(m_Players.Get(z));
-
-			if (playerz.m_Trader_IsReadingTraderFileEntrys)
-			{
-				somePlayerIsReadingTraderConfigFile = true;
-				break;
-			}
-		}
-		// WORKAROUND PREVENT SIMULTAIN FILE READING END
 
 		for (int j = 0; j < m_Players.Count(); j++)
 		{
@@ -48,13 +63,6 @@ modded class MissionServer
 			
 			if ( !player )
 				continue;
-
-			// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
-			if (somePlayerIsReadingTraderConfigFile)
-				player.serverIsReadingTheTraderConfigFile = true;
-			else
-				player.serverIsReadingTheTraderConfigFile = false;
-			// WORKAROUND PREVENT SIMULTAIN FILE READING END
 			
 			if ( !player.m_Trader_WelcomeMessageHandled && player.IsAlive() )
 			{				
@@ -84,7 +92,7 @@ modded class MissionServer
 			}
 
 			// Kill player after some Time when not have the Mod loaded:
-			if (player.m_Trader_WelcomeMessageHandled && !player.m_Trader_TraderModIsLoaded && player.IsAlive())
+			/*if (player.m_Trader_WelcomeMessageHandled && !player.m_Trader_TraderModIsLoaded && player.IsAlive())
 			{
 				player.m_Trader_WelcomeMessageTimer -= timeslice;
 				if (player.m_Trader_WelcomeMessageTimer < -5)
@@ -95,19 +103,22 @@ modded class MissionServer
 					player.SetHealth( "", "", 0 );
 					player.SetHealth( "", "Blood", 0 );
 				}
-			}
+			}*/
 
 			if (!player.IsAlive())
 				continue;
 			
-			if (!player.m_Trader_RecievedAllData) // TODO: Wenn Server die TraderPositions und Safezoneradien kennt, dann immer zulassen! 
-				continue;	
+			if (!m_Trader_ReadAllTraderData)
+				continue;
+
+			if (!player.m_Trader_RecievedAllData)
+				sendTraderDataToPlayer(player);
 			
 			bool isInSafezone = false;
 			
-			for (int k = 0; k < player.m_Trader_TraderPositions.Count(); k++)
+			for (int k = 0; k < m_Trader_TraderPositions.Count(); k++)
 			{
-				if (vector.Distance(player.GetPosition(), player.m_Trader_TraderPositions.Get(k)) <= player.m_Trader_TraderSafezones.Get(k))
+				if (vector.Distance(player.GetPosition(), m_Trader_TraderPositions.Get(k)) <= m_Trader_TraderSafezones.Get(k))
 					isInSafezone = true;
 			}
 			
@@ -374,6 +385,587 @@ modded class MissionServer
 		
 		CloseFile(file_index);
 		TraderServerLogs.PrintS("[TRADER] DEBUG END");
+	}
+
+	private void sendTraderDataToPlayer(PlayerBase player)
+	{
+		TraderServerLogs.PrintS("[TRADER] SEND DATA TO PLAYER");
+
+		// request client to clear all data:
+		Param1<bool> crpClr = new Param1<bool>( true );
+		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CLEAR, crpClr, true, player.GetIdentity());
+
+		Param1<string> crp1 = new Param1<string>( m_Trader_CurrencyItemType );
+		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCYTYPE_ENTRY, crp1, true, player.GetIdentity());
+		//TraderServerLogs.PrintS("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyItemType);
+		
+		int i = 0;
+		for ( i = 0; i < m_Trader_TraderNames.Count(); i++ )
+		{
+			Param1<string> crp2 = new Param1<string>( m_Trader_TraderNames.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_NAME_ENTRY, crp2, true, player.GetIdentity());
+			//TraderServerLogs.PrintS("[TRADER] TRADERNAME: " + m_Trader_TraderNames.Get(i));
+		}
+		
+		for ( i = 0; i < m_Trader_Categorys.Count(); i++ )
+		{
+			Param2<string, int> crp3 = new Param2<string, int>( m_Trader_Categorys.Get(i), m_Trader_CategorysTraderKey.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CATEGORY_ENTRY, crp3, true, player.GetIdentity());
+			//TraderServerLogs.PrintS("[TRADER] TRADERCATEGORY: " + m_Trader_Categorys.Get(i) + ", " + m_Trader_CategorysTraderKey.Get(i));
+		}
+		
+		for ( i = 0; i < m_Trader_ItemsClassnames.Count(); i++ )
+		{
+			Param6<int, int, string, int, int, int> crp4 = new Param6<int, int, string, int, int, int>( m_Trader_ItemsTraderId.Get(i), m_Trader_ItemsCategoryId.Get(i), m_Trader_ItemsClassnames.Get(i), m_Trader_ItemsQuantity.Get(i), m_Trader_ItemsBuyValue.Get(i), m_Trader_ItemsSellValue.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_ITEM_ENTRY, crp4, true, player.GetIdentity());
+			//TraderServerLogs.PrintS("[TRADER] ITEMENTRY: " + m_Trader_ItemsTraderId.Get(i) + ", " + m_Trader_ItemsCategoryId.Get(i) + ", " + m_Trader_ItemsClassnames.Get(i) + ", " + m_Trader_ItemsQuantity.Get(i) + ", " + m_Trader_ItemsBuyValue.Get(i) + ", " + m_Trader_ItemsSellValue.Get(i));
+		}
+		
+		for ( i = 0; i < m_Trader_TraderPositions.Count(); i++ )
+		{
+			Param5<int, vector, int, vector, vector> crp5 = new Param5<int, vector, int, vector, vector>( m_Trader_TraderIDs.Get(i), m_Trader_TraderPositions.Get(i), m_Trader_TraderSafezones.Get(i), m_Trader_TraderVehicleSpawns.Get(i), m_Trader_TraderVehicleSpawnsOrientation.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_MARKER_ENTRY, crp5, true, player.GetIdentity());
+			//TraderServerLogs.PrintS("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i) + ", " + m_Trader_TraderVehicleSpawns.Get(i) + ", " + m_Trader_TraderVehicleSpawnsOrientation.Get(i));
+		}
+
+		// Only stored Serverside:
+		player.m_Trader_Vehicles = new array<string>;
+		for ( i = 0; i < m_Trader_Vehicles.Count(); i++ )
+		{
+			player.m_Trader_Vehicles.Insert(m_Trader_Vehicles.Get(i));
+
+			//Param1<string> crp6 = new Param1<string>( m_Trader_Vehicles.Get(i) );
+			//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLE_ENTRY, crp6, true, player.GetIdentity());
+			//TraderServerLogs.PrintS("[TRADER] VEHICLEENTRY: " + m_Trader_Vehicles.Get(i));
+		}
+
+		// Only stored Serverside:
+		player.m_Trader_VehiclesParts = new array<string>;
+		player.m_Trader_VehiclesPartsVehicleId = new array<int>;
+		for ( i = 0; i < m_Trader_VehiclesParts.Count(); i++ )
+		{
+			player.m_Trader_VehiclesParts.Insert(m_Trader_VehiclesParts.Get(i));
+			player.m_Trader_VehiclesPartsVehicleId.Insert(m_Trader_VehiclesPartsVehicleId.Get(i));
+
+			//Param2<string, int> crp7 = new Param2<string, int>( m_Trader_VehiclesParts.Get(i), m_Trader_VehiclesPartsVehicleId.Get(i) );
+			//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLEPART_ENTRY, crp7, true, player.GetIdentity());
+			//TraderServerLogs.PrintS("[TRADER] VEHICLEPARTENTRY: " + m_Trader_VehiclesPartsVehicleId.Get(i) + ", " + m_Trader_VehiclesParts.Get(i));
+		}
+		
+		// confirm that all data was sended:
+		player.m_Trader_RecievedAllData = true;
+		
+		Param1<bool> crpConf = new Param1<bool>( true );
+		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION, crpConf, true, player.GetIdentity());
+		//TraderServerLogs.PrintS("[TRADER] DEBUG END");
+	}
+
+	private void readTraderData()
+	{
+		//m_Trader_IsReadingTraderFileEntrys = true;
+		
+		//Param1<PlayerBase> rp6 = new Param1<PlayerBase>( NULL );
+		//ctx.Read(rp6);
+		
+		//player = rp6.param1;
+		
+		// clear all data here:
+		m_Trader_ReadAllTraderData = false;	
+		m_Trader_CurrencyItemType = "";
+		m_Trader_TraderNames = new array<string>;
+		m_Trader_TraderPositions = new array<vector>;
+		m_Trader_TraderIDs = new array<int>;
+		m_Trader_TraderSafezones = new array<int>;
+		m_Trader_TraderVehicleSpawns = new array<vector>;
+		m_Trader_TraderVehicleSpawnsOrientation = new array<vector>;
+		m_Trader_Categorys = new array<string>;
+		m_Trader_CategorysTraderKey = new array<int>;
+		m_Trader_ItemsTraderId = new array<int>;
+		m_Trader_ItemsCategoryId = new array<int>;
+		m_Trader_ItemsClassnames = new array<string>;
+		m_Trader_ItemsQuantity = new array<int>;
+		m_Trader_ItemsBuyValue = new array<int>;
+		m_Trader_ItemsSellValue = new array<int>;
+		m_Trader_Vehicles = new array<string>;
+		m_Trader_VehiclesParts = new array<string>;
+		m_Trader_VehiclesPartsVehicleId = new array<int>;
+		
+		//// request that client also clears all data:
+		//Param1<bool> crpClr = new Param1<bool>( true );
+		//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CLEAR, crpClr, true, player.GetIdentity());
+		
+
+		TraderServerLogs.PrintS("[TRADER] DEBUG START");
+		
+		FileHandle file_index = OpenFile(m_Trader_ConfigFilePath, FileMode.READ);
+		
+		if ( file_index == 0 )
+		{
+			TraderServerLogs.PrintS("[TRADER] FOUND NO TRADERCONFIG FILE!");
+
+			//Param1<string> msgRp2 = new Param1<string>( "[Trader] FOUND NO TRADERCONFIG FILE!" );
+			//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp2, true, player.GetIdentity());
+			return;
+		}
+		
+		string line_content = "";
+		
+		TraderServerLogs.PrintS("[TRADER] READING CURRENCY ENTRY..");
+		line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Currency>", "");
+		line_content.Replace("<Currency>", "");
+		line_content = FileReadHelper.TrimComment(line_content);
+		m_Trader_CurrencyItemType = line_content;
+		
+		bool traderInstanceDone = false;
+		int traderCounter = 0;
+		
+		line_content = "";
+		while (traderCounter <= 500 && line_content != "<FileEnd>")
+		{
+			TraderServerLogs.PrintS("[TRADER] READING TRADER ENTRY..");
+			
+			if (traderInstanceDone == false)
+				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Trader>", "");
+			else
+				traderInstanceDone = false;
+			
+			line_content.Replace("<Trader>", "");
+			line_content = FileReadHelper.TrimComment(line_content);
+			
+			m_Trader_TraderNames.Insert(line_content);
+				
+			int categoryCounter = 0;
+			
+			line_content = "";
+			while (categoryCounter <= 500 && line_content != "<FileEnd>")
+			{
+				line_content = FileReadHelper.TrimComment(FileReadHelper.SearchForNextTermInFile(file_index, "<Category>", "<Trader>"));
+				
+				if (line_content.Contains("<Trader>"))
+				{
+					traderInstanceDone = true;
+					break;
+				}
+				
+				if (line_content == string.Empty)
+				{
+					line_content = "<FileEnd>";
+					break;
+				}
+				
+				TraderServerLogs.PrintS("[TRADER] READING CATEGORY ENTRY..");
+				line_content.Replace("<Category>", "");
+				m_Trader_Categorys.Insert(FileReadHelper.TrimComment(line_content));
+				m_Trader_CategorysTraderKey.Insert(traderCounter);
+				
+				categoryCounter++;
+			}
+			
+			traderCounter++;
+		}
+		
+		CloseFile(file_index);
+		
+		//------------------------------------------------------------------------------------
+		
+		file_index = OpenFile(m_Trader_ConfigFilePath, FileMode.READ);
+		
+		int itemCounter = 0;
+		int char_count = 0;
+		int traderID = -1;
+		int categoryId = -1;
+		
+		line_content = "";
+		while ( itemCounter <= 5000 && char_count != -1 && line_content.Contains("<FileEnd>") == false)
+		{
+			TraderServerLogs.PrintS("[TRADER] READING ITEM ENTRY..");
+			char_count = FGets( file_index,  line_content );
+			
+			line_content = FileReadHelper.TrimComment(line_content);
+
+			if (line_content.Contains("<Trader>"))
+			{
+				traderID++;
+				
+				continue;
+			}
+			
+			if (line_content.Contains("<Category>"))
+			{
+				categoryId++;
+				
+				continue;
+			}
+		
+			
+			if (!line_content.Contains(","))
+				continue;
+		
+			TStringArray strs = new TStringArray;
+			line_content.Split( ",", strs );
+			
+			string itemStr = strs.Get(0);
+			itemStr = FileReadHelper.TrimSpaces(itemStr);
+			
+			string qntStr = strs.Get(1);
+			qntStr = FileReadHelper.TrimSpaces(qntStr);
+			
+			if (qntStr.Contains("*") || qntStr.Contains("-1"))
+			{
+				/*entity = player.SpawnEntityOnGroundPos(itemStr, vector.Zero);
+				Class.CastTo(item, entity);
+				
+				int itemQuantityMax = -1;
+				mgzn = Magazine.Cast(item);
+				
+				if( item.IsMagazine() )
+					itemQuantityMax = mgzn.GetAmmoMax();
+				else
+					itemQuantityMax = item.GetQuantityMax();				
+				
+				qntStr = itemQuantityMax.ToString();	
+				
+				item.Delete();*/
+
+				qntStr = GetItemMaxQuantity(itemStr).ToString();
+			}
+
+			if (qntStr.Contains("V") || qntStr.Contains("v"))
+				qntStr = "-2";
+
+			if (qntStr.Contains("M") || qntStr.Contains("m"))
+				qntStr = "-3";
+
+			if (qntStr.Contains("W") || qntStr.Contains("w"))
+				qntStr = "-4";
+			
+			string buyStr = strs.Get(2);
+			buyStr = FileReadHelper.TrimSpaces(buyStr);
+			
+			string sellStr = strs.Get(3);
+			sellStr = FileReadHelper.TrimSpaces(sellStr);
+			
+			m_Trader_ItemsTraderId.Insert(traderID);
+			m_Trader_ItemsCategoryId.Insert(categoryId);
+			m_Trader_ItemsClassnames.Insert(itemStr);
+			m_Trader_ItemsQuantity.Insert(qntStr.ToInt());
+			m_Trader_ItemsBuyValue.Insert(buyStr.ToInt());
+			m_Trader_ItemsSellValue.Insert(sellStr.ToInt());
+			
+			itemCounter++;
+		}
+		
+		CloseFile(file_index);
+		
+		//------------------------------------------------------------------------------------
+		
+		file_index = OpenFile(m_Trader_ObjectsFilePath, FileMode.READ);
+		
+		if ( file_index == 0 )
+		{
+			TraderServerLogs.PrintS("[TRADER] FOUND NO TRADEROBJECTS FILE!");
+
+			//Param1<string> msgRp3 = new Param1<string>( "[Trader] FOUND NO TRADEROBJECTS FILE!" );
+			//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp3, true, player.GetIdentity());
+			return;
+		}
+		
+		bool skipLine = false;
+		int markerCounter = 0;				
+
+		line_content = "";
+		while ( markerCounter <= 5000 && line_content.Contains("<FileEnd>") == false)
+		{
+			// Get Trader Marker Trader ID:
+			if (!skipLine)
+				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarker>", "<FileEnd>");
+			else
+				skipLine = false;					
+			
+			if (!line_content.Contains("<TraderMarker>"))
+				continue;
+			
+			line_content.Replace("<TraderMarker>", "");
+			line_content = FileReadHelper.TrimComment(line_content);
+			line_content = FileReadHelper.TrimSpaces(line_content);
+			
+			TraderServerLogs.PrintS("[TRADER] READING MARKER ID ENTRY..");
+								
+			m_Trader_TraderIDs.Insert(line_content.ToInt());
+			
+			// Get Trader Marker Position:		
+			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarkerPosition>", "<FileEnd>");
+			
+			line_content.Replace("<TraderMarkerPosition>", "");
+			line_content = FileReadHelper.TrimComment(line_content);
+			
+			TStringArray strsm = new TStringArray;
+			line_content.Split( ",", strsm );
+			
+			string traderMarkerPosX = strsm.Get(0);
+			traderMarkerPosX = FileReadHelper.TrimSpaces(traderMarkerPosX);
+			
+			string traderMarkerPosY = strsm.Get(1);
+			traderMarkerPosY = FileReadHelper.TrimSpaces(traderMarkerPosY);
+			
+			string traderMarkerPosZ = strsm.Get(2);
+			traderMarkerPosZ = FileReadHelper.TrimSpaces(traderMarkerPosZ);
+			
+			vector markerPosition = "0 0 0";
+			markerPosition[0] = traderMarkerPosX.ToFloat();
+			markerPosition[1] = traderMarkerPosY.ToFloat();
+			markerPosition[2] = traderMarkerPosZ.ToFloat();
+			
+			TraderServerLogs.PrintS("[TRADER] READING MARKER POSITION ENTRY..");
+			
+			m_Trader_TraderPositions.Insert(markerPosition);
+			
+			// Get Trader Marker Safezone Radius:					
+			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarkerSafezone>", "<FileEnd>");
+			
+			line_content.Replace("<TraderMarkerSafezone>", "");
+			line_content = FileReadHelper.TrimComment(line_content);
+			line_content = FileReadHelper.TrimSpaces(line_content);
+			
+			TraderServerLogs.PrintS("[TRADER] READING MARKER SAFEZONE ENTRY..");
+			
+			m_Trader_TraderSafezones.Insert(line_content.ToInt());
+
+			// Get Trader Marker Vehicle Spawnpoint:					
+			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<VehicleSpawn>", "<TraderMarker>");
+
+			if(line_content == string.Empty)
+				break;
+
+			if (line_content.Contains("<TraderMarker>"))
+			{
+				skipLine = true;
+				m_Trader_TraderVehicleSpawns.Insert("0 0 0");
+				m_Trader_TraderVehicleSpawnsOrientation.Insert("0 0 0");
+				continue;
+			}
+
+			line_content.Replace("<VehicleSpawn>", "");
+			line_content = FileReadHelper.TrimComment(line_content);
+
+			TStringArray strtmv = new TStringArray;
+			line_content.Split( ",", strtmv );
+			
+			string traderMarkerVehiclePosX = strtmv.Get(0);
+			traderMarkerVehiclePosX = FileReadHelper.TrimSpaces(traderMarkerVehiclePosX);
+			
+			string traderMarkerVehiclePosY = strtmv.Get(1);
+			traderMarkerVehiclePosY = FileReadHelper.TrimSpaces(traderMarkerVehiclePosY);
+			
+			string traderMarkerVehiclePosZ = strtmv.Get(2);
+			traderMarkerVehiclePosZ = FileReadHelper.TrimSpaces(traderMarkerVehiclePosZ);
+			
+			vector markerVehiclePosition = "0 0 0";
+			markerVehiclePosition[0] = traderMarkerVehiclePosX.ToFloat();
+			markerVehiclePosition[1] = traderMarkerVehiclePosY.ToFloat();
+			markerVehiclePosition[2] = traderMarkerVehiclePosZ.ToFloat();
+
+			TraderServerLogs.PrintS("[TRADER] READING MARKER VEHICLE ENTRY..");
+
+			m_Trader_TraderVehicleSpawns.Insert(markerVehiclePosition);
+
+			// Get Trader Marker Vehicle Orientation:
+			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<VehicleSpawnOri>", "<TraderMarker>");
+
+			if(line_content == string.Empty)
+				break;
+
+			if (line_content.Contains("<TraderMarker>"))
+			{
+				skipLine = true;
+				m_Trader_TraderVehicleSpawnsOrientation.Insert("0 0 0");
+				continue;
+			}
+
+			line_content.Replace("<VehicleSpawnOri>", "");
+			line_content = FileReadHelper.TrimComment(line_content);
+
+			TStringArray strtmvd = new TStringArray;
+			line_content.Split( ",", strtmvd );
+			
+			string traderMarkerVehicleOriX = strtmvd.Get(0);
+			traderMarkerVehicleOriX = FileReadHelper.TrimSpaces(traderMarkerVehicleOriX);
+			
+			string traderMarkerVehicleOriY = strtmvd.Get(1);
+			traderMarkerVehicleOriY = FileReadHelper.TrimSpaces(traderMarkerVehicleOriY);
+			
+			string traderMarkerVehicleOriZ = strtmvd.Get(2);
+			traderMarkerVehicleOriZ = FileReadHelper.TrimSpaces(traderMarkerVehicleOriZ);
+			
+			vector markerVehicleOrientation = "0 0 0";
+			markerVehicleOrientation[0] = traderMarkerVehicleOriX.ToFloat();
+			markerVehicleOrientation[1] = traderMarkerVehicleOriY.ToFloat();
+			markerVehicleOrientation[2] = traderMarkerVehicleOriZ.ToFloat();
+
+			m_Trader_TraderVehicleSpawnsOrientation.Insert(markerVehicleOrientation);
+
+
+			markerCounter++;
+		}
+		
+		CloseFile(file_index);
+		
+		//------------------------------------------------------------------------------------
+		
+		file_index = OpenFile(m_Trader_VehiclePartsFilePath, FileMode.READ);
+		
+		if ( file_index == 0 )
+		{
+			Print("[TRADER] FOUND NO VEHICLEPARTS FILE!");
+
+			//Param1<string> msgRp4 = new Param1<string>( "[Trader] FOUND NO VEHICLEPARTS FILE!" );
+			//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp4, true, player.GetIdentity());
+			return;
+		}
+		
+		skipLine = false;
+		int vehicleCounter = 0;
+		
+		line_content = "";
+		while ( vehicleCounter <= 5000 && line_content.Contains("<FileEnd>") == false)
+		{
+			// Get Vehicle Name Entrys:
+			if (!skipLine)
+				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<VehicleParts>", "<FileEnd>");
+			else
+				skipLine = false;
+			
+			if (!line_content.Contains("<VehicleParts>"))
+				continue;
+			
+			line_content.Replace("<VehicleParts>", "");
+			line_content = FileReadHelper.TrimComment(line_content);
+			line_content = FileReadHelper.TrimSpaces(line_content);
+			
+			TraderServerLogs.PrintS("[TRADER] READING VEHICLE NAME ENTRY..");
+
+			m_Trader_Vehicles.Insert(line_content);
+
+			char_count = 0;
+			int vehiclePartsCounter = 0;
+			//while ( vehiclePartsCounter <= 5000  && char_count != -1 && line_content.Contains("<FileEnd>") == false)
+			while (true)
+			{
+				// Get Vehicle Parts Entrys:
+				char_count = FGets( file_index,  line_content );
+
+				line_content = FileReadHelper.TrimComment(line_content);
+				line_content = FileReadHelper.TrimSpaces(line_content);
+
+				if (line_content == "")
+					continue;
+
+				if (line_content.Contains("<VehicleParts>"))
+				{
+					skipLine = true;						
+					break;
+				}
+
+				if (line_content.Contains("<FileEnd>") || char_count == -1 || vehiclePartsCounter > 5000)
+				{
+					line_content = "<FileEnd>";
+					break;
+				}
+
+				m_Trader_VehiclesParts.Insert(line_content);
+				m_Trader_VehiclesPartsVehicleId.Insert(vehicleCounter);
+
+				vehiclePartsCounter++;
+			}
+			
+			vehicleCounter++;
+		}
+		
+		CloseFile(file_index);
+		
+		//------------------------------------------------------------------------------------
+
+		TraderServerLogs.PrintS("[TRADER] DONE READING!");
+		//m_Trader_IsReadingTraderFileEntrys = false;
+		m_Trader_ReadAllTraderData = true;
+		
+		/*
+		Param1<string> crp1 = new Param1<string>( m_Trader_CurrencyItemType );
+		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCYTYPE_ENTRY, crp1, true, player.GetIdentity());
+		TraderServerLogs.PrintS("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyItemType);
+		
+		//int i = 0;
+		for ( i = 0; i < m_Trader_TraderNames.Count(); i++ )
+		{
+			Param1<string> crp2 = new Param1<string>( m_Trader_TraderNames.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_NAME_ENTRY, crp2, true, player.GetIdentity());
+			TraderServerLogs.PrintS("[TRADER] TRADERNAME: " + m_Trader_TraderNames.Get(i));
+		}
+		
+		for ( i = 0; i < m_Trader_Categorys.Count(); i++ )
+		{
+			Param2<string, int> crp3 = new Param2<string, int>( m_Trader_Categorys.Get(i), m_Trader_CategorysTraderKey.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CATEGORY_ENTRY, crp3, true, player.GetIdentity());
+			TraderServerLogs.PrintS("[TRADER] TRADERCATEGORY: " + m_Trader_Categorys.Get(i) + ", " + m_Trader_CategorysTraderKey.Get(i));
+		}
+		
+		for ( i = 0; i < m_Trader_ItemsClassnames.Count(); i++ )
+		{
+			Param6<int, int, string, int, int, int> crp4 = new Param6<int, int, string, int, int, int>( m_Trader_ItemsTraderId.Get(i), m_Trader_ItemsCategoryId.Get(i), m_Trader_ItemsClassnames.Get(i), m_Trader_ItemsQuantity.Get(i), m_Trader_ItemsBuyValue.Get(i), m_Trader_ItemsSellValue.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_ITEM_ENTRY, crp4, true, player.GetIdentity());
+			TraderServerLogs.PrintS("[TRADER] ITEMENTRY: " + m_Trader_ItemsTraderId.Get(i) + ", " + m_Trader_ItemsCategoryId.Get(i) + ", " + m_Trader_ItemsClassnames.Get(i) + ", " + m_Trader_ItemsQuantity.Get(i) + ", " + m_Trader_ItemsBuyValue.Get(i) + ", " + m_Trader_ItemsSellValue.Get(i));
+		}
+		
+		for ( i = 0; i < m_Trader_TraderPositions.Count(); i++ )
+		{
+			Param5<int, vector, int, vector, vector> crp5 = new Param5<int, vector, int, vector, vector>( m_Trader_TraderIDs.Get(i), m_Trader_TraderPositions.Get(i), m_Trader_TraderSafezones.Get(i), m_Trader_TraderVehicleSpawns.Get(i), m_Trader_TraderVehicleSpawnsOrientation.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_MARKER_ENTRY, crp5, true, player.GetIdentity());
+			TraderServerLogs.PrintS("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i) + ", " + m_Trader_TraderVehicleSpawns.Get(i) + ", " + m_Trader_TraderVehicleSpawnsOrientation.Get(i));
+		}
+
+		for ( i = 0; i < m_Trader_Vehicles.Count(); i++ )
+		{
+			Param1<string> crp6 = new Param1<string>( m_Trader_Vehicles.Get(i) );
+			//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLE_ENTRY, crp6, true, player.GetIdentity());
+			TraderServerLogs.PrintS("[TRADER] VEHICLEENTRY: " + m_Trader_Vehicles.Get(i));
+		}
+
+		for ( i = 0; i < m_Trader_VehiclesParts.Count(); i++ )
+		{
+			Param2<string, int> crp7 = new Param2<string, int>( m_Trader_VehiclesParts.Get(i), m_Trader_VehiclesPartsVehicleId.Get(i) );
+			//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLEPART_ENTRY, crp7, true, player.GetIdentity());
+			TraderServerLogs.PrintS("[TRADER] VEHICLEPARTENTRY: " + m_Trader_VehiclesPartsVehicleId.Get(i) + ", " + m_Trader_VehiclesParts.Get(i));
+		}
+		
+		// confirm that all data was sended:
+		m_Trader_ReadAllTraderData = true;
+		
+		Param1<bool> crpConf = new Param1<bool>( true );
+		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION, crpConf, true, player.GetIdentity());
+		TraderServerLogs.PrintS("[TRADER] DEBUG END");
+		
+		//m_Trader_IsReadingTraderFileEntrys = false;
+		*/
+	}
+
+	private int GetItemMaxQuantity(string itemClassname)
+	{
+		TStringArray searching_in = new TStringArray;
+		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
+		//searching_in.Insert( CFG_WEAPONSPATH );
+		searching_in.Insert( CFG_VEHICLESPATH + " " + itemClassname + " varQuantityMax");
+
+		for ( int s = 0; s < searching_in.Count(); ++s )
+		{
+			string path = searching_in.Get( s );
+
+			if ( GetGame().ConfigIsExisting( path ) )
+			{
+				return g_Game.ConfigGetInt( path );
+			}
+		}
+
+		return 0;
 	}
 
 	private void SetPlayerVehicleInSafezone( PlayerBase player, bool isInSafezone )
