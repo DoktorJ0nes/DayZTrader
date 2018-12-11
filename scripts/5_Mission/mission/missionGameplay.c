@@ -3,7 +3,6 @@
 modded class MissionGameplay
 {	
 	float traderModIsLoadedReplicationTimer = 0.1;
-	float traderRequestTraderDataTimer = -0.4;
 
 	#ifdef Trader_Debug
 	string toCopy = "";
@@ -27,7 +26,6 @@ modded class MissionGameplay
 		
 		if ( player )
 		{
-			
 			traderModIsLoadedReplicationTimer -= timeslice;			
 			if (traderModIsLoadedReplicationTimer > 0)
 				return;			
@@ -37,14 +35,6 @@ modded class MissionGameplay
 			{
 				GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_TRADER_MOD_IS_LOADED, new Param1<PlayerBase>( GetGame().GetPlayer() ), true);
 			}
-
-			traderRequestTraderDataTimer += 0.5;
-			if (traderRequestTraderDataTimer < 2)
-				return;			
-			traderRequestTraderDataTimer = 0;
-
-			//if (!player.m_Trader_RecievedAllData)
-			//	GetGame().RPCSingleParam(player, TRPCs.RPC_REQUEST_TRADER_DATA, new Param1<PlayerBase>( player ), true);
 		}
 		
 #ifdef Trader_Debug
@@ -115,7 +105,6 @@ modded class MissionGameplay
 			if (player.m_Trader_RecievedAllData == false)
 			{			
 				player.MessageStatus("[Trader] MISSING TRADER DATA FROM SERVER!");
-				player.MessageStatus("[Trader] TRYING TO GET TRADER DATA FROM SERVER..");
 				
 				Param1<PlayerBase> rp2 = new Param1<PlayerBase>( g_Game.GetPlayer() );
 				GetGame().RPCSingleParam(g_Game.GetPlayer(), TRPCs.RPC_REQUEST_TRADER_DATA, rp2, true);

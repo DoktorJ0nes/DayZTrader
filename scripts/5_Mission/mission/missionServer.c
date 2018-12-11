@@ -4,7 +4,6 @@ modded class MissionServer
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
 	static const string m_Trader_VehiclePartsFilePath = "$profile:Trader/TraderVehicleParts.txt";
 
-	//bool m_Trader_IsReadingTraderFileEntrys = false;
 	bool m_Trader_ReadAllTraderData = false;
 
 	string m_Trader_CurrencyItemType;
@@ -29,10 +28,6 @@ modded class MissionServer
 	ref array<string> m_Trader_Vehicles;
 	ref array<string> m_Trader_VehiclesParts;
 	ref array<int> m_Trader_VehiclesPartsVehicleId;
-
-	// WORKAROUND PREVENT SIMULTAIN FILE READING BEGIN
-	//bool IsReadingTraderConfigFile = false;
-	// WORKAROUND PREVENT SIMULTAIN FILE READING END
 		
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
 	ref array<BarrelHoles_ColorBase> m_Trader_SpawnedFireBarrels;
@@ -90,20 +85,6 @@ modded class MissionServer
 					player.m_Trader_WelcomeMessageHandled = true;
 				}
 			}
-
-			// Kill player after some Time when not have the Mod loaded:
-			/*if (player.m_Trader_WelcomeMessageHandled && !player.m_Trader_TraderModIsLoaded && player.IsAlive())
-			{
-				player.m_Trader_WelcomeMessageTimer -= timeslice;
-				if (player.m_Trader_WelcomeMessageTimer < -5)
-				{
-					player.m_Trader_WelcomeMessageHandled = false;
-					player.m_Trader_WelcomeMessageTimer = 25;
-
-					player.SetHealth( "", "", 0 );
-					player.SetHealth( "", "Blood", 0 );
-				}
-			}*/
 
 			if (!player.IsAlive())
 				continue;
@@ -433,9 +414,6 @@ modded class MissionServer
 		for ( i = 0; i < m_Trader_Vehicles.Count(); i++ )
 		{
 			player.m_Trader_Vehicles.Insert(m_Trader_Vehicles.Get(i));
-
-			//Param1<string> crp6 = new Param1<string>( m_Trader_Vehicles.Get(i) );
-			//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLE_ENTRY, crp6, true, player.GetIdentity());
 			//TraderServerLogs.PrintS("[TRADER] VEHICLEENTRY: " + m_Trader_Vehicles.Get(i));
 		}
 
@@ -446,9 +424,6 @@ modded class MissionServer
 		{
 			player.m_Trader_VehiclesParts.Insert(m_Trader_VehiclesParts.Get(i));
 			player.m_Trader_VehiclesPartsVehicleId.Insert(m_Trader_VehiclesPartsVehicleId.Get(i));
-
-			//Param2<string, int> crp7 = new Param2<string, int>( m_Trader_VehiclesParts.Get(i), m_Trader_VehiclesPartsVehicleId.Get(i) );
-			//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLEPART_ENTRY, crp7, true, player.GetIdentity());
 			//TraderServerLogs.PrintS("[TRADER] VEHICLEPARTENTRY: " + m_Trader_VehiclesPartsVehicleId.Get(i) + ", " + m_Trader_VehiclesParts.Get(i));
 		}
 		
@@ -461,14 +436,7 @@ modded class MissionServer
 	}
 
 	private void readTraderData()
-	{
-		//m_Trader_IsReadingTraderFileEntrys = true;
-		
-		//Param1<PlayerBase> rp6 = new Param1<PlayerBase>( NULL );
-		//ctx.Read(rp6);
-		
-		//player = rp6.param1;
-		
+	{		
 		// clear all data here:
 		m_Trader_ReadAllTraderData = false;	
 		m_Trader_CurrencyItemType = "";
@@ -488,12 +456,7 @@ modded class MissionServer
 		m_Trader_ItemsSellValue = new array<int>;
 		m_Trader_Vehicles = new array<string>;
 		m_Trader_VehiclesParts = new array<string>;
-		m_Trader_VehiclesPartsVehicleId = new array<int>;
-		
-		//// request that client also clears all data:
-		//Param1<bool> crpClr = new Param1<bool>( true );
-		//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CLEAR, crpClr, true, player.GetIdentity());
-		
+		m_Trader_VehiclesPartsVehicleId = new array<int>;		
 
 		TraderServerLogs.PrintS("[TRADER] DEBUG START");
 		
@@ -502,9 +465,6 @@ modded class MissionServer
 		if ( file_index == 0 )
 		{
 			TraderServerLogs.PrintS("[TRADER] FOUND NO TRADERCONFIG FILE!");
-
-			//Param1<string> msgRp2 = new Param1<string>( "[Trader] FOUND NO TRADERCONFIG FILE!" );
-			//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp2, true, player.GetIdentity());
 			return;
 		}
 		
@@ -612,21 +572,6 @@ modded class MissionServer
 			
 			if (qntStr.Contains("*") || qntStr.Contains("-1"))
 			{
-				/*entity = player.SpawnEntityOnGroundPos(itemStr, vector.Zero);
-				Class.CastTo(item, entity);
-				
-				int itemQuantityMax = -1;
-				mgzn = Magazine.Cast(item);
-				
-				if( item.IsMagazine() )
-					itemQuantityMax = mgzn.GetAmmoMax();
-				else
-					itemQuantityMax = item.GetQuantityMax();				
-				
-				qntStr = itemQuantityMax.ToString();	
-				
-				item.Delete();*/
-
 				qntStr = GetItemMaxQuantity(itemStr).ToString();
 			}
 
@@ -664,9 +609,6 @@ modded class MissionServer
 		if ( file_index == 0 )
 		{
 			TraderServerLogs.PrintS("[TRADER] FOUND NO TRADEROBJECTS FILE!");
-
-			//Param1<string> msgRp3 = new Param1<string>( "[Trader] FOUND NO TRADEROBJECTS FILE!" );
-			//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp3, true, player.GetIdentity());
 			return;
 		}
 		
@@ -817,9 +759,6 @@ modded class MissionServer
 		if ( file_index == 0 )
 		{
 			Print("[TRADER] FOUND NO VEHICLEPARTS FILE!");
-
-			//Param1<string> msgRp4 = new Param1<string>( "[Trader] FOUND NO VEHICLEPARTS FILE!" );
-			//GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp4, true, player.GetIdentity());
 			return;
 		}
 		
@@ -886,66 +825,7 @@ modded class MissionServer
 		//------------------------------------------------------------------------------------
 
 		TraderServerLogs.PrintS("[TRADER] DONE READING!");
-		//m_Trader_IsReadingTraderFileEntrys = false;
 		m_Trader_ReadAllTraderData = true;
-		
-		/*
-		Param1<string> crp1 = new Param1<string>( m_Trader_CurrencyItemType );
-		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCYTYPE_ENTRY, crp1, true, player.GetIdentity());
-		TraderServerLogs.PrintS("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyItemType);
-		
-		//int i = 0;
-		for ( i = 0; i < m_Trader_TraderNames.Count(); i++ )
-		{
-			Param1<string> crp2 = new Param1<string>( m_Trader_TraderNames.Get(i) );
-			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_NAME_ENTRY, crp2, true, player.GetIdentity());
-			TraderServerLogs.PrintS("[TRADER] TRADERNAME: " + m_Trader_TraderNames.Get(i));
-		}
-		
-		for ( i = 0; i < m_Trader_Categorys.Count(); i++ )
-		{
-			Param2<string, int> crp3 = new Param2<string, int>( m_Trader_Categorys.Get(i), m_Trader_CategorysTraderKey.Get(i) );
-			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CATEGORY_ENTRY, crp3, true, player.GetIdentity());
-			TraderServerLogs.PrintS("[TRADER] TRADERCATEGORY: " + m_Trader_Categorys.Get(i) + ", " + m_Trader_CategorysTraderKey.Get(i));
-		}
-		
-		for ( i = 0; i < m_Trader_ItemsClassnames.Count(); i++ )
-		{
-			Param6<int, int, string, int, int, int> crp4 = new Param6<int, int, string, int, int, int>( m_Trader_ItemsTraderId.Get(i), m_Trader_ItemsCategoryId.Get(i), m_Trader_ItemsClassnames.Get(i), m_Trader_ItemsQuantity.Get(i), m_Trader_ItemsBuyValue.Get(i), m_Trader_ItemsSellValue.Get(i) );
-			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_ITEM_ENTRY, crp4, true, player.GetIdentity());
-			TraderServerLogs.PrintS("[TRADER] ITEMENTRY: " + m_Trader_ItemsTraderId.Get(i) + ", " + m_Trader_ItemsCategoryId.Get(i) + ", " + m_Trader_ItemsClassnames.Get(i) + ", " + m_Trader_ItemsQuantity.Get(i) + ", " + m_Trader_ItemsBuyValue.Get(i) + ", " + m_Trader_ItemsSellValue.Get(i));
-		}
-		
-		for ( i = 0; i < m_Trader_TraderPositions.Count(); i++ )
-		{
-			Param5<int, vector, int, vector, vector> crp5 = new Param5<int, vector, int, vector, vector>( m_Trader_TraderIDs.Get(i), m_Trader_TraderPositions.Get(i), m_Trader_TraderSafezones.Get(i), m_Trader_TraderVehicleSpawns.Get(i), m_Trader_TraderVehicleSpawnsOrientation.Get(i) );
-			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_MARKER_ENTRY, crp5, true, player.GetIdentity());
-			TraderServerLogs.PrintS("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i) + ", " + m_Trader_TraderVehicleSpawns.Get(i) + ", " + m_Trader_TraderVehicleSpawnsOrientation.Get(i));
-		}
-
-		for ( i = 0; i < m_Trader_Vehicles.Count(); i++ )
-		{
-			Param1<string> crp6 = new Param1<string>( m_Trader_Vehicles.Get(i) );
-			//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLE_ENTRY, crp6, true, player.GetIdentity());
-			TraderServerLogs.PrintS("[TRADER] VEHICLEENTRY: " + m_Trader_Vehicles.Get(i));
-		}
-
-		for ( i = 0; i < m_Trader_VehiclesParts.Count(); i++ )
-		{
-			Param2<string, int> crp7 = new Param2<string, int>( m_Trader_VehiclesParts.Get(i), m_Trader_VehiclesPartsVehicleId.Get(i) );
-			//GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VEHICLEPART_ENTRY, crp7, true, player.GetIdentity());
-			TraderServerLogs.PrintS("[TRADER] VEHICLEPARTENTRY: " + m_Trader_VehiclesPartsVehicleId.Get(i) + ", " + m_Trader_VehiclesParts.Get(i));
-		}
-		
-		// confirm that all data was sended:
-		m_Trader_ReadAllTraderData = true;
-		
-		Param1<bool> crpConf = new Param1<bool>( true );
-		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION, crpConf, true, player.GetIdentity());
-		TraderServerLogs.PrintS("[TRADER] DEBUG END");
-		
-		//m_Trader_IsReadingTraderFileEntrys = false;
-		*/
 	}
 
 	private int GetItemMaxQuantity(string itemClassname)
