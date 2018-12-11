@@ -301,6 +301,14 @@ modded class DayZPlayerImplement
 					}
 				}
 			}
+
+			if (rpc_type == TRPCs.RPC_TRADER_SERVER_LOG)
+			{
+				Param1<string> rpsl = new Param1<string>( "" );
+				ctx.Read(rpsl);
+
+				TraderServerLogs.PrintS("[TRADER] Player: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId() + " " + rpsl.param1);
+			}
 			
 #ifdef Trader_Debug
 			if (rpc_type == TRPCs.RPC_DEBUG_TELEPORT)

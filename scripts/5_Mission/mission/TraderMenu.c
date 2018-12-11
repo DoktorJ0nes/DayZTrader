@@ -180,6 +180,8 @@ class TraderMenu extends UIScriptedMenu
 				return true;
 			}
 
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_TRADER_SERVER_LOG, new Param1<string>( "bought " + getItemDisplayName(itemType) + "(" + itemType + ")"), true);
+
 			if (itemQuantity == -2) // Is a Vehicle
 			{
 				if (!IsVehicleSpawnFree())
@@ -239,6 +241,8 @@ class TraderMenu extends UIScriptedMenu
 
 				return true;
 			}
+
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_TRADER_SERVER_LOG, new Param1<string>( "sold " + getItemDisplayName(itemType) + " (" + itemType + ")"), true);
 			
 			int playerCurrencyAmountBeforeSale = m_Player_CurrencyAmount;
 			

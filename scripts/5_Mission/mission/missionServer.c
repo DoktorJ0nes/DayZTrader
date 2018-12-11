@@ -758,7 +758,7 @@ modded class MissionServer
 		
 		if ( file_index == 0 )
 		{
-			Print("[TRADER] FOUND NO VEHICLEPARTS FILE!");
+			TraderServerLogs.PrintS("[TRADER] FOUND NO VEHICLEPARTS FILE!");
 			return;
 		}
 		
