@@ -85,7 +85,7 @@ modded class DayZPlayerImplement
 		string itemType;
 		ItemBase item;
 		EntityAI entity;
-		Magazine mgzn;
+		//Magazine mgzn;
 		int amount;
 		vector position;
 		
@@ -191,7 +191,8 @@ modded class DayZPlayerImplement
 
 				obj = rpdv.param1;
 
-				GetGame().ObjectDelete(obj);
+				if (obj)
+					GetGame().ObjectDelete(obj);
 			}
 			
 			if (rpc_type == TRPCs.RPC_SPAWN_ITEM_ON_GROUND)
@@ -203,26 +204,11 @@ modded class DayZPlayerImplement
 				itemType = rp1.param2;
 				position = rp1.param3;
 				amount = rp1.param4;
-
-				if (amount == -3)
-					amount = 0;
-
-				if (amount == -4)
-					amount = 0;
 				
 				entity = player.SpawnEntityOnGroundPos(itemType, position);
 				Class.CastTo(item, entity);
 
-				mgzn = Magazine.Cast(item);
-						
-				if( item.IsMagazine() )
-				{
-					mgzn.ServerSetAmmoCount(amount);
-				}
-				else
-				{
-					item.SetQuantity(amount);
-				}
+				SetItemAmount(item, amount);
 			}
 			
 			if (rpc_type == TRPCs.RPC_CREATE_ITEM_IN_INVENTORY)
@@ -233,29 +219,11 @@ modded class DayZPlayerImplement
 				player = rp2.param1;
 				itemType = rp2.param2;
 				amount = rp2.param3;
-
-				if (amount == -3)
-					amount = 0;
-
-				if (amount == -4)
-					amount = 0;
 				
 				entity = player.GetHumanInventory().CreateInInventory(itemType);
 				Class.CastTo(item, entity);
 				
-				//if (amount != -1)
-				//{
-				mgzn = Magazine.Cast(item);
-					
-				if( item.IsMagazine() )
-				{
-					mgzn.ServerSetAmmoCount(amount);
-				}
-				else
-				{
-					item.SetQuantity(amount);
-				}
-				//}
+				SetItemAmount(item, amount);
 			}
 			
 			if (rpc_type == TRPCs.RPC_DELETE_ITEM)
@@ -265,7 +233,8 @@ modded class DayZPlayerImplement
 				
 				item = rp3.param1;
 				
-				item.Delete();
+				if (item)
+					item.Delete();
 			}
 			
 			if (rpc_type == TRPCs.RPC_SET_ITEM_AMOUNT)
@@ -276,20 +245,7 @@ modded class DayZPlayerImplement
 				item = rp4.param1;
 				amount = rp4.param2;
 				
-				
-				if (amount != -1)
-				{
-					mgzn = Magazine.Cast(item);
-						
-					if( item.IsMagazine() )
-					{
-						mgzn.ServerSetAmmoCount(amount);
-					}
-					else
-					{
-						item.SetQuantity(amount);
-					}
-				}
+				SetItemAmount(item, amount);
 			}
 			
 			if (rpc_type == TRPCs.RPC_INCREASE_PLAYER_CURRENCY)
@@ -330,32 +286,16 @@ modded class DayZPlayerImplement
 						// unnoetig, da items immer mix maxammount gespawnt werden! // Nachtrag: Nicht in jedem Fall!
 
 						Class.CastTo(item, entity);
-						mgzn = Magazine.Cast(item);
 						
-						if( item.IsMagazine() )
-						{
-							mgzn.ServerSetAmmoCount(itemMaxAmount);
-						}
-						else
-						{
-							item.SetQuantity(itemMaxAmount);
-						}
+						SetItemAmount(item, itemMaxAmount);
 
 						currencyAmount -= itemMaxAmount;
 					}
 					else
 					{					
 						Class.CastTo(item, entity);
-						mgzn = Magazine.Cast(item);
 						
-						if( item.IsMagazine() )
-						{
-							mgzn.ServerSetAmmoCount(currencyAmount);
-						}
-						else
-						{
-							item.SetQuantity(currencyAmount);
-						}				
+						SetItemAmount(item, currencyAmount);		
 						
 						currencyAmount = 0;
 					}
@@ -600,6 +540,37 @@ modded class DayZPlayerImplement
 		}
 
 		return 0;
+	}
+
+	private bool SetItemAmount(ItemBase item, int amount)
+	{
+		if (!item)
+			return false;
+
+		if (amount == -1)
+			amount = GetItemMaxQuantity(item.GetType());
+
+		if (amount == -3)
+			amount = 0;
+
+		if (amount == -4)
+			amount = 0;
+
+		Magazine mgzn = Magazine.Cast(item);
+				
+		if( item.IsMagazine() )
+		{
+			if (!mgzn)
+				return false;
+
+			mgzn.ServerSetAmmoCount(amount);
+		}
+		else
+		{
+			item.SetQuantity(amount);
+		}
+
+		return true;
 	}
 
 	/*override void SetSuicide(bool state)
