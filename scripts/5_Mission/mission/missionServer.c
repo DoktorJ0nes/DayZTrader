@@ -4,6 +4,8 @@ modded class MissionServer
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
 	static const string m_Trader_VehiclePartsFilePath = "$profile:Trader/TraderVehicleParts.txt";
 
+	static const float m_Trader_SafezoneTimeout = 30;
+
 	bool m_Trader_ReadAllTraderData = false;
 
 	string m_Trader_CurrencyItemType;
@@ -102,10 +104,20 @@ modded class MissionServer
 				if (vector.Distance(player.GetPosition(), m_Trader_TraderPositions.Get(k)) <= m_Trader_TraderSafezones.Get(k))
 					isInSafezone = true;
 			}
-			
+
+			if (!isInSafezone && player.m_Trader_IsInSafezoneTimeout > 0)
+			{
+				float m_Trader_IsInSafezoneTimeout_Last = player.m_Trader_IsInSafezoneTimeout;
+				player.m_Trader_IsInSafezoneTimeout -= timeslice;
+
+				if ((Math.Floor(player.m_Trader_IsInSafezoneTimeout) != Math.Floor(m_Trader_IsInSafezoneTimeout_Last)) && player.m_Trader_IsInSafezoneTimeout > 0)
+					GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You are leaving the Safezone in " + (Math.Floor(player.m_Trader_IsInSafezoneTimeout) + 1) + " Seconds!" ), false, player.GetIdentity());
+			}
+
 			if (player.m_Trader_IsInSafezone == false && isInSafezone == true)
 			{
 				player.m_Trader_IsInSafezone = true;
+				player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( true ), true, player.GetIdentity());
 				player.m_Trader_HealthEnteredSafeZone = player.GetHealth( "", "");
 				player.m_Trader_HealthBloodEnteredSafeZone = player.GetHealth( "", "Blood" );
@@ -115,8 +127,14 @@ modded class MissionServer
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You entered the Safezone!" ), true, player.GetIdentity());
 				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Press 'B'-Key to open the Trader Menu." ), true, player.GetIdentity());
 			}
+
+			if (isInSafezone && player.m_Trader_IsInSafezoneTimeout < m_Trader_SafezoneTimeout)
+			{
+				player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
+				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] Welcome back!" ), true, player.GetIdentity());
+			}
 			
-			if (player.m_Trader_IsInSafezone == true && isInSafezone == false)
+			if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout <= 0)
 			{
 				player.m_Trader_IsInSafezone = false;
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( false ), true, player.GetIdentity());
