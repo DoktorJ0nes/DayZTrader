@@ -60,7 +60,7 @@ class CfgVehicles
 		scope=2;
 		displayName="Ruble";
 		descriptionShort="This Currency was used in Russia before the Disease. It is now only used for trading.";
-		model="TM\Trader\scripts\Money_Ruble.p3d";
+		model="TM\Trader\Money_Ruble.p3d";
 		canBeSplit=1;
 		rotationFlags = 16;
 		lootCategory="Materials"; // Should be changed to Money?
@@ -95,7 +95,7 @@ class CfgVehicles
 	class Land_RoadCone: HouseNoDestruct
 	{
 		scope = 2;
-		model = "TM\Trader\scripts\Road_Cone.p3d";
+		model = "TM\Trader\Road_Cone.p3d";
 	};
 	
 	class Hoodie_ColorBase;
@@ -103,13 +103,13 @@ class CfgVehicles
 	{
 		scope = 2;
 		visibilityModifier = 0.95;
-		hiddenSelectionsTextures[] = {"","","","","TM\Trader\scripts\data\hoodie_graffiti_co.paa","TM\Trader\scripts\data\hoodie_graffiti_co.paa","TM\Trader\scripts\data\hoodie_graffiti_co.paa"};
+		hiddenSelectionsTextures[] = {"","","","","TM\Trader\data\hoodie_graffiti_co.paa","TM\Trader\data\hoodie_graffiti_co.paa","TM\Trader\data\hoodie_graffiti_co.paa"};
 	};
 	
 	class Hoodie_DrJ0nes: Hoodie_ColorBase
 	{
 		scope = 2;
 		visibilityModifier = 0.95;
-		hiddenSelectionsTextures[] = {"","","","","TM\Trader\scripts\data\hoodie_drj0nes_co.paa","TM\Trader\scripts\data\hoodie_drj0nes_co.paa","TM\Trader\scripts\data\hoodie_drj0nes_co.paa"};
+		hiddenSelectionsTextures[] = {"","","","","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa"};
 	};
 };
