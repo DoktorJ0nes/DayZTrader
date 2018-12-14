@@ -237,7 +237,8 @@ class TraderMenu extends UIScriptedMenu
 				m_Player.MessageStatus("Trader: Sorry, but you can't sell that!");
 
 				if (itemQuantity == -2)
-					m_Player.MessageStatus("Trader: Turn the Engine on and place it inside the Traffic Cones!");
+					m_Player.MessageStatus("Trader: Place the Vehicle inside the Traffic Cones!");
+					//m_Player.MessageStatus("Trader: Turn the Engine on and place it inside the Traffic Cones!");
 
 				return true;
 			}
@@ -723,13 +724,15 @@ class TraderMenu extends UIScriptedMenu
 						continue;
 
 					// Check if Engine is running:
-					Car car;
+					/*Car car;
 					Class.CastTo(car, nearby_objects.Get(i));
 					if (car && vehicleIsEmpty)
 					{
 						if (car.EngineIsOn())
 							return nearby_objects.Get(i);
-					}					
+					}*/
+
+					return nearby_objects.Get(i);		
 				}					
 			}
 		}
