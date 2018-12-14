@@ -1,3 +1,44 @@
+class CfgMods
+{
+	class Trader
+	{
+		dir = "Trader";
+		picture = "";
+		action = "";
+		hideName = 1;
+		hidePicture = 1;
+		name = "";
+		credits = "";
+		author = "Dr_J0nes";
+		authorID = "0";
+		version = "1.0";
+		extra = 0;
+		type = "mod";
+		
+		dependencies[] = {"Game", "World", "Mission"};
+		
+		class defs
+		{			
+			class gameScriptModule
+			{
+				value = "";
+				files[] = {"DZ/Trader/scripts/3_Game"};
+			};
+			
+			class worldScriptModule
+			{
+				value = "";
+				files[] = {"DZ/Trader/scripts/4_World"};
+			};
+			
+			class missionScriptModule
+			{
+				value = "";
+				files[] = {"DZ/Trader/scripts/5_Mission"};
+			};
+		};
+	};
+};
 class CfgPatches
 {
 	class trader
@@ -55,5 +96,20 @@ class CfgVehicles
 	{
 		scope = 2;
 		model = "DZ\Trader\scripts\Road_Cone.p3d";
+	};
+	
+	class Hoodie_ColorBase;
+	class Hoodie_GraffitiTiles: Hoodie_ColorBase
+	{
+		scope = 2;
+		visibilityModifier = 0.95;
+		hiddenSelectionsTextures[] = {"","","","","DZ\Trader\scripts\data\hoodie_graffiti_co.paa","DZ\Trader\scripts\data\hoodie_graffiti_co.paa","DZ\Trader\scripts\data\hoodie_graffiti_co.paa"};
+	};
+	
+	class Hoodie_DrJ0nes: Hoodie_ColorBase
+	{
+		scope = 2;
+		visibilityModifier = 0.95;
+		hiddenSelectionsTextures[] = {"","","","","DZ\Trader\scripts\data\hoodie_drj0nes_co.paa","DZ\Trader\scripts\data\hoodie_drj0nes_co.paa","DZ\Trader\scripts\data\hoodie_drj0nes_co.paa"};
 	};
 };
