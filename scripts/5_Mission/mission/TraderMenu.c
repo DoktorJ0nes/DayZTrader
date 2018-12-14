@@ -503,6 +503,7 @@ class TraderMenu extends UIScriptedMenu
 	private bool isInPlayerInventory(string itemClassname, int amount)
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
+		itemClassname.ToLower();
 		
 		bool isMagazine = false;
 		if (amount == -3)
@@ -515,11 +516,23 @@ class TraderMenu extends UIScriptedMenu
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
+		//m_Player.MessageStatus("--------------");
+
 		ItemBase item;		
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			if(item && item.GetType() == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
+			string itemPlayerClassname = "";
+
+			if (item)
+			{
+				itemPlayerClassname = item.GetType();
+				itemPlayerClassname.ToLower();
+			}
+
+			//m_Player.MessageStatus("I: " + itemPlayerClassname + " == " + itemClassname);
+
+			if(item && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
 			{
 				return true;
 			}
@@ -531,6 +544,7 @@ class TraderMenu extends UIScriptedMenu
 	private bool removeFromPlayerInventory(string itemClassname, int amount)
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
+		itemClassname.ToLower();
 
 		bool isMagazine = false;
 		if (amount == -3)
@@ -547,7 +561,15 @@ class TraderMenu extends UIScriptedMenu
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			if(item && item.GetType() == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
+			string itemPlayerClassname = "";
+
+			if (item)
+			{
+				itemPlayerClassname = item.GetType();
+				itemPlayerClassname.ToLower();
+			}
+
+			if(item && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
 			{
 				int itemAmount = getItemAmount(item);
 				
