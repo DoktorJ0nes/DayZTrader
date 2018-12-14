@@ -15,8 +15,6 @@ class TraderMenu extends UIScriptedMenu
 	TextWidget m_ItemWeight;
 	float m_UiUpdateTimer = 0;
 	
-	static const string filePath = "DZ/Trader/scripts/5_Mission/mission/TraderConfig.txt";
-	
 	int m_TraderID = -1;
 	vector m_TraderVehicleSpawn = "0 0 0";
 	vector m_TraderVehicleSpawnOrientation = "0 0 0";
@@ -62,7 +60,7 @@ class TraderMenu extends UIScriptedMenu
 
     override Widget Init()
     {
-		layoutRoot = GetGame().GetWorkspace().CreateWidgets( "DZ/Trader/scripts/5_Mission/mission/TraderMenu.layout" );
+		layoutRoot = GetGame().GetWorkspace().CreateWidgets( "TM/Trader/scripts/5_Mission/mission/TraderMenu.layout" );
 
         m_BtnBuy = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_buy" ) );
 		m_BtnSell = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_sell" ) );

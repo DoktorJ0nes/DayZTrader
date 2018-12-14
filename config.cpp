@@ -22,19 +22,19 @@ class CfgMods
 			class gameScriptModule
 			{
 				value = "";
-				files[] = {"DZ/Trader/scripts/3_Game"};
+				files[] = {"TM/Trader/scripts/3_Game"};
 			};
 			
 			class worldScriptModule
 			{
 				value = "";
-				files[] = {"DZ/Trader/scripts/4_World"};
+				files[] = {"TM/Trader/scripts/4_World"};
 			};
 			
 			class missionScriptModule
 			{
 				value = "";
-				files[] = {"DZ/Trader/scripts/5_Mission"};
+				files[] = {"TM/Trader/scripts/5_Mission"};
 			};
 		};
 	};
@@ -60,7 +60,7 @@ class CfgVehicles
 		scope=2;
 		displayName="Ruble";
 		descriptionShort="This Currency was used in Russia before the Disease. It is now only used for trading.";
-		model="DZ\Trader\scripts\Money_Ruble.p3d";
+		model="TM\Trader\scripts\Money_Ruble.p3d";
 		canBeSplit=1;
 		rotationFlags = 16;
 		lootCategory="Materials"; // Should be changed to Money?
@@ -95,7 +95,7 @@ class CfgVehicles
 	class Land_RoadCone: HouseNoDestruct
 	{
 		scope = 2;
-		model = "DZ\Trader\scripts\Road_Cone.p3d";
+		model = "TM\Trader\scripts\Road_Cone.p3d";
 	};
 	
 	class Hoodie_ColorBase;
@@ -103,13 +103,13 @@ class CfgVehicles
 	{
 		scope = 2;
 		visibilityModifier = 0.95;
-		hiddenSelectionsTextures[] = {"","","","","DZ\Trader\scripts\data\hoodie_graffiti_co.paa","DZ\Trader\scripts\data\hoodie_graffiti_co.paa","DZ\Trader\scripts\data\hoodie_graffiti_co.paa"};
+		hiddenSelectionsTextures[] = {"","","","","TM\Trader\scripts\data\hoodie_graffiti_co.paa","TM\Trader\scripts\data\hoodie_graffiti_co.paa","TM\Trader\scripts\data\hoodie_graffiti_co.paa"};
 	};
 	
 	class Hoodie_DrJ0nes: Hoodie_ColorBase
 	{
 		scope = 2;
 		visibilityModifier = 0.95;
-		hiddenSelectionsTextures[] = {"","","","","DZ\Trader\scripts\data\hoodie_drj0nes_co.paa","DZ\Trader\scripts\data\hoodie_drj0nes_co.paa","DZ\Trader\scripts\data\hoodie_drj0nes_co.paa"};
+		hiddenSelectionsTextures[] = {"","","","","TM\Trader\scripts\data\hoodie_drj0nes_co.paa","TM\Trader\scripts\data\hoodie_drj0nes_co.paa","TM\Trader\scripts\data\hoodie_drj0nes_co.paa"};
 	};
 };
