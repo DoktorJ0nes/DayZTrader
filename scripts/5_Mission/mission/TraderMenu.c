@@ -14,6 +14,9 @@ class TraderMenu extends UIScriptedMenu
 	MultilineTextWidget m_ItemDescription;
 	TextWidget m_ItemWeight;
 	float m_UiUpdateTimer = 0;
+	float m_UiSellTimer = 0;
+	float m_UiBuyTimer = 0;
+	const float m_buySellTime = 0.3;
 	
 	int m_TraderID = -1;
 	vector m_TraderVehicleSpawn = "0 0 0";
@@ -96,6 +99,13 @@ class TraderMenu extends UIScriptedMenu
 	override void Update(float timeslice)
 	{
 		super.Update(timeslice);
+
+		if (m_UiSellTimer > 0)
+			m_UiSellTimer -= timeslice;
+
+		if (m_UiBuyTimer > 0)
+			m_UiBuyTimer -= timeslice;
+
 		
 		if (m_UiUpdateTimer >= 0.05)
 		{
@@ -168,6 +178,13 @@ class TraderMenu extends UIScriptedMenu
 		
 		if ( w == m_BtnBuy )
 		{
+			if (m_UiBuyTimer > 0)
+			{
+				m_Player.MessageStatus("Trader: Not that fast Bro!");
+				return true;
+			}
+			m_UiBuyTimer = m_buySellTime;
+
 			int itemCosts = m_ListboxItemsBuyValue.Get(row_index);
 			
 			int playerCurrencyAmountBeforePurchase = m_Player_CurrencyAmount;
@@ -226,7 +243,14 @@ class TraderMenu extends UIScriptedMenu
 		}
 		
 		if ( w == m_BtnSell )
-		{		
+		{
+			if (m_UiSellTimer > 0)
+			{
+				m_Player.MessageStatus("Trader: Not that fast Bro!");
+				return true;
+			}
+			m_UiSellTimer = m_buySellTime;
+
 			Object vehicleToSell = GetVehicleToSell(itemType);
 			bool isValidVehicle = (itemQuantity == -2 && vehicleToSell);
 
