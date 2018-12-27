@@ -195,19 +195,29 @@ modded class MissionServer
 				{
 					ItemBase kindling;
 					kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Rag"));
-					kindling.SetQuantityMax();
+					if (kindling)
+						kindling.SetQuantityMax();
+
 					//kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("BandageDressing"));
-					//kindling.SetQuantityMax();
+					//if (kindling)
+					//	kindling.SetQuantityMax();
+
 					kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Bark_Oak"));
-					kindling.SetQuantityMax();
+					if (kindling)
+						kindling.SetQuantityMax();
+
 					kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Bark_Birch"));
-					kindling.SetQuantityMax();
+					if (kindling)
+						kindling.SetQuantityMax();
 
 					ItemBase fuel;
 					fuel = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Firewood"));
-					fuel.SetQuantityMax();
+					if (fuel)
+						fuel.SetQuantityMax();
+
 					fuel = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("WoodenStick"));
-					fuel.SetQuantityMax();
+					//if (fuel)
+					//	fuel.SetQuantityMax();
 
 					EntityAI fire_source_dummy;
 					ntarget.OnIgnitedThis(fire_source_dummy);
