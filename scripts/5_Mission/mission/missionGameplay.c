@@ -32,12 +32,12 @@ modded class MissionGameplay
 		}
 	}
 	
-	override void OnKeyPress(int key)
+	override void OnKeyRelease(int key)
 	{
-		super.OnKeyPress(key);
-
+		super.OnKeyRelease(key);
 		
-		PlayerBase player = g_Game.GetPlayer();
+		
+		PlayerBase player = GetGame().GetPlayer();
 
 		if ( key == KeyCode.KC_B )
 		{			
@@ -83,58 +83,5 @@ modded class MissionGameplay
 				GetGame().GetUIManager().ShowScriptedMenu( m_TraderMenu, NULL );
 			}
 		}
-	}
-	
-	override void OnKeyRelease(int key)
-	{
-		super.OnKeyRelease(key);
-		
-		
-		PlayerBase player = GetGame().GetPlayer();
-
-		/*if ( key == KeyCode.KC_B )
-		{			
-			bool traderNearby = false;
-			int traderID = -1;
-			int traderUID = -1;
-			vector traderVehicleSpawn = "0 0 0";
-			vector traderVehicleSpawnOrientation = "0 0 0";
-			
-			if (player.m_Trader_RecievedAllData == false)
-			{			
-				player.MessageStatus("[Trader] MISSING TRADER DATA FROM SERVER!");				
-				return;
-			}
-			
-			for ( int i = 0; i < player.m_Trader_TraderPositions.Count(); i++ )
-			{				
-				if (vector.Distance(player.GetPosition(), player.m_Trader_TraderPositions.Get(i)) <= 1.7)
-				{
-					traderNearby = true;
-					traderID = player.m_Trader_TraderIDs.Get(i);
-					traderUID = i;
-					traderVehicleSpawn = player.m_Trader_TraderVehicleSpawns.Get(i);
-					traderVehicleSpawnOrientation = player.m_Trader_TraderVehicleSpawnsOrientation.Get(i);
-				}
-			}
-			
-			if (!traderNearby)
-			{
-				player.MessageStatus("There is no Trader nearby..");
-				return;
-			}
-				
-			
-			if ( g_Game.GetUIManager().GetMenu() == NULL )
-			{					
-				ref TraderMenu m_TraderMenu = new TraderMenu;
-				m_TraderMenu.m_TraderID = traderID;
-				m_TraderMenu.m_TraderUID = traderUID;
-				m_TraderMenu.m_TraderVehicleSpawn = traderVehicleSpawn;
-				m_TraderMenu.m_TraderVehicleSpawnOrientation = traderVehicleSpawnOrientation;
-				m_TraderMenu.Init();
-				GetGame().GetUIManager().ShowScriptedMenu( m_TraderMenu, NULL );
-			}
-		}*/
 	}
 }
