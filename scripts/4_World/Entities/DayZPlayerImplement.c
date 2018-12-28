@@ -493,6 +493,9 @@ modded class DayZPlayerImplement
 			if (!item)
 				continue;
 
+			if (item.IsRuined())
+				continue;
+
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 

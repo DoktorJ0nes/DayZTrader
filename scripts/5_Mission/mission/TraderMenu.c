@@ -425,15 +425,18 @@ class TraderMenu extends UIScriptedMenu
 			Class.CastTo(item, itemsArray.Get(i));
 			string itemPlayerClassname = "";
 
-			if (item)
-			{
-				itemPlayerClassname = item.GetType();
-				itemPlayerClassname.ToLower();
-			}
+			if (!item)
+				continue;
+
+			if (item.IsRuined())
+				continue;
+
+			itemPlayerClassname = item.GetType();
+			itemPlayerClassname.ToLower();
 
 			//m_Player.MessageStatus("I: " + itemPlayerClassname + " == " + itemClassname);
 
-			if(item && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
 			{
 				return true;
 			}
