@@ -409,6 +409,7 @@ modded class MissionServer
 		Param1<bool> crpClr = new Param1<bool>( true );
 		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CLEAR, crpClr, true, player.GetIdentity());
 
+		player.m_Trader_CurrencyItemType = m_Trader_CurrencyItemType;
 		Param1<string> crp1 = new Param1<string>( m_Trader_CurrencyItemType );
 		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCYTYPE_ENTRY, crp1, true, player.GetIdentity());
 		//TraderServerLogs.PrintS("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyItemType);
@@ -428,15 +429,31 @@ modded class MissionServer
 			//TraderServerLogs.PrintS("[TRADER] TRADERCATEGORY: " + m_Trader_Categorys.Get(i) + ", " + m_Trader_CategorysTraderKey.Get(i));
 		}
 		
+		player.m_Trader_ItemsClassnames = new array<string>;
+		player.m_Trader_ItemsQuantity = new array<int>;
+		player.m_Trader_ItemsBuyValue = new array<int>;
+		player.m_Trader_ItemsSellValue = new array<int>;
 		for ( i = 0; i < m_Trader_ItemsClassnames.Count(); i++ )
 		{
+			player.m_Trader_ItemsClassnames.Insert(m_Trader_ItemsClassnames.Get(i));
+			player.m_Trader_ItemsQuantity.Insert(m_Trader_ItemsQuantity.Get(i));
+			player.m_Trader_ItemsBuyValue.Insert(m_Trader_ItemsBuyValue.Get(i));
+			player.m_Trader_ItemsSellValue.Insert(m_Trader_ItemsSellValue.Get(i));
+
 			Param6<int, int, string, int, int, int> crp4 = new Param6<int, int, string, int, int, int>( m_Trader_ItemsTraderId.Get(i), m_Trader_ItemsCategoryId.Get(i), m_Trader_ItemsClassnames.Get(i), m_Trader_ItemsQuantity.Get(i), m_Trader_ItemsBuyValue.Get(i), m_Trader_ItemsSellValue.Get(i) );
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_ITEM_ENTRY, crp4, true, player.GetIdentity());
 			//TraderServerLogs.PrintS("[TRADER] ITEMENTRY: " + m_Trader_ItemsTraderId.Get(i) + ", " + m_Trader_ItemsCategoryId.Get(i) + ", " + m_Trader_ItemsClassnames.Get(i) + ", " + m_Trader_ItemsQuantity.Get(i) + ", " + m_Trader_ItemsBuyValue.Get(i) + ", " + m_Trader_ItemsSellValue.Get(i));
 		}
 		
+		player.m_Trader_TraderPositions = new array<vector>;
+		player.m_Trader_TraderVehicleSpawns = new array<vector>;
+		player.m_Trader_TraderVehicleSpawnsOrientation = new array<vector>;
 		for ( i = 0; i < m_Trader_TraderPositions.Count(); i++ )
 		{
+			player.m_Trader_TraderPositions.Insert(m_Trader_TraderPositions.Get(i));
+			player.m_Trader_TraderVehicleSpawns.Insert(m_Trader_TraderVehicleSpawns.Get(i));
+			player.m_Trader_TraderVehicleSpawnsOrientation.Insert(m_Trader_TraderVehicleSpawnsOrientation.Get(i));
+
 			Param5<int, vector, int, vector, vector> crp5 = new Param5<int, vector, int, vector, vector>( m_Trader_TraderIDs.Get(i), m_Trader_TraderPositions.Get(i), m_Trader_TraderSafezones.Get(i), m_Trader_TraderVehicleSpawns.Get(i), m_Trader_TraderVehicleSpawnsOrientation.Get(i) );
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_MARKER_ENTRY, crp5, true, player.GetIdentity());
 			//TraderServerLogs.PrintS("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i) + ", " + m_Trader_TraderVehicleSpawns.Get(i) + ", " + m_Trader_TraderVehicleSpawnsOrientation.Get(i));

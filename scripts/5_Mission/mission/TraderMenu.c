@@ -19,6 +19,7 @@ class TraderMenu extends UIScriptedMenu
 	const float m_buySellTime = 0.3;
 	
 	int m_TraderID = -1;
+	int m_TraderUID = -1;
 	vector m_TraderVehicleSpawn = "0 0 0";
 	vector m_TraderVehicleSpawnOrientation = "0 0 0";
 	
@@ -40,6 +41,8 @@ class TraderMenu extends UIScriptedMenu
 	ref array<int> m_ListboxItemsQuantity;
 	ref array<int> m_ListboxItemsBuyValue;
 	ref array<int> m_ListboxItemsSellValue;
+
+	ref array<int> m_ItemIDs;
 	
 	ref TStringArray m_FileContent;
 
@@ -83,6 +86,7 @@ class TraderMenu extends UIScriptedMenu
 		m_ListboxItemsQuantity = new array<int>;
 		m_ListboxItemsBuyValue = new array<int>;
 		m_ListboxItemsSellValue = new array<int>;
+		m_ItemIDs = new array<int>;
 		
 		LoadFileValues();
 		m_CategorysCurrentIndex = 0;
@@ -185,6 +189,11 @@ class TraderMenu extends UIScriptedMenu
 			}
 			m_UiBuyTimer = m_buySellTime;
 
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_BUY, new Param3<int, int, string>( m_TraderUID, m_ItemIDs.Get(row_index), getItemDisplayName(m_ListboxItemsClassnames.Get(row_index))), true);
+			
+			return true;
+
+			/*
 			int itemCosts = m_ListboxItemsBuyValue.Get(row_index);
 			
 			int playerCurrencyAmountBeforePurchase = m_Player_CurrencyAmount;
@@ -239,7 +248,7 @@ class TraderMenu extends UIScriptedMenu
 			updatePlayerCurrencyAmount();				
 			updateItemListboxColors();
 
-			return true;
+			return true;*/
 		}
 		
 		if ( w == m_BtnSell )
@@ -250,6 +259,12 @@ class TraderMenu extends UIScriptedMenu
 				return true;
 			}
 			m_UiSellTimer = m_buySellTime;
+
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SELL, new Param3<int, int, string>( m_TraderUID, m_ItemIDs.Get(row_index), getItemDisplayName(m_ListboxItemsClassnames.Get(row_index))), true);
+			
+			return true;
+
+			//-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 			Object vehicleToSell = GetVehicleToSell(itemType);
 			bool isValidVehicle = (itemQuantity == -2 && vehicleToSell);
@@ -1186,6 +1201,7 @@ class TraderMenu extends UIScriptedMenu
 		m_ListboxItemsQuantity = new array<int>;
 		m_ListboxItemsBuyValue = new array<int>;
 		m_ListboxItemsSellValue = new array<int>;
+		m_ItemIDs = new array<int>;
 			
 		for ( int i = 0; i < m_Player.m_Trader_ItemsClassnames.Count(); i++ )
 		{			
@@ -1195,6 +1211,7 @@ class TraderMenu extends UIScriptedMenu
 				m_ListboxItemsQuantity.Insert(m_Player.m_Trader_ItemsQuantity.Get(i));
 				m_ListboxItemsBuyValue.Insert(m_Player.m_Trader_ItemsBuyValue.Get(i));
 				m_ListboxItemsSellValue.Insert(m_Player.m_Trader_ItemsSellValue.Get(i));
+				m_ItemIDs.Insert(i);
 			}
 		}
 		

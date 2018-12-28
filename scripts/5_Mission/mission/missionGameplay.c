@@ -99,6 +99,7 @@ modded class MissionGameplay
 		{			
 			bool traderNearby = false;
 			int traderID = -1;
+			int traderUID = -1;
 			vector traderVehicleSpawn = "0 0 0";
 			vector traderVehicleSpawnOrientation = "0 0 0";
 			
@@ -114,6 +115,7 @@ modded class MissionGameplay
 				{
 					traderNearby = true;
 					traderID = player.m_Trader_TraderIDs.Get(i);
+					traderUID = i;
 					traderVehicleSpawn = player.m_Trader_TraderVehicleSpawns.Get(i);
 					traderVehicleSpawnOrientation = player.m_Trader_TraderVehicleSpawnsOrientation.Get(i);
 				}
@@ -130,6 +132,7 @@ modded class MissionGameplay
 			{					
 				ref TraderMenu m_TraderMenu = new TraderMenu;
 				m_TraderMenu.m_TraderID = traderID;
+				m_TraderMenu.m_TraderUID = traderUID;
 				m_TraderMenu.m_TraderVehicleSpawn = traderVehicleSpawn;
 				m_TraderMenu.m_TraderVehicleSpawnOrientation = traderVehicleSpawnOrientation;
 				m_TraderMenu.Init();
