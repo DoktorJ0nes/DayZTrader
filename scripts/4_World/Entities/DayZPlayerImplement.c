@@ -19,6 +19,8 @@ modded class DayZPlayerImplement
 	
 	string m_Trader_CurrencyItemType;
 	int m_Player_CurrencyAmount;
+
+	int m_Trader_LastSelledItemID = -1;
 	
 	ref array<string> m_Trader_TraderNames;
 	ref array<vector> m_Trader_TraderPositions;
@@ -488,16 +490,18 @@ modded class DayZPlayerImplement
 			Class.CastTo(item, itemsArray.Get(i));
 			string itemPlayerClassname = "";
 
-			if (item)
-			{
-				itemPlayerClassname = item.GetType();
-				itemPlayerClassname.ToLower();
-			}
+			if (!item)
+				continue;
+
+			itemPlayerClassname = item.GetType();
+			itemPlayerClassname.ToLower();
 
 			//m_Player.MessageStatus("I: " + itemPlayerClassname + " == " + itemClassname);
 
-			if(item && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon) && m_Trader_LastSelledItemID != item.GetID())
 			{
+				m_Trader_LastSelledItemID = item.GetID();
+
 				return true;
 			}
 		}
@@ -750,6 +754,11 @@ modded class DayZPlayerImplement
 					}*/
 
 					//TODO: Check if Vehicle Owner is Player or Vehicle Owner is not set.
+
+					if (m_Trader_LastSelledItemID == nearby_objects.Get(i).GetID())
+						continue;
+
+					m_Trader_LastSelledItemID = nearby_objects.Get(i).GetID();
 
 					return nearby_objects.Get(i);		
 				}					
