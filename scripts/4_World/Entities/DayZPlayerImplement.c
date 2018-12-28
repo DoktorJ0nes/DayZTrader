@@ -13,6 +13,7 @@ modded class DayZPlayerImplement
 	float m_Trader_IsInSafezoneTimeout = 0;
 	float m_Trader_HealthEnteredSafeZone;
 	float m_Trader_HealthBloodEnteredSafeZone;
+	int m_Trader_InfluenzaEnteredSafeZone;
 	bool m_Trader_PlayerDiedInSafezone = false;
 	
 	bool m_Trader_RecievedAllData = false;

@@ -126,6 +126,7 @@ modded class MissionServer
 				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( true ), true, player.GetIdentity());
 				player.m_Trader_HealthEnteredSafeZone = player.GetHealth( "", "");
 				player.m_Trader_HealthBloodEnteredSafeZone = player.GetHealth( "", "Blood" );
+				player.m_Trader_InfluenzaEnteredSafeZone = player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA);
 				player.GetInputController().OverrideRaise(true, false);
 				SetPlayerVehicleIsInSafezone( player, true );
 				
@@ -156,11 +157,16 @@ modded class MissionServer
 					
 				if (player.GetHealth( "", "Blood" ) > player.m_Trader_HealthBloodEnteredSafeZone) // allow regaining Blood
 					player.m_Trader_HealthBloodEnteredSafeZone = player.GetHealth( "", "Blood" );
+
+				if ( player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA) < player.m_Trader_InfluenzaEnteredSafeZone) // allow influenza healing
+					player.m_Trader_InfluenzaEnteredSafeZone = player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA);
 				
 				player.SetHealth( "", "", player.m_Trader_HealthEnteredSafeZone );
 				player.SetHealth( "","Blood", player.m_Trader_HealthBloodEnteredSafeZone );
 
 				player.SetHealth( "","Shock", player.GetMaxHealth( "", "Shock" ) );
+
+				player.m_AgentPool.SetAgentCount(eAgents.INFLUENZA, player.m_Trader_InfluenzaEnteredSafeZone);
 
 				//player.GetStatStamina().Set(1000);
 
@@ -180,6 +186,7 @@ modded class MissionServer
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachEnergy().Set(300);
 			m_Trader_SpawnedTraderCharacters.Get(i).GetStatHeatComfort().Set(0);
 			m_Trader_SpawnedTraderCharacters.Get(i).SetHealth( "","Shock", m_Trader_SpawnedTraderCharacters.Get(i).GetMaxHealth( "", "Shock" ) );
+			m_Trader_SpawnedTraderCharacters.Get(i).m_AgentPool.SetAgentCount(eAgents.INFLUENZA, 0);
 		}
 
 		m_Trader_SpawnedFireBarrelsUpdateTimer += timeslice;
