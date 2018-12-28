@@ -1,5 +1,3 @@
-//#define Trader_Debug
-
 modded class DayZPlayerImplement
 {
 	static const string m_Trader_ConfigFilePath = "$profile:Trader/TraderConfig.txt";
@@ -43,40 +41,6 @@ modded class DayZPlayerImplement
 	ref array<string> m_Trader_VehiclesParts;
 	ref array<int> m_Trader_VehiclesPartsVehicleId;
 	
-#ifdef Trader_Debug
-	Object TEST_PreviewObj;
-	vector TEST_PreviewObjectPosition;
-	bool TEST_PreviewObjectIsCreated = false;
-	float TEST_PreviewObjYOffset = 0;
-	vector TEST_PreviewObjPosOffset = "10 0 0";
-	float TEST_PreviewObjDirOffset = 0;
-	bool TEST_updateDir = false;
-	bool TEST_PreviewObjectFreeze = false;
-	
-	bool TEST_ClassnamesInitialized = false;
-	ref array<string> TEST_ClassnameCategoryName;
-	int TEST_ClassnameCategoryID = 0;
-	
-	ref array<string> TEST_ClassnamesResidential;
-	int TEST_ClassnamesResidentialID = 0;
-	ref array<string> TEST_ClassnamesIndustrial;
-	int TEST_ClassnamesIndustrialID = 0;
-	ref array<string> TEST_ClassnamesMilitary;
-	int TEST_ClassnamesMilitaryID = 0;
-	ref array<string> TEST_ClassnamesWrecks;
-	int TEST_ClassnamesWrecksID = 0;
-	ref array<string> TEST_ClassnamesPlants;
-	int TEST_ClassnamesPlantsID = 0;
-	ref array<string> TEST_ClassnamesWalls;
-	int TEST_ClassnamesWallsID = 0;
-	ref array<string> TEST_ClassnamesRail;
-	int TEST_ClassnamesRailID = 0;
-	ref array<string> TEST_ClassnamesSpecific;
-	int TEST_ClassnamesSpecificID = 0;
-	
-	ref array<Object> TEST_ObjectsToSave = new array<Object>;
-#endif
-	
 	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
 		super.OnRPC(sender, rpc_type, ctx);
@@ -87,7 +51,6 @@ modded class DayZPlayerImplement
 		string itemType;
 		ItemBase item;
 		EntityAI entity;
-		//Magazine mgzn;
 		int amount;
 		int itemQuantity; // same as amount
 		vector position;
@@ -230,296 +193,6 @@ modded class DayZPlayerImplement
 				
 				increasePlayerCurrency(itemSellValue);
 			}
-
-			if (rpc_type == TRPCs.RPC_SPAWN_VEHICLE)
-			{
-				Param3<vector, vector, string> rpv = new Param3<vector, vector, string>( "0 0 0", "0 0 0", "" );
-				ctx.Read(rpv);
-
-				vector objectPosition = rpv.param1;
-				vector objectDirection = rpv.param2;
-				string vehicleType = rpv.param3;
-
-				// Get all Players to synchronize Things:
-				ref array<Man> m_Players = new array<Man>;
-				GetGame().GetWorld().GetPlayerList(m_Players);
-				PlayerBase currentPlayer;
-
-				// Spawn:
-				obj = GetGame().CreateObject( vehicleType, objectPosition, false, false, true );
-
-				obj.SetOrientation(objectDirection);
-				obj.SetDirection(obj.GetDirection());
-
-				for (int i = 0; i < m_Players.Count(); i++)
-				{
-					currentPlayer = PlayerBase.Cast(m_Players.Get(i));
-
-					if ( !currentPlayer )
-						continue;
-
-					GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_OBJECT_ORIENTATION, new Param2<Object, vector>( obj, objectDirection ), true, currentPlayer.GetIdentity());
-				}
-				
-				// Attach Parts:
-				EntityAI vehicle;
-				Class.CastTo(vehicle, obj);
-
-				int vehicleId = -1;
-				for (i = 0; i < m_Trader_Vehicles.Count(); i++)
-				{
-					if (vehicleType == m_Trader_Vehicles.Get(i))
-						vehicleId = i;
-				}
-
-				for (int j = 0; j < m_Trader_VehiclesParts.Count(); j++)
-				{
-					if (m_Trader_VehiclesPartsVehicleId.Get(j) == vehicleId)
-						vehicle.GetInventory().CreateAttachment(m_Trader_VehiclesParts.Get(j));
-				}
-
-				// Try to fill Fuel, Oil, Brakeliquid, Coolantliquid and lock Vehicle:
-				Car car;
-				Class.CastTo(car, vehicle);
-				if (car)
-				{
-					car.Fill( CarFluid.FUEL, car.GetFluidCapacity( CarFluid.FUEL ));
-					car.Fill( CarFluid.OIL, car.GetFluidCapacity( CarFluid.OIL ));
-					car.Fill( CarFluid.BRAKE, car.GetFluidCapacity( CarFluid.BRAKE ));
-					car.Fill( CarFluid.COOLANT, car.GetFluidCapacity( CarFluid.COOLANT ));
-
-					car.Fill( CarFluid.USER1, car.GetFluidCapacity( CarFluid.USER1 ));
-					car.Fill( CarFluid.USER2, car.GetFluidCapacity( CarFluid.USER2 ));
-					car.Fill( CarFluid.USER3, car.GetFluidCapacity( CarFluid.USER3 ));
-					car.Fill( CarFluid.USER4, car.GetFluidCapacity( CarFluid.USER4 ));
-
-					CarScript carScript;
-					if (Class.CastTo(carScript, vehicle))
-					{
-						carScript.m_Trader_OwnerPlayerUID = this.GetIdentity().GetId();
-						carScript.m_Trader_IsInSafezone = true;
-
-						for (i = 0; i < m_Players.Count(); i++)
-						{
-							currentPlayer = PlayerBase.Cast(m_Players.Get(i));
-							
-							if ( !currentPlayer )
-								continue;
-
-							GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE, new Param2<CarScript, bool>( car, true ), true, currentPlayer.GetIdentity());
-						}
-					}
-				}
-			}
-
-			if (rpc_type == TRPCs.RPC_DELETE_VEHICLE)
-			{
-				Param1<Object> rpdv = new Param1<Object>( NULL );
-				ctx.Read(rpdv);
-
-				obj = rpdv.param1;
-
-				if (obj)
-					GetGame().ObjectDelete(obj);
-			}
-			
-			if (rpc_type == TRPCs.RPC_SPAWN_ITEM_ON_GROUND)
-			{
-				Param4<PlayerBase, string, vector, int> rp1 = new Param4<PlayerBase, string, vector, int>( NULL, "", "0 0 0", 0);
-				ctx.Read(rp1);
-				
-				player = rp1.param1;
-				itemType = rp1.param2;
-				position = rp1.param3;
-				amount = rp1.param4;
-				
-				entity = player.SpawnEntityOnGroundPos(itemType, position);
-				Class.CastTo(item, entity);
-
-				SetItemAmount(item, amount);
-			}
-			
-			if (rpc_type == TRPCs.RPC_CREATE_ITEM_IN_INVENTORY)
-			{
-				Param3<PlayerBase, string, int> rp2 = new Param3<PlayerBase, string, int>( NULL, "", 0);
-				ctx.Read(rp2);
-				
-				player = rp2.param1;
-				itemType = rp2.param2;
-				amount = rp2.param3;
-				
-				entity = player.GetHumanInventory().CreateInInventory(itemType);
-				Class.CastTo(item, entity);
-				
-				SetItemAmount(item, amount);
-			}
-			
-			if (rpc_type == TRPCs.RPC_DELETE_ITEM)
-			{
-				Param1<ItemBase> rp3 = new Param1<ItemBase>( NULL );
-				ctx.Read(rp3);
-				
-				item = rp3.param1;
-				
-				if (item)
-					item.Delete();
-			}
-			
-			if (rpc_type == TRPCs.RPC_SET_ITEM_AMOUNT)
-			{
-				Param2<ItemBase, int> rp4 = new Param2<ItemBase, int>( NULL, 0 );
-				ctx.Read(rp4);
-				
-				item = rp4.param1;
-				amount = rp4.param2;
-				
-				SetItemAmount(item, amount);
-			}
-			
-			if (rpc_type == TRPCs.RPC_INCREASE_PLAYER_CURRENCY)
-			{
-				Param3<PlayerBase, string, int> rp5 = new Param3<PlayerBase, string, int>( NULL, "", 0);
-				ctx.Read(rp5);
-				
-				player = rp5.param1;
-				string m_CurrencyItemType = rp5.param2;
-				int currencyAmount = rp5.param3;
-
-				int itemMaxAmount = GetItemMaxQuantity(m_CurrencyItemType);
-
-				
-				while (currencyAmount > 0)
-				{
-					bool freeSpaceForItem = false;
-					InventoryLocation il = new InventoryLocation;		
-					if (player.GetInventory().FindFirstFreeLocationForNewEntity(m_CurrencyItemType, FindInventoryLocationType.ANY, il))
-						freeSpaceForItem = true;
-					
-					if (freeSpaceForItem)
-					{						
-						entity = player.GetHumanInventory().CreateInInventory(m_CurrencyItemType);
-					}
-					else
-					{
-						Param1<string> msgRp = new Param1<string>( "Trader: Your Inventory is full! Your Currencys were placed on Ground!" );
-						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp, true, player.GetIdentity());
-						
-						entity = player.SpawnEntityOnGroundPos(m_CurrencyItemType, player.GetPosition());
-					}
-					
-					// set currency amount of item:
-					if (currencyAmount > itemMaxAmount)
-					{
-						//setItemAmount(item, itemMaxAmount); // TODO: Funktion daraus machen!
-						// unnoetig, da items immer mix maxammount gespawnt werden! // Nachtrag: Nicht in jedem Fall!
-
-						Class.CastTo(item, entity);
-						
-						SetItemAmount(item, itemMaxAmount);
-
-						currencyAmount -= itemMaxAmount;
-					}
-					else
-					{					
-						Class.CastTo(item, entity);
-						
-						SetItemAmount(item, currencyAmount);		
-						
-						currencyAmount = 0;
-					}
-				}
-			}
-
-			if (rpc_type == TRPCs.RPC_TRADER_SERVER_LOG)
-			{
-				Param1<string> rpsl = new Param1<string>( "" );
-				ctx.Read(rpsl);
-
-				TraderServerLogs.PrintS("[TRADER] Player: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId() + " " + rpsl.param1);
-			}
-			
-#ifdef Trader_Debug
-			if (rpc_type == TRPCs.RPC_DEBUG_TELEPORT)
-			{
-				Param2<PlayerBase, vector> rp7 = new Param2<PlayerBase, vector>( NULL, "0 0 0" );
-				ctx.Read(rp7);
-				
-				player = rp7.param1;
-				
-				player.SetPosition( rp7.param2 );
-			}
-			
-			if (rpc_type == TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT)
-			{
-				Param4<PlayerBase, string, vector, vector> rpt1 = new Param4<PlayerBase, string, vector, vector>( NULL, "", vector.Zero, vector.Zero );
-				ctx.Read(rpt1);
-				
-				player = rpt1.param1;
-				itemType = rpt1.param2;
-				position = rpt1.param3;
-				
-				TEST_PreviewObj = GetGame().CreateObject( itemType, position, false, false, true );
-				TEST_PreviewObj.SetOrientation(rpt1.param4);
-				
-				Param1<Object> rptc1 = new Param1<Object>( TEST_PreviewObj );
-				GetGame().RPCSingleParam(player, TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT, rptc1, true, player.GetIdentity());
-			}
-			
-			if (rpc_type == TRPCs.RPC_TEST_PLACE_OBJECT)
-			{
-				Param3<string, vector, vector> rpt4 = new Param3<string, vector, vector>( "", vector.Zero, vector.Zero );
-				ctx.Read(rpt4);
-				
-				itemType = rpt4.param1;
-				position = rpt4.param2;
-				
-				TEST_PreviewObj = GetGame().CreateObject( itemType, position, false, false, true );
-				TEST_PreviewObj.SetDirection(rpt4.param3);
-				TEST_PreviewObj.SetPosition(position);
-				
-				TEST_ObjectsToSave.Insert(TEST_PreviewObj);
-			}
-			
-			if (rpc_type == TRPCs.RPC_TEST_DELETE_OBJECT)
-			{
-				Param1<Object> rpt2 = new Param1<Object>( NULL );
-				ctx.Read(rpt2);
-				
-				GetGame().ObjectDelete(rpt2.param1);
-			}
-			
-			if (rpc_type == TRPCs.RPC_TEST_REPOS_OBJECT)
-			{
-				Param2<Object, vector> rpt3 = new Param2<Object, vector>( NULL, vector.Zero );
-				ctx.Read(rpt3);
-				
-				rpt3.param1.SetPosition(rpt3.param2);
-			}
-			
-			if (rpc_type == TRPCs.RPC_TEST_REDIR_OBJECT)
-			{
-				Param2<Object, vector> rpt5 = new Param2<Object, vector>( NULL, vector.Zero );
-				ctx.Read(rpt5);
-				
-				rpt3.param1.SetOrientation(rpt5.param2);
-			}
-			
-			if (rpc_type == TRPCs.RPC_TEST_SAVE_OBJECTS)
-			{
-				FileHandle file = OpenFile("$profile:Trader/TEST.txt", FileMode.WRITE);
-				if (file != 0)
-				{
-					for (int f = 0; f < TEST_ObjectsToSave.Count(); f++)
-					{
-						FPrintln(file, "<Object>\t\t\t" + TEST_ObjectsToSave.Get(f).GetType());
-						FPrintln(file, "<ObjectPosition>\t" + TEST_ObjectsToSave.Get(f).GetPosition()[0] + ",\t" + TEST_ObjectsToSave.Get(f).GetPosition()[1] + ",\t" + TEST_ObjectsToSave.Get(f).GetPosition()[2]);
-						FPrintln(file, "<ObjectDirection>\t" + TEST_ObjectsToSave.Get(f).GetDirection()[0] + ",\t" + TEST_ObjectsToSave.Get(f).GetDirection()[1] + ",\t" + TEST_ObjectsToSave.Get(f).GetDirection()[2]);
-						FPrintln(file, " ");
-					}
-					CloseFile(file);
-				}
-			}
-#endif
 		}
 		else ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// CLIENT RPC ///////////////////////////////////////////////////////////
 		{
@@ -649,15 +322,6 @@ modded class DayZPlayerImplement
 				case TRPCs.RPC_SEND_MENU_BACK:
 					GetGame().GetUIManager().Back();
 				break;
-				
-#ifdef Trader_Debug
-				case TRPCs.RPC_TEST_PLACE_PREVIEW_OBJECT:
-				Param1<Object> rptcc1 = new Param1<Object>( NULL );
-				ctx.Read(rptcc1);
-				
-				TEST_PreviewObj = rptcc1.param1;
-				break;
-#endif
 			}
 		}
 	}
@@ -667,13 +331,13 @@ modded class DayZPlayerImplement
 		TraderServerLogs.PrintS("[TRADER] Player: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId() + " " + message);
 	}
 
-	private string TrimUntPrefix(string str)
+	private string TrimUntPrefix(string str) // duplicate
 	{
 		str.Replace("$UNT$", "");
 		return str;
 	}
 
-	private string getItemDisplayName(string itemClassname)
+	private string getItemDisplayName(string itemClassname) // duplicate
 	{
 		TStringArray itemInfos = new TStringArray;
 		
@@ -712,7 +376,7 @@ modded class DayZPlayerImplement
 			return itemClassname;
 	}
 
-	private int GetItemMaxQuantity(string itemClassname) // TODO in seperate Class as static Method
+	private int GetItemMaxQuantity(string itemClassname)
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
@@ -732,7 +396,7 @@ modded class DayZPlayerImplement
 		return 0;
 	}
 
-	private int getItemAmount(ItemBase item)
+	private int getItemAmount(ItemBase item) // duplicate
 	{
 		Magazine mgzn = Magazine.Cast(item);
 				
@@ -780,7 +444,7 @@ modded class DayZPlayerImplement
 		return true;
 	}
 
-	private int getPlayerCurrencyAmount()
+	private int getPlayerCurrencyAmount() // duplicate
 	{		
 		int currencyAmount = 0;
 		
@@ -801,7 +465,7 @@ modded class DayZPlayerImplement
 		return currencyAmount;
 	}
 
-	private bool isInPlayerInventory(string itemClassname, int amount)
+	private bool isInPlayerInventory(string itemClassname, int amount) // duplicate
 	{
 		itemClassname.ToLower();
 		
@@ -1042,7 +706,7 @@ modded class DayZPlayerImplement
 		return !(GetGame().IsBoxColliding( m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects));
 	}
 
-	private Object GetVehicleToSell(int traderUID, string vehicleClassname)
+	private Object GetVehicleToSell(int traderUID, string vehicleClassname) // duplicate
 	{
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
@@ -1174,17 +838,6 @@ modded class DayZPlayerImplement
 			}
 		}
 	}
-
-	/*override void SetSuicide(bool state)
-	{
-		if (m_Trader_IsInSafezone)
-		{
-			m_Suicide = false;
-			return;
-		}
-
-		super.SetSuicide(state);
-	}*/
 
 	void ShowDeadScreen(bool show, float duration)
 	{

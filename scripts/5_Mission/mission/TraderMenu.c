@@ -163,13 +163,6 @@ class TraderMenu extends UIScriptedMenu
 		Close();
 	}
 
-    /*override void OnHide()
-    {
-        super.OnHide();
-		
-		Close();
-    }*/
-
 	override bool OnClick( Widget w, int x, int y, int button )
 	{
 		super.OnClick(w, x, y, button);
@@ -192,63 +185,6 @@ class TraderMenu extends UIScriptedMenu
 			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_BUY, new Param3<int, int, string>( m_TraderUID, m_ItemIDs.Get(row_index), getItemDisplayName(m_ListboxItemsClassnames.Get(row_index))), true);
 			
 			return true;
-
-			/*
-			int itemCosts = m_ListboxItemsBuyValue.Get(row_index);
-			
-			int playerCurrencyAmountBeforePurchase = m_Player_CurrencyAmount;
-			
-			if (m_Player_CurrencyAmount < itemCosts)
-			{
-				m_Player.MessageStatus("Trader: Sorry, but you can't afford that!");
-				return true;
-			}
-
-			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_TRADER_SERVER_LOG, new Param1<string>( "bought " + getItemDisplayName(itemType) + "(" + itemType + ")"), true);
-
-			if (itemQuantity == -2) // Is a Vehicle
-			{
-				if (!IsVehicleSpawnFree())
-				{
-					m_Player.MessageStatus("Trader: Something is blocking the Way!");
-					return true;
-				}
-
-				m_Player.MessageStatus("Trader: " + getItemDisplayName(itemType) + " was parked next to you!");
-
-				GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SPAWN_VEHICLE, new Param3<vector, vector, string>( m_TraderVehicleSpawn, m_TraderVehicleSpawnOrientation ,itemType), true);
-
-				GetGame().GetUIManager().Back();
-			}
-			else // Is not a Vehicle
-			{			
-				if (canCreateItemInPlayerInventory(itemType))
-				{
-					m_Player.MessageStatus("Trader: " + getItemDisplayName(itemType) + " was added to your Inventory!");
-					
-					createItemInPlayerInventory(itemType, itemQuantity);
-				}
-				else
-				{
-					m_Player.MessageStatus("Trader: Your Inventory is full! " + getItemDisplayName(itemType) + " was placed on Ground!");
-					
-					vector playerPosition = m_Player.GetPosition();
-					
-					spawnItemOnGround(itemType, playerPosition, itemQuantity);
-					
-					GetGame().GetUIManager().Back();
-				}
-			}
-			
-			deductPlayerCurrency(itemCosts);
-			updatePlayerCurrencyAmount();
-			updateItemListboxColors();
-			
-			m_Player_CurrencyAmount = playerCurrencyAmountBeforePurchase - itemCosts;
-			updatePlayerCurrencyAmount();				
-			updateItemListboxColors();
-
-			return true;*/
 		}
 		
 		if ( w == m_BtnSell )
@@ -261,44 +197,6 @@ class TraderMenu extends UIScriptedMenu
 			m_UiSellTimer = m_buySellTime;
 
 			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SELL, new Param3<int, int, string>( m_TraderUID, m_ItemIDs.Get(row_index), getItemDisplayName(m_ListboxItemsClassnames.Get(row_index))), true);
-			
-			return true;
-
-			//-----------------------------------------------------------------------------------------------------------------------------------------------------------
-
-			Object vehicleToSell = GetVehicleToSell(itemType);
-			bool isValidVehicle = (itemQuantity == -2 && vehicleToSell);
-
-			if (!isInPlayerInventory(itemType, itemQuantity) && !isValidVehicle)
-			{
-				m_Player.MessageStatus("Trader: Sorry, but you can't sell that!");
-
-				if (itemQuantity == -2)
-					m_Player.MessageStatus("Trader: Place the Vehicle inside the Traffic Cones!");
-					//m_Player.MessageStatus("Trader: Turn the Engine on and place it inside the Traffic Cones!");
-
-				return true;
-			}
-
-			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_TRADER_SERVER_LOG, new Param1<string>( "sold " + getItemDisplayName(itemType) + " (" + itemType + ")"), true);
-			
-			int playerCurrencyAmountBeforeSale = m_Player_CurrencyAmount;
-			
-			m_Player.MessageStatus("Trader: " + getItemDisplayName(itemType) + " was sold!");
-
-			if (isValidVehicle)
-				sellVehicle(vehicleToSell);
-			else
-				removeFromPlayerInventory(itemType, itemQuantity);
-			
-			int itemSellValue = m_ListboxItemsSellValue.Get(row_index);
-			increasePlayerCurrency(itemSellValue);
-			updatePlayerCurrencyAmount();
-			updateItemListboxColors();
-
-			m_Player_CurrencyAmount = playerCurrencyAmountBeforeSale + itemSellValue;
-			updatePlayerCurrencyAmount();			
-			updateItemListboxColors();
 			
 			return true;
 		}
@@ -480,43 +378,7 @@ class TraderMenu extends UIScriptedMenu
 		m_SaldoValue.SetText(" " + m_Player_CurrencyAmount);
 	}
 	
-	private bool canCreateItemInPlayerInventory(string itemType)
-	{
-		PlayerBase m_Player = g_Game.GetPlayer();
-
-		InventoryLocation il = new InventoryLocation;
-		
-		if (g_Game.GetPlayer().GetInventory().FindFirstFreeLocationForNewEntity(itemType, FindInventoryLocationType.ANY, il))
-		{
-			return true;
-		}
-
-		EntityAI entityInHands = m_Player.GetHumanInventory().GetEntityInHands();
-		if (!entityInHands)
-			return true;
-
-		return false;			
-	}
-	
-	private void spawnItemOnGround(string itemType, vector position, int amount)
-	{
-		PlayerBase m_Player = g_Game.GetPlayer();
-		
-		Param4<PlayerBase, string, vector, int> rp2 = new Param4<PlayerBase, string, vector, int>(m_Player, itemType, position, amount);
-		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_SPAWN_ITEM_ON_GROUND, rp2, true);
-	}
-	
-	private void createItemInPlayerInventory(string itemType, int amount)
-	{
-		PlayerBase m_Player = g_Game.GetPlayer();
-		
-		Param3<PlayerBase, string, int> rp1 = new Param3<PlayerBase, string, int>(m_Player, itemType, amount);
-		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_CREATE_ITEM_IN_INVENTORY, rp1, true);
-		
-		m_Player.UpdateInventoryMenu();
-	}
-	
-	private int getPlayerCurrencyAmount()
+	private int getPlayerCurrencyAmount() // duplicate
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
@@ -539,7 +401,7 @@ class TraderMenu extends UIScriptedMenu
 		return currencyAmount;
 	}
 	
-	private bool isInPlayerInventory(string itemClassname, int amount)
+	private bool isInPlayerInventory(string itemClassname, int amount) // duplicate
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 		itemClassname.ToLower();
@@ -580,61 +442,7 @@ class TraderMenu extends UIScriptedMenu
 		return false;
 	}
 	
-	private bool removeFromPlayerInventory(string itemClassname, int amount)
-	{
-		PlayerBase m_Player = g_Game.GetPlayer();
-		itemClassname.ToLower();
-
-		bool isMagazine = false;
-		if (amount == -3)
-			isMagazine = true;
-
-		bool isWeapon = false;
-		if (amount == -4)
-			isWeapon = true;
-		
-		array<EntityAI> itemsArray = new array<EntityAI>;
-		ItemBase item;
-		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
-		
-		for (int i = 0; i < itemsArray.Count(); i++)
-		{
-			Class.CastTo(item, itemsArray.Get(i));
-			string itemPlayerClassname = "";
-
-			if (item)
-			{
-				itemPlayerClassname = item.GetType();
-				itemPlayerClassname.ToLower();
-			}
-
-			if(item && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
-			{
-				int itemAmount = getItemAmount(item);
-				
-				if (itemAmount == amount || isMagazine || isWeapon)
-				{					
-					Param1<ItemBase> rp1 = new Param1<ItemBase>(item);
-					GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_ITEM, rp1, true);
-					
-					m_Player.UpdateInventoryMenu();
-					return true;
-				}
-				else
-				{
-					setItemAmount(item, itemAmount - amount);
-				
-					m_Player.UpdateInventoryMenu();
-					return true;
-				}
-			}
-		}
-		
-		m_Player.UpdateInventoryMenu();
-		return false;
-	}
-	
-	private int getItemAmount(ItemBase item)
+	private int getItemAmount(ItemBase item) // duplicate
 	{
 		Magazine mgzn = Magazine.Cast(item);
 				
@@ -651,56 +459,7 @@ class TraderMenu extends UIScriptedMenu
 		return itemAmount;
 	}
 	
-	private void setItemAmount(ItemBase item, int amount)
-	{
-		Param2<ItemBase, int> rp1 = new Param2<ItemBase, int>(item, amount);
-		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_SET_ITEM_AMOUNT, rp1, true);
-		
-		g_Game.GetPlayer().UpdateInventoryMenu();
-	}
-	
-	private void increasePlayerCurrency(int currencyAmount)
-	{
-		PlayerBase m_Player = g_Game.GetPlayer();
-		
-		Param3<PlayerBase, string, int> rp1 = new Param3<PlayerBase, string, int>( m_Player, m_Player.m_Trader_CurrencyItemType, currencyAmount);
-		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_INCREASE_PLAYER_CURRENCY, rp1, true);
-	}
-	
-	private void deductPlayerCurrency(int currencyAmount)
-	{		
-		PlayerBase m_Player = g_Game.GetPlayer();
-		
-		array<EntityAI> itemsArray = new array<EntityAI>;
-		ItemBase item;
-		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
-		
-		for (int i = 0; i < itemsArray.Count(); i++)
-		{
-			Class.CastTo(item, itemsArray.Get(i));
-			if(item && item.GetType() == m_Player.m_Trader_CurrencyItemType)
-			{
-				int itemCurrencyAmount = getItemAmount(item);
-				
-				if(itemCurrencyAmount > currencyAmount)
-				{
-					setItemAmount(item, itemCurrencyAmount - currencyAmount);
-					return;
-				}
-				else
-				{
-					Param1<ItemBase> rp1 = new Param1<ItemBase>(itemsArray.Get(i));
-					GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_ITEM, rp1, true);
-					
-					m_Player.UpdateInventoryMenu();
-					
-					currencyAmount -= itemCurrencyAmount;
-				}
-			}
-		}
-	}
-	
-	private string getItemDisplayName(string itemClassname)
+	private string getItemDisplayName(string itemClassname) // duplicate
 	{
 		TStringArray itemInfos = new TStringArray;
 		
@@ -739,16 +498,7 @@ class TraderMenu extends UIScriptedMenu
 			return itemClassname;
 	}
 
-	private bool IsVehicleSpawnFree()
-	{
-		vector size = "3 5 9";
-		array<Object> excluded_objects = new array<Object>;
-		array<Object> nearby_objects = new array<Object>;
-
-		return !(GetGame().IsBoxColliding( m_TraderVehicleSpawn, m_TraderVehicleSpawnOrientation, size, excluded_objects, nearby_objects));
-	}
-
-	private Object GetVehicleToSell(string vehicleClassname)
+	private Object GetVehicleToSell(string vehicleClassname) // duplicate
 	{
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
@@ -797,11 +547,6 @@ class TraderMenu extends UIScriptedMenu
 		}
 
 		return NULL;
-	}
-
-	private void sellVehicle(Object vehicleToSell)
-	{
-		GetGame().RPCSingleParam(GetGame().GetPlayer(), TRPCs.RPC_DELETE_VEHICLE, new Param1<Object>(vehicleToSell), true);
 	}
 
 	private bool IsAttached(EntityAI parentEntity, string attachmentClassname)
@@ -1218,7 +963,7 @@ class TraderMenu extends UIScriptedMenu
 		return true;
 	}
 
-	private string TrimUntPrefix(string str)
+	private string TrimUntPrefix(string str) // duplicate
 	{
 		str.Replace("$UNT$", "");
 		return str;
