@@ -504,8 +504,6 @@ modded class DayZPlayerImplement
 
 			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon) && m_Trader_LastSelledItemID != item.GetID())
 			{
-				m_Trader_LastSelledItemID = item.GetID();
-
 				return true;
 			}
 		}
@@ -619,27 +617,23 @@ modded class DayZPlayerImplement
 		if (amount == -4)
 			isWeapon = true;
 		
-		array<EntityAI> itemsArray = new array<EntityAI>;
-		ItemBase item;
-		this.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
-		
-		for (int i = 0; i < itemsArray.Count(); i++)
+
+		string itemPlayerClassname = "";
+		int itemAmount = -1;
+
+		ItemBase item = ItemBase.Cast(this.GetHumanInventory().GetEntityInHands());
+		if (item)
 		{
-			Class.CastTo(item, itemsArray.Get(i));
-			string itemPlayerClassname = "";
-
-			if (!item)
-				continue;
-
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
+			if(!item.IsRuined() && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
 			{
-				int itemAmount = getItemAmount(item);
+				itemAmount = getItemAmount(item);
 				
 				if (itemAmount == amount || isMagazine || isWeapon)
 				{
+					m_Trader_LastSelledItemID = item.GetID();
 					deleteItem(item);
 					
 					this.UpdateInventoryMenu(); // RPC-Call needed?
@@ -647,6 +641,48 @@ modded class DayZPlayerImplement
 				}
 				else
 				{
+					m_Trader_LastSelledItemID = item.GetID();
+					SetItemAmount(item, itemAmount - amount);
+				
+					this.UpdateInventoryMenu(); // RPC-Call needed?
+					return true;
+				}
+			}
+		}
+
+
+		array<EntityAI> itemsArray = new array<EntityAI>;
+		this.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+		
+		for (int i = 0; i < itemsArray.Count(); i++)
+		{
+			Class.CastTo(item, itemsArray.Get(i));
+			itemPlayerClassname = "";
+
+			if (!item)
+				continue;
+
+			if (item.IsRuined())
+				continue;
+
+			itemPlayerClassname = item.GetType();
+			itemPlayerClassname.ToLower();
+
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
+			{
+				itemAmount = getItemAmount(item);
+				
+				if (itemAmount == amount || isMagazine || isWeapon)
+				{
+					m_Trader_LastSelledItemID = item.GetID();
+					deleteItem(item);
+					
+					this.UpdateInventoryMenu(); // RPC-Call needed?
+					return true;
+				}
+				else
+				{
+					m_Trader_LastSelledItemID = item.GetID();
 					SetItemAmount(item, itemAmount - amount);
 				
 					this.UpdateInventoryMenu(); // RPC-Call needed?
