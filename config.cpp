@@ -58,9 +58,9 @@ class CfgVehicles
 	class MoneyRuble1: Inventory_Base
 	{
 		scope=2;
-		displayName="Ruble";
-		descriptionShort="This Currency was used in Russia before the Disease. It is now only used for trading.";
-		model="TM\Trader\Money_Ruble.p3d";
+		displayName="1 Ruble Note";
+		descriptionShort="This Currency was used in Chernarus before the Disease. It is now only used for trading.";
+		model="TM\Trader\Money_Ruble1.p3d";
 		canBeSplit=1;
 		rotationFlags = 16;
 		lootCategory="Materials"; // Should be changed to Money?
@@ -89,6 +89,36 @@ class CfgVehicles
 				};
 			};
 		};
+	};
+	
+	class MoneyRuble5: MoneyRuble1
+	{
+		displayName="5 Ruble Note";
+		model="TM\Trader\Money_Ruble5.p3d";
+	};
+	
+	class MoneyRuble10: MoneyRuble1
+	{
+		displayName="10 Ruble Note";
+		model="TM\Trader\Money_Ruble10.p3d";
+	};
+	
+	class MoneyRuble25: MoneyRuble1
+	{
+		displayName="25 Ruble Note";
+		model="TM\Trader\Money_Ruble25.p3d";
+	};
+	
+	class MoneyRuble50: MoneyRuble1
+	{
+		displayName="50 Ruble Note";
+		model="TM\Trader\Money_Ruble50.p3d";
+	};
+	
+	class MoneyRuble100: MoneyRuble1
+	{
+		displayName="100 Ruble Note";
+		model="TM\Trader\Money_Ruble100.p3d";
 	};
 	
 	class HouseNoDestruct;
