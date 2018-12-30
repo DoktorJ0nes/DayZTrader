@@ -236,7 +236,7 @@ modded class MissionServer
 		}
 	}
 	
-	private void SpawnTraderObjects()
+	void SpawnTraderObjects()
 	{
 		m_Trader_SpawnedTraderCharacters = new array<PlayerBase>;
 		m_Trader_SpawnedFireBarrels = new array<BarrelHoles_ColorBase>;
@@ -408,7 +408,7 @@ modded class MissionServer
 		TraderServerLogs.PrintS("[TRADER] DEBUG END");
 	}
 
-	private void sendTraderDataToPlayer(PlayerBase player)
+	void sendTraderDataToPlayer(PlayerBase player)
 	{
 		TraderServerLogs.PrintS("[TRADER] SEND DATA TO PLAYER");
 
@@ -492,7 +492,7 @@ modded class MissionServer
 		//TraderServerLogs.PrintS("[TRADER] DEBUG END");
 	}
 
-	private void readTraderData()
+	void readTraderData()
 	{		
 		// clear all data here:
 		m_Trader_ReadAllTraderData = false;	
@@ -885,7 +885,7 @@ modded class MissionServer
 		m_Trader_ReadAllTraderData = true;
 	}
 
-	private int GetItemMaxQuantity(string itemClassname)
+	int GetItemMaxQuantity(string itemClassname)
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
@@ -905,7 +905,7 @@ modded class MissionServer
 		return 0;
 	}
 
-	private void SetPlayerVehicleIsInSafezone( PlayerBase player, bool isInSafezone )
+	void SetPlayerVehicleIsInSafezone( PlayerBase player, bool isInSafezone )
 	{
 		CarScript car = CarScript.Cast(player.GetParent());
 

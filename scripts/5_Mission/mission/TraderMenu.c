@@ -236,7 +236,7 @@ class TraderMenu extends UIScriptedMenu
 		return false;
 	}
 	
-	private void updateItemListboxContent()
+	void updateItemListboxContent()
 	{		
 		//------------------------------------------------------
 		
@@ -254,7 +254,7 @@ class TraderMenu extends UIScriptedMenu
 		}
 	}
 	
-	private void updateItemListboxColors()
+	void updateItemListboxColors()
 	{
 		for (int i = 0; i < m_ListboxItems.GetNumItems(); i++)
 		{
@@ -294,7 +294,7 @@ class TraderMenu extends UIScriptedMenu
 		}
 	}
 
-	private void updateItemPreview(string itemType)
+	void updateItemPreview(string itemType)
 	{
 		if ( !m_ItemPreviewWidget )
 			{
@@ -341,7 +341,7 @@ class TraderMenu extends UIScriptedMenu
 			}
 	}
 
-	private string GetItemWeightText()
+	string GetItemWeightText()
 	{
 		ItemBase item_IB = ItemBase.Cast( previewItem );
 
@@ -369,7 +369,7 @@ class TraderMenu extends UIScriptedMenu
 		return "ERROR";
 	}
 	
-	private void updatePlayerCurrencyAmount()
+	void updatePlayerCurrencyAmount()
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 
@@ -378,7 +378,7 @@ class TraderMenu extends UIScriptedMenu
 		m_SaldoValue.SetText(" " + m_Player_CurrencyAmount);
 	}
 	
-	private int getPlayerCurrencyAmount() // duplicate
+	int getPlayerCurrencyAmount() // duplicate
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
@@ -401,7 +401,7 @@ class TraderMenu extends UIScriptedMenu
 		return currencyAmount;
 	}
 	
-	private bool isInPlayerInventory(string itemClassname, int amount) // duplicate
+	bool isInPlayerInventory(string itemClassname, int amount) // duplicate
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 		itemClassname.ToLower();
@@ -445,7 +445,7 @@ class TraderMenu extends UIScriptedMenu
 		return false;
 	}
 	
-	private int getItemAmount(ItemBase item) // duplicate
+	int getItemAmount(ItemBase item) // duplicate
 	{
 		Magazine mgzn = Magazine.Cast(item);
 				
@@ -462,7 +462,7 @@ class TraderMenu extends UIScriptedMenu
 		return itemAmount;
 	}
 	
-	private string getItemDisplayName(string itemClassname) // duplicate
+	string getItemDisplayName(string itemClassname) // duplicate
 	{
 		TStringArray itemInfos = new TStringArray;
 		
@@ -501,7 +501,7 @@ class TraderMenu extends UIScriptedMenu
 			return itemClassname;
 	}
 
-	private Object GetVehicleToSell(string vehicleClassname) // duplicate
+	Object GetVehicleToSell(string vehicleClassname) // duplicate
 	{
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
@@ -552,7 +552,7 @@ class TraderMenu extends UIScriptedMenu
 		return NULL;
 	}
 
-	private bool IsAttached(EntityAI parentEntity, string attachmentClassname)
+	bool IsAttached(EntityAI parentEntity, string attachmentClassname)
 	{
 		for ( int i = 0; i < parentEntity.GetInventory().AttachmentCount(); i++ )
 		{
@@ -564,7 +564,7 @@ class TraderMenu extends UIScriptedMenu
 		return false;
 	}
 
-	private bool IsAttachment(EntityAI parentEntity, string attachmentClassname)
+	bool IsAttachment(EntityAI parentEntity, string attachmentClassname)
 	{
 		// Check chamberable Ammunitions
 		string type_name = parentEntity.GetType();
@@ -738,7 +738,7 @@ class TraderMenu extends UIScriptedMenu
 		return false;*/
 	}
 
-	/*private string GetItemInventorySlot(string itemClassname)
+	/*string GetItemInventorySlot(string itemClassname)
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_VEHICLESPATH );
@@ -763,7 +763,7 @@ class TraderMenu extends UIScriptedMenu
 		return inventorySlot;
 	}
 
-	private array<string> GetItemAttachmentSlots(string itemClassname)
+	array<string> GetItemAttachmentSlots(string itemClassname)
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_VEHICLESPATH );
@@ -796,7 +796,7 @@ class TraderMenu extends UIScriptedMenu
 		return attachments_slots;
 	}*/
 
-	/*private void TEST()
+	/*void TEST()
 	{
 		string classname = "CZ61";
 
@@ -915,7 +915,7 @@ class TraderMenu extends UIScriptedMenu
 		return attachments_slots;
 	}*/
 	
-	private bool LoadFileValues()
+	bool LoadFileValues()
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
@@ -941,7 +941,7 @@ class TraderMenu extends UIScriptedMenu
 		return true;
 	}
 	
-	private bool LoadItemsFromFile()
+	bool LoadItemsFromFile()
 	{
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
@@ -966,7 +966,7 @@ class TraderMenu extends UIScriptedMenu
 		return true;
 	}
 
-	private string TrimUntPrefix(string str) // duplicate
+	string TrimUntPrefix(string str) // duplicate
 	{
 		str.Replace("$UNT$", "");
 		return str;

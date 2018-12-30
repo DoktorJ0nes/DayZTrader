@@ -329,18 +329,18 @@ modded class DayZPlayerImplement
 		}
 	}
 
-	private void traderServerLog(string message)
+	void traderServerLog(string message)
 	{
 		TraderServerLogs.PrintS("[TRADER] Player: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId() + " " + message);
 	}
 
-	private string TrimUntPrefix(string str) // duplicate
+	string TrimUntPrefix(string str) // duplicate
 	{
 		str.Replace("$UNT$", "");
 		return str;
 	}
 
-	private string getItemDisplayName(string itemClassname) // duplicate
+	string getItemDisplayName(string itemClassname) // duplicate
 	{
 		TStringArray itemInfos = new TStringArray;
 		
@@ -379,7 +379,7 @@ modded class DayZPlayerImplement
 			return itemClassname;
 	}
 
-	private int GetItemMaxQuantity(string itemClassname)
+	int GetItemMaxQuantity(string itemClassname)
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
@@ -399,7 +399,7 @@ modded class DayZPlayerImplement
 		return 0;
 	}
 
-	private int getItemAmount(ItemBase item) // duplicate
+	int getItemAmount(ItemBase item) // duplicate
 	{
 		Magazine mgzn = Magazine.Cast(item);
 				
@@ -416,7 +416,7 @@ modded class DayZPlayerImplement
 		return itemAmount;
 	}
 
-	private bool SetItemAmount(ItemBase item, int amount)
+	bool SetItemAmount(ItemBase item, int amount)
 	{
 		if (!item)
 			return false;
@@ -447,7 +447,7 @@ modded class DayZPlayerImplement
 		return true;
 	}
 
-	private int getPlayerCurrencyAmount() // duplicate
+	int getPlayerCurrencyAmount() // duplicate
 	{		
 		int currencyAmount = 0;
 		
@@ -468,7 +468,7 @@ modded class DayZPlayerImplement
 		return currencyAmount;
 	}
 
-	private bool isInPlayerInventory(string itemClassname, int amount) // duplicate
+	bool isInPlayerInventory(string itemClassname, int amount) // duplicate
 	{
 		itemClassname.ToLower();
 		
@@ -511,7 +511,7 @@ modded class DayZPlayerImplement
 		return false;
 	}
 
-	private bool canCreateItemInPlayerInventory(string itemType)
+	bool canCreateItemInPlayerInventory(string itemType)
 	{
 		InventoryLocation il = new InventoryLocation;
 		
@@ -527,7 +527,7 @@ modded class DayZPlayerImplement
 		return false;			
 	}
 
-	private void createItemInPlayerInventory(string itemType, int amount)
+	void createItemInPlayerInventory(string itemType, int amount)
 	{		
 		EntityAI entity = this.GetHumanInventory().CreateInInventory(itemType);
 
@@ -543,7 +543,7 @@ modded class DayZPlayerImplement
 		SetItemAmount(item, amount);
 	}
 
-	private void spawnItemOnGround(string itemType, int amount, vector position)
+	void spawnItemOnGround(string itemType, int amount, vector position)
 	{		
 		EntityAI entity = this.SpawnEntityOnGroundPos(itemType, position);
 
@@ -559,7 +559,7 @@ modded class DayZPlayerImplement
 		SetItemAmount(item, amount);
 	}
 
-	private void increasePlayerCurrency(int currencyAmount)
+	void increasePlayerCurrency(int currencyAmount)
 	{
 		int itemMaxAmount = GetItemMaxQuantity(m_Trader_CurrencyItemType);
 		EntityAI entity;
@@ -605,7 +605,7 @@ modded class DayZPlayerImplement
 		}
 	}
 
-	private bool removeFromPlayerInventory(string itemClassname, int amount)
+	bool removeFromPlayerInventory(string itemClassname, int amount)
 	{
 		itemClassname.ToLower();
 
@@ -695,7 +695,7 @@ modded class DayZPlayerImplement
 		return false;
 	}
 
-	private void deductPlayerCurrency(int currencyAmount)
+	void deductPlayerCurrency(int currencyAmount)
 	{		
 		array<EntityAI> itemsArray = new array<EntityAI>;
 		ItemBase item;
@@ -729,19 +729,19 @@ modded class DayZPlayerImplement
 		}
 	}
 
-	private void deleteItem(ItemBase item)
+	void deleteItem(ItemBase item)
 	{
 		if (item)
 			item.Delete();
 	}
 
-	private void deleteObject(Object obj)
+	void deleteObject(Object obj)
 	{
 		if (obj)
 			GetGame().ObjectDelete(obj);
 	}
 
-	private bool isVehicleSpawnFree(int traderUID)
+	bool isVehicleSpawnFree(int traderUID)
 	{
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
@@ -750,7 +750,7 @@ modded class DayZPlayerImplement
 		return !(GetGame().IsBoxColliding( m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects));
 	}
 
-	private Object GetVehicleToSell(int traderUID, string vehicleClassname) // duplicate
+	Object GetVehicleToSell(int traderUID, string vehicleClassname) // duplicate
 	{
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
@@ -808,7 +808,7 @@ modded class DayZPlayerImplement
 		return NULL;
 	}
 
-	private void spawnVehicle(int traderUID, string vehicleType)
+	void spawnVehicle(int traderUID, string vehicleType)
 	{
 		//Param3<vector, vector, string> rpv = new Param3<vector, vector, string>( "0 0 0", "0 0 0", "" );
 		//ctx.Read(rpv);

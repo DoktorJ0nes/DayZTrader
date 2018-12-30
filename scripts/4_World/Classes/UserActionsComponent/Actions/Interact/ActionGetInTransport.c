@@ -1,6 +1,6 @@
 modded class ActionGetInTransport
 {
-	private Transport m_transportClone;
+	Transport m_transportClone;
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
