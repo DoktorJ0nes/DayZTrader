@@ -18,7 +18,9 @@ modded class DayZPlayerImplement
 	
 	bool m_Trader_RecievedAllData = false;
 	
-	string m_Trader_CurrencyItemType;
+	string m_Trader_CurrencyName;
+	ref array<string> m_Trader_CurrencyClassnames;
+	ref array<int> m_Trader_CurrencyValues;
 	int m_Player_CurrencyAmount;
 
 	int m_Trader_LastSelledItemID = -1;
@@ -201,11 +203,19 @@ modded class DayZPlayerImplement
 		{
 			switch(rpc_type)
 			{
-				case TRPCs.RPC_SEND_TRADER_CURRENCYTYPE_ENTRY:
-					ref Param1<string> currencyType_rp = new Param1<string>( "" );
-					ctx.Read( currencyType_rp );
+				case TRPCs.RPC_SEND_TRADER_CURRENCYNAME_ENTRY:
+					ref Param1<string> currencyName_rp = new Param1<string>( "" );
+					ctx.Read( currencyName_rp );
 					
-					m_Trader_CurrencyItemType = currencyType_rp.param1;
+					m_Trader_CurrencyName = currencyName_rp.param1;
+				break;
+
+				case TRPCs.RPC_SEND_TRADER_CURRENCY_ENTRY:
+					ref Param2<string, int> currency_rp = new Param2<string, int>( "", -1 );
+					ctx.Read( currency_rp );
+					
+					m_Trader_CurrencyClassnames.Insert(currency_rp.param1);
+					m_Trader_CurrencyValues.Insert(currency_rp.param2);
 				break;
 				
 				case TRPCs.RPC_SEND_TRADER_MANCLASSNAME_ENTRY:
@@ -260,7 +270,9 @@ modded class DayZPlayerImplement
 				case TRPCs.RPC_SEND_TRADER_CLEAR:
 					// clear all data here:
 					m_Trader_RecievedAllData = false;	
-					m_Trader_CurrencyItemType = "";
+					m_Trader_CurrencyName = "";
+					m_Trader_CurrencyClassnames = new array<string>;
+					m_Trader_CurrencyValues = new array<int>;
 					m_Trader_TraderNames = new array<string>;
 					m_Trader_TraderPositions = new array<vector>;
 					m_Trader_TraderIDs = new array<int>;
@@ -448,20 +460,29 @@ modded class DayZPlayerImplement
 	}
 
 	int getPlayerCurrencyAmount() // duplicate
-	{		
+	{
+		PlayerBase m_Player = this;
+		
 		int currencyAmount = 0;
 		
 		array<EntityAI> itemsArray = new array<EntityAI>;
-		this.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 
 		ItemBase item;
 		
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			if(item && item.GetType() == m_Trader_CurrencyItemType)
+
+			if (!item)
+				continue;
+
+			for (int j = 0; j < m_Player.m_Trader_CurrencyClassnames.Count(); j++)
 			{
-				currencyAmount += getItemAmount(item);
+				if(item.GetType() == m_Player.m_Trader_CurrencyClassnames.Get(j))
+				{
+					currencyAmount += getItemAmount(item) * m_Player.m_Trader_CurrencyValues.Get(j);
+				}
 			}
 		}
 		
@@ -561,46 +582,68 @@ modded class DayZPlayerImplement
 
 	void increasePlayerCurrency(int currencyAmount)
 	{
-		int itemMaxAmount = GetItemMaxQuantity(m_Trader_CurrencyItemType);
+		if (currencyAmount == 0)
+			return;
+
 		EntityAI entity;
-		ItemBase item;
+		ItemBase item;		
 		
-		while (currencyAmount > 0)
+		for (int i = m_Trader_CurrencyClassnames.Count() - 1; i < m_Trader_CurrencyClassnames.Count(); i--)
 		{
-			bool freeSpaceForItem = false;
-			InventoryLocation il = new InventoryLocation;		
-			if (this.GetInventory().FindFirstFreeLocationForNewEntity(m_Trader_CurrencyItemType, FindInventoryLocationType.ANY, il))
-				freeSpaceForItem = true;
-			
-			if (freeSpaceForItem)
-			{						
-				entity = this.GetHumanInventory().CreateInInventory(m_Trader_CurrencyItemType);
-			}
-			else
-			{
-				GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Your Inventory is full! Your Currencys were placed on Ground!" ), true, this.GetIdentity());
-				
-				entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyItemType, this.GetPosition());
+			int itemMaxAmount = GetItemMaxQuantity(m_Trader_CurrencyClassnames.Get(i));
 
-				GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
-			}
-			
-			// set currency amount of item:
-			if (currencyAmount > itemMaxAmount)
+			while (currencyAmount / m_Trader_CurrencyValues.Get(i) > 0)
 			{
-				Class.CastTo(item, entity);
+				bool freeSpaceForItem = false;
+				InventoryLocation il = new InventoryLocation;		
+				if (this.GetInventory().FindFirstFreeLocationForNewEntity(m_Trader_CurrencyClassnames.Get(i), FindInventoryLocationType.ANY, il))
+					freeSpaceForItem = true;
 				
-				SetItemAmount(item, itemMaxAmount);
+				if (freeSpaceForItem)
+				{						
+					//entity = this.GetHumanInventory().CreateInInventory(m_Trader_CurrencyClassnames.Get(i));
+				}
+				else
+				{
+					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Your Inventory is full! Your Currencys were placed on Ground!" ), true, this.GetIdentity());
+					
+					entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());
 
-				currencyAmount -= itemMaxAmount;
-			}
-			else
-			{					
-				Class.CastTo(item, entity);
+					GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
+				}
 				
-				SetItemAmount(item, currencyAmount);		
-				
-				currencyAmount = 0;
+				// set currency amount of item:
+				if (currencyAmount > itemMaxAmount * m_Trader_CurrencyValues.Get(i))
+				{
+					if (freeSpaceForItem)
+					{
+						createItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
+					}
+					else
+					{
+						Class.CastTo(item, entity);
+						SetItemAmount(item, itemMaxAmount);
+					}
+
+					currencyAmount -= itemMaxAmount * m_Trader_CurrencyValues.Get(i);
+				}
+				else
+				{		
+					if (freeSpaceForItem)
+					{
+						createItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i));
+					}
+					else
+					{			
+						Class.CastTo(item, entity);
+						SetItemAmount(item, currencyAmount / m_Trader_CurrencyValues.Get(i));		
+					}
+
+					currencyAmount -= (currencyAmount / m_Trader_CurrencyValues.Get(i) * m_Trader_CurrencyValues.Get(i));
+				}
+
+				if (currencyAmount == 0)
+					return;
 			}
 		}
 	}
@@ -697,36 +740,81 @@ modded class DayZPlayerImplement
 
 	void deductPlayerCurrency(int currencyAmount)
 	{		
+		if (currencyAmount == 0)
+			return;
+
 		array<EntityAI> itemsArray = new array<EntityAI>;
 		ItemBase item;
 		this.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
-		for (int i = 0; i < itemsArray.Count(); i++)
+		//for (int i = m_Trader_CurrencyClassnames.Count() - 1; i < m_Trader_CurrencyClassnames.Count(); i--)
+		for (int i = 0; i < m_Trader_CurrencyClassnames.Count(); i++)
 		{
-			Class.CastTo(item, itemsArray.Get(i));
-			
-			if (!item)
-				continue;
-
-			if(item.GetType() == m_Trader_CurrencyItemType)
+			for (int j = 0; j < itemsArray.Count(); j++)
 			{
-				int itemCurrencyAmount = getItemAmount(item);
+				Class.CastTo(item, itemsArray.Get(j));
 				
-				if(itemCurrencyAmount > currencyAmount)
+				if (!item)
+					continue;
+
+				if(item.GetType() == m_Trader_CurrencyClassnames.Get(i))
 				{
-					SetItemAmount(item, itemCurrencyAmount - currencyAmount);
-					return;
-				}
-				else
-				{
-					deleteItem(itemsArray.Get(i));
-					
-					this.UpdateInventoryMenu(); // RPC-Call needed?
-					
-					currencyAmount -= itemCurrencyAmount;
+					int itemAmount = getItemAmount(item);
+
+					if(itemAmount * m_Trader_CurrencyValues.Get(i) > currencyAmount)
+					{
+						if (currencyAmount > m_Trader_CurrencyValues.Get(i))
+						{
+							SetItemAmount(item, itemAmount - (currencyAmount / m_Trader_CurrencyValues.Get(i)));
+
+							this.UpdateInventoryMenu(); // RPC-Call needed?
+							
+							currencyAmount -= (currencyAmount / m_Trader_CurrencyValues.Get(i)) * m_Trader_CurrencyValues.Get(i);
+							//return;
+						}
+
+
+						if (currencyAmount < m_Trader_CurrencyValues.Get(i))
+						{
+							exchangeCurrency(item, currencyAmount, m_Trader_CurrencyValues.Get(i));
+
+							return;
+						}
+					}
+					else
+					{
+						deleteItem(itemsArray.Get(j));
+						
+						this.UpdateInventoryMenu(); // RPC-Call needed?
+						
+						currencyAmount -= itemAmount * m_Trader_CurrencyValues.Get(i);
+					}
+
+					//if (currencyAmount <= 0)
+					//	return;
 				}
 			}
 		}
+	}
+
+	void exchangeCurrency(ItemBase item, int currencyAmount, int currencyValue)
+	{
+		GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "EXCHANGE " + item.GetType() + "[" + currencyValue + "]" + currencyAmount ), true, this.GetIdentity());
+
+		if (!item)
+			return;
+
+		if (currencyAmount == 0)
+			return;
+
+		int itemAmount = getItemAmount(item);
+
+		if (itemAmount <= 1)
+			deleteItem(item);
+		else
+			SetItemAmount(item, itemAmount - 1);
+
+		increasePlayerCurrency(currencyValue - currencyAmount);
 	}
 
 	void deleteItem(ItemBase item)

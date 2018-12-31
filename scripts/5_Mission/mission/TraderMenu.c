@@ -392,9 +392,16 @@ class TraderMenu extends UIScriptedMenu
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			if(item && item.GetType() == m_Player.m_Trader_CurrencyItemType)
+
+			if (!item)
+				continue;
+
+			for (int j = 0; j < m_Player.m_Trader_CurrencyClassnames.Count(); j++)
 			{
-				currencyAmount += getItemAmount(item);
+				if(item.GetType() == m_Player.m_Trader_CurrencyClassnames.Get(j))
+				{
+					currencyAmount += getItemAmount(item) * m_Player.m_Trader_CurrencyValues.Get(j);
+				}
 			}
 		}
 		
@@ -920,7 +927,7 @@ class TraderMenu extends UIScriptedMenu
 		PlayerBase m_Player = g_Game.GetPlayer();
 		
 		m_TraderName.SetText(m_Player.m_Trader_TraderNames.Get(m_TraderID));
-		m_Saldo.SetText("(" + getItemDisplayName(m_Player.m_Trader_CurrencyItemType) + ") Balance: ");
+		m_Saldo.SetText(m_Player.m_Trader_CurrencyName + ": ");
 
 		m_XComboboxCategorys.ClearAll();
 		m_Categorys = new array<string>;

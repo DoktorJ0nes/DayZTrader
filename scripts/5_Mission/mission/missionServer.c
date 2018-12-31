@@ -8,7 +8,9 @@ modded class MissionServer
 
 	bool m_Trader_ReadAllTraderData = false;
 
-	string m_Trader_CurrencyItemType;
+	string m_Trader_CurrencyName;
+	ref array<string> m_Trader_CurrencyClassnames;
+	ref array<int> m_Trader_CurrencyValues;
 	
 	ref array<string> m_Trader_TraderNames;
 	ref array<vector> m_Trader_TraderPositions;
@@ -416,12 +418,23 @@ modded class MissionServer
 		Param1<bool> crpClr = new Param1<bool>( true );
 		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CLEAR, crpClr, true, player.GetIdentity());
 
-		player.m_Trader_CurrencyItemType = m_Trader_CurrencyItemType;
-		Param1<string> crp1 = new Param1<string>( m_Trader_CurrencyItemType );
-		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCYTYPE_ENTRY, crp1, true, player.GetIdentity());
-		//TraderServerLogs.PrintS("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyItemType);
-		
+		player.m_Trader_CurrencyName = m_Trader_CurrencyName;
+		Param1<string> crp0 = new Param1<string>( m_Trader_CurrencyName );
+		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCYNAME_ENTRY, crp0, true, player.GetIdentity());
+		//TraderServerLogs.PrintS("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyName);
+
 		int i = 0;
+		player.m_Trader_CurrencyClassnames = new array<string>;
+		player.m_Trader_CurrencyValues = new array<int>;
+		for ( i = 0; i < m_Trader_CurrencyClassnames.Count(); i++ )
+		{
+			player.m_Trader_CurrencyClassnames.Insert(m_Trader_CurrencyClassnames.Get(i));
+			player.m_Trader_CurrencyValues.Insert(m_Trader_CurrencyValues.Get(i));
+
+			Param2<string, int> crp1 = new Param2<string, int>( m_Trader_CurrencyClassnames.Get(i), m_Trader_CurrencyValues.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCY_ENTRY, crp1, true, player.GetIdentity());
+		}
+		
 		for ( i = 0; i < m_Trader_TraderNames.Count(); i++ )
 		{
 			Param1<string> crp2 = new Param1<string>( m_Trader_TraderNames.Get(i) );
@@ -496,7 +509,9 @@ modded class MissionServer
 	{		
 		// clear all data here:
 		m_Trader_ReadAllTraderData = false;	
-		m_Trader_CurrencyItemType = "";
+		m_Trader_CurrencyName = "";
+		m_Trader_CurrencyClassnames = new array<string>;
+		m_Trader_CurrencyValues = new array<int>;
 		m_Trader_TraderNames = new array<string>;
 		m_Trader_TraderPositions = new array<vector>;
 		m_Trader_TraderIDs = new array<int>;
@@ -527,16 +542,43 @@ modded class MissionServer
 		
 		string line_content = "";
 		
-		TraderServerLogs.PrintS("[TRADER] READING CURRENCY ENTRY..");
-		line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Currency>", "");
-		line_content.Replace("<Currency>", "");
+		TraderServerLogs.PrintS("[TRADER] READING CURRENCY NAME ENTRY..");
+		line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<CurrencyName>", "");
+		line_content.Replace("<CurrencyName>", "");
 		line_content = FileReadHelper.TrimComment(line_content);
-		m_Trader_CurrencyItemType = line_content;
-		
-		bool traderInstanceDone = false;
+		m_Trader_CurrencyName = line_content;
+
+		int currencyCounter = 0;
+
+		line_content = "";
+		while (currencyCounter <= 500 && !line_content.Contains("<Trader>"))
+		{
+			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Currency>", "<Trader>");
+			line_content.Replace("<Currency>", "");
+			line_content = FileReadHelper.TrimComment(line_content);
+
+			if (line_content.Contains("<Trader>"))
+				break;
+
+			TraderServerLogs.PrintS("[TRADER] READING CURRENCY ENTRY..");
+
+			TStringArray crys = new TStringArray;
+			line_content.Split( ",", crys );
+
+			string currencyClassname = crys.Get(0);
+			currencyClassname = FileReadHelper.TrimSpaces(currencyClassname);
+			
+			string currencyValue = crys.Get(1);
+			currencyValue = FileReadHelper.TrimSpaces(currencyValue);
+
+			m_Trader_CurrencyClassnames.Insert(currencyClassname);
+			m_Trader_CurrencyValues.Insert(currencyValue.ToInt());
+		}
+
+		bool traderInstanceDone = true;
 		int traderCounter = 0;
 		
-		line_content = "";
+		//line_content = "";
 		while (traderCounter <= 500 && line_content != "<FileEnd>")
 		{
 			TraderServerLogs.PrintS("[TRADER] READING TRADER ENTRY..");
@@ -595,7 +637,6 @@ modded class MissionServer
 		line_content = "";
 		while ( itemCounter <= 5000 && char_count != -1 && line_content.Contains("<FileEnd>") == false)
 		{
-			TraderServerLogs.PrintS("[TRADER] READING ITEM ENTRY..");
 			char_count = FGets( file_index,  line_content );
 			
 			line_content = FileReadHelper.TrimComment(line_content);
@@ -614,9 +655,13 @@ modded class MissionServer
 				continue;
 			}
 		
-			
 			if (!line_content.Contains(","))
 				continue;
+
+			if (line_content.Contains("<Currency"))
+				continue;
+
+			TraderServerLogs.PrintS("[TRADER] READING ITEM ENTRY..");
 		
 			TStringArray strs = new TStringArray;
 			line_content.Split( ",", strs );
@@ -802,7 +847,6 @@ modded class MissionServer
 			markerVehicleOrientation[2] = traderMarkerVehicleOriZ.ToFloat();
 
 			m_Trader_TraderVehicleSpawnsOrientation.Insert(markerVehicleOrientation);
-
 
 			markerCounter++;
 		}
