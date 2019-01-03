@@ -45,6 +45,9 @@ modded class DayZPlayerImplement
 	ref array<string> m_Trader_Vehicles;
 	ref array<string> m_Trader_VehiclesParts;
 	ref array<int> m_Trader_VehiclesPartsVehicleId;
+
+	string itemDisplayNameClient;
+	bool m_Trader_IsSelling;
 	
 	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
@@ -61,7 +64,6 @@ modded class DayZPlayerImplement
 		vector position;
 		int traderUID;
 		int itemID;
-		string itemDisplayNameClient;
 		vector playerPosition;
 		
 		if (GetGame().IsServer()) //////////////////////////////////////////////////////////////////////////////////////////////////////////////// SERVER RPC ///////////////////////////////////////////////////////////
@@ -86,6 +88,8 @@ modded class DayZPlayerImplement
 				traderUID = rpb.param1;
 				itemID = rpb.param2;
 				itemDisplayNameClient = rpb.param3;
+
+				m_Trader_IsSelling = false;
 
 				if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
 					return;
@@ -121,6 +125,8 @@ modded class DayZPlayerImplement
 						return;
 					}
 
+					deductPlayerCurrency(itemCosts);
+
 					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: " + itemDisplayNameClient + " was parked next to you!" ), true, this.GetIdentity());
 
 					spawnVehicle(traderUID, itemType);
@@ -128,8 +134,10 @@ modded class DayZPlayerImplement
 					GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
 				}
 				else // Is not a Vehicle
-				{			
-					if (canCreateItemInPlayerInventory(itemType))
+				{		
+					deductPlayerCurrency(itemCosts);
+
+					if (canCreateItemInPlayerInventory(itemType, itemQuantity))
 					{
 						GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: " + itemDisplayNameClient + " was added to your Inventory!" ), true, this.GetIdentity());
 						
@@ -145,7 +153,7 @@ modded class DayZPlayerImplement
 					}
 				}
 
-				deductPlayerCurrency(itemCosts);
+				//deductPlayerCurrency(itemCosts);
 			}
 
 			if (rpc_type == TRPCs.RPC_SELL)
@@ -156,6 +164,8 @@ modded class DayZPlayerImplement
 				traderUID = rps.param1;
 				itemID = rps.param2;
 				itemDisplayNameClient = rps.param3;
+
+				m_Trader_IsSelling = true;
 
 				if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
 					return;
@@ -532,14 +542,55 @@ modded class DayZPlayerImplement
 		return false;
 	}
 
-	bool canCreateItemInPlayerInventory(string itemType)
+	array<ItemBase> getMergeableItemFromPlayerInventory(string itemType, int amount, bool absolute = false)
 	{
-		InventoryLocation il = new InventoryLocation;
-		
-		if (this.GetInventory().FindFirstFreeLocationForNewEntity(itemType, FindInventoryLocationType.ANY, il))
+		array<ItemBase> mergableItems = new array<ItemBase>;
+
+		array<EntityAI> itemsArray = new array<EntityAI>;		
+		this.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+
+		itemType.ToLower();
+
+		if (GetItemMaxQuantity(itemType) <= amount || amount == 0)
+			return mergableItems;
+
+		ItemBase item;		
+		for (int i = 0; i < itemsArray.Count(); i++)
 		{
-			return true;
+			Class.CastTo(item, itemsArray.Get(i));
+			string itemPlayerClassname = "";
+
+			if (!item)
+				continue;
+
+			if (item.IsRuined())
+				continue;
+
+			itemPlayerClassname = item.GetType();
+			itemPlayerClassname.ToLower();
+
+			if (itemType == itemPlayerClassname && item.CanBeCombined(item, this) && !item.IsFullQuantity() && getItemAmount(item) + 1 <= GetItemMaxQuantity(item.GetType()))
+			{
+				amount -= GetItemMaxQuantity(item.GetType()) - getItemAmount(item);
+				mergableItems.Insert(item);
+			}
 		}
+
+		if (absolute && amount > 0)
+			return new array<ItemBase>;
+
+		return mergableItems;
+	}
+
+	bool canCreateItemInPlayerInventory(string itemType, int amount)
+	{
+		array<ItemBase> mergeableItems = getMergeableItemFromPlayerInventory(itemType, amount);
+		if (mergeableItems.Count() > 0)
+			return true;
+
+		InventoryLocation il = new InventoryLocation;		
+		if (this.GetInventory().FindFirstFreeLocationForNewEntity(itemType, FindInventoryLocationType.ANY, il))
+			return true;
 
 		EntityAI entityInHands = this.GetHumanInventory().GetEntityInHands();
 		if (!entityInHands)
@@ -550,7 +601,35 @@ modded class DayZPlayerImplement
 
 	void createItemInPlayerInventory(string itemType, int amount)
 	{		
-		EntityAI entity = this.GetHumanInventory().CreateInInventory(itemType);
+		EntityAI entity;
+
+		array<ItemBase> mergeableItems = getMergeableItemFromPlayerInventory(itemType, amount);
+
+		bool isMergingPossible = mergeableItems.Count() > 0;
+		bool itemsAreLeftOverMerging = getMergeableItemFromPlayerInventory(itemType, amount, true).Count() == 0;
+
+		if (isMergingPossible)
+		{
+			if (itemsAreLeftOverMerging)
+			{
+				entity = this.SpawnEntityOnGroundPos(itemType, this.GetPosition());
+				
+				if (m_Trader_IsSelling)
+					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Some Currencys were placed on Ground!" ), true, this.GetIdentity());
+				else
+					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Some " + itemDisplayNameClient + " were placed on Ground!" ), true, this.GetIdentity());
+
+				GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
+			}
+			else
+			{
+				entity = this.SpawnEntityOnGroundPos(itemType, this.GetPosition());
+			}
+		}
+		else
+		{
+			entity = this.GetHumanInventory().CreateInInventory(itemType);
+		}
 
 		if (!entity)
 			return;
@@ -562,6 +641,35 @@ modded class DayZPlayerImplement
 			return;
 		
 		SetItemAmount(item, amount);
+
+		for (int i = 0; i < mergeableItems.Count(); i++)
+		{
+			int mergeQuantity;
+
+			if (getItemAmount(mergeableItems.Get(i)) + getItemAmount(item) <= GetItemMaxQuantity(mergeableItems.Get(i).GetType())
+				mergeQuantity = getItemAmount(item);
+			else
+				mergeQuantity = GetItemMaxQuantity(mergeableItems.Get(i).GetType()) - getItemAmount(mergeableItems.Get(i));
+
+			//GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "MERGED " + mergeableItems.Get(i).GetType() + "; QTY: " + mergeQuantity ), true, this.GetIdentity());
+
+			SetItemAmount(mergeableItems.Get(i), getItemAmount(mergeableItems.Get(i)) + mergeQuantity);
+			SetItemAmount(item, getItemAmount(item) - mergeQuantity);
+			amount -= mergeQuantity;
+
+			if (item)
+			{
+				if (getItemAmount(item) <= 0 || amount <= 0)
+				{
+					deleteItem(item);
+					this.UpdateInventoryMenu(); // RPC-Call needed?
+
+					return;
+				}
+			}
+		}
+
+		this.UpdateInventoryMenu(); // RPC-Call needed?
 	}
 
 	void spawnItemOnGround(string itemType, int amount, vector position)
@@ -594,33 +702,19 @@ modded class DayZPlayerImplement
 
 			while (currencyAmount / m_Trader_CurrencyValues.Get(i) > 0)
 			{
-				bool freeSpaceForItem = false;
-				InventoryLocation il = new InventoryLocation;		
-				if (this.GetInventory().FindFirstFreeLocationForNewEntity(m_Trader_CurrencyClassnames.Get(i), FindInventoryLocationType.ANY, il))
-					freeSpaceForItem = true;
-				
-				if (freeSpaceForItem)
-				{						
-					//entity = this.GetHumanInventory().CreateInInventory(m_Trader_CurrencyClassnames.Get(i));
-				}
-				else
-				{
-					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Your Inventory is full! Your Currencys were placed on Ground!" ), true, this.GetIdentity());
-					
-					entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());
-
-					GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
-				}
-				
-				// set currency amount of item:
 				if (currencyAmount > itemMaxAmount * m_Trader_CurrencyValues.Get(i))
 				{
-					if (freeSpaceForItem)
+					if (canCreateItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), itemMaxAmount))
 					{
 						createItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
 					}
 					else
 					{
+						GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Your Inventory is full! Your Currencys were placed on Ground!" ), true, this.GetIdentity());
+						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
+
+						entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());						
+
 						Class.CastTo(item, entity);
 						SetItemAmount(item, itemMaxAmount);
 					}
@@ -629,12 +723,17 @@ modded class DayZPlayerImplement
 				}
 				else
 				{		
-					if (freeSpaceForItem)
+					if (canCreateItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i)))
 					{
 						createItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i));
 					}
 					else
-					{			
+					{		
+						GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Your Inventory is full! Your Currencys were placed on Ground!" ), true, this.GetIdentity());
+						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
+
+						entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());	
+
 						Class.CastTo(item, entity);
 						SetItemAmount(item, currencyAmount / m_Trader_CurrencyValues.Get(i));		
 					}
@@ -747,7 +846,6 @@ modded class DayZPlayerImplement
 		ItemBase item;
 		this.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
-		//for (int i = m_Trader_CurrencyClassnames.Count() - 1; i < m_Trader_CurrencyClassnames.Count(); i--)
 		for (int i = 0; i < m_Trader_CurrencyClassnames.Count(); i++)
 		{
 			for (int j = 0; j < itemsArray.Count(); j++)
@@ -763,14 +861,13 @@ modded class DayZPlayerImplement
 
 					if(itemAmount * m_Trader_CurrencyValues.Get(i) > currencyAmount)
 					{
-						if (currencyAmount > m_Trader_CurrencyValues.Get(i))
+						if (currencyAmount >= m_Trader_CurrencyValues.Get(i))
 						{
 							SetItemAmount(item, itemAmount - (currencyAmount / m_Trader_CurrencyValues.Get(i)));
 
 							this.UpdateInventoryMenu(); // RPC-Call needed?
 							
 							currencyAmount -= (currencyAmount / m_Trader_CurrencyValues.Get(i)) * m_Trader_CurrencyValues.Get(i);
-							//return;
 						}
 
 
@@ -789,9 +886,6 @@ modded class DayZPlayerImplement
 						
 						currencyAmount -= itemAmount * m_Trader_CurrencyValues.Get(i);
 					}
-
-					//if (currencyAmount <= 0)
-					//	return;
 				}
 			}
 		}
@@ -799,13 +893,13 @@ modded class DayZPlayerImplement
 
 	void exchangeCurrency(ItemBase item, int currencyAmount, int currencyValue)
 	{
-		GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "EXCHANGE " + item.GetType() + "[" + currencyValue + "]" + currencyAmount ), true, this.GetIdentity());
-
 		if (!item)
 			return;
 
 		if (currencyAmount == 0)
 			return;
+
+		//GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "EXCHANGE " + item.GetType() + " [" + currencyValue + "] " + currencyAmount ), true, this.GetIdentity());
 
 		int itemAmount = getItemAmount(item);
 
@@ -820,7 +914,10 @@ modded class DayZPlayerImplement
 	void deleteItem(ItemBase item)
 	{
 		if (item)
-			item.Delete();
+			GetGame().ObjectDelete(item);
+			//item.Delete();
+
+		//GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "DELETED " + item.GetType() + "; QTY: " + getItemAmount(item) ), true, this.GetIdentity());
 	}
 
 	void deleteObject(Object obj)
