@@ -115,6 +115,12 @@ modded class DayZPlayerImplement
 
 				m_Player_CurrencyAmount = getPlayerCurrencyAmount();
 
+				if (itemCosts < 0)
+				{
+					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Sorry, but that can't be bought!" ), true, this.GetIdentity());
+					return;
+				}
+
 				if (m_Player_CurrencyAmount < itemCosts)
 				{
 					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Sorry, but you can't afford that!" ), true, this.GetIdentity());
@@ -195,6 +201,12 @@ modded class DayZPlayerImplement
 
 				Object vehicleToSell = GetVehicleToSell(traderUID, itemType);
 				bool isValidVehicle = (itemQuantity == -2 && vehicleToSell);
+
+				if (itemSellValue < 0)
+				{
+					GetGame().RPCSingleParam(this, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Trader: Sorry, but that can't be selled!" ), true, this.GetIdentity());
+					return;
+				}
 
 				if (!isInPlayerInventory(itemType, itemQuantity) && !isValidVehicle)
 				{

@@ -260,7 +260,11 @@ class TraderMenu extends UIScriptedMenu
 		{
 			int itemCosts = m_ListboxItemsBuyValue.Get(i);
 			
-			if (m_Player_CurrencyAmount >= itemCosts)
+			if (itemCosts < 0)
+			{
+				m_ListboxItems.SetItemColor(i, 1, ARGBF(0, 1, 1, 1) );
+			}
+			else if (m_Player_CurrencyAmount >= itemCosts)
 			{
 				m_ListboxItems.SetItemColor(i, 1, ARGBF(1, 1, 1, 1) );
 			}
@@ -272,7 +276,11 @@ class TraderMenu extends UIScriptedMenu
 			string itemClassname = m_ListboxItemsClassnames.Get(i);
 			int itemQuantity = m_ListboxItemsQuantity.Get(i);
 			
-			if (isInPlayerInventory(itemClassname, itemQuantity) || (itemQuantity == -2 && GetVehicleToSell(itemClassname)))
+			if (m_ListboxItemsSellValue.Get(i) < 0)
+			{
+				m_ListboxItems.SetItemColor(i, 2, ARGBF(0, 1, 1, 1) );
+			}
+			else if (isInPlayerInventory(itemClassname, itemQuantity) || (itemQuantity == -2 && GetVehicleToSell(itemClassname)))
 			{
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(1, 0, 1, 0) );
 			}
