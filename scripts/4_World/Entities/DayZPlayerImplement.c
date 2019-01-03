@@ -23,7 +23,9 @@ modded class DayZPlayerImplement
 	ref array<int> m_Trader_CurrencyValues;
 	int m_Player_CurrencyAmount;
 
-	int m_Trader_LastSelledItemID = -1;
+	//int m_Trader_LastSelledItemID = -1;
+	int m_Trader_LastSelledTime = 0;
+	int m_Trader_LastBuyedTime = 0;
 	
 	ref array<string> m_Trader_TraderNames;
 	ref array<vector> m_Trader_TraderPositions;
@@ -90,6 +92,10 @@ modded class DayZPlayerImplement
 				itemDisplayNameClient = rpb.param3;
 
 				m_Trader_IsSelling = false;
+
+				if (GetGame().GetTime() - m_Trader_LastBuyedTime < 300)
+					return;
+				m_Trader_LastBuyedTime = GetGame().GetTime();
 
 				if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
 					return;
@@ -166,6 +172,10 @@ modded class DayZPlayerImplement
 				itemDisplayNameClient = rps.param3;
 
 				m_Trader_IsSelling = true;
+
+				if (GetGame().GetTime() - m_Trader_LastSelledTime < 300)
+					return;
+				m_Trader_LastSelledTime = GetGame().GetTime();
 
 				if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
 					return;
@@ -533,7 +543,7 @@ modded class DayZPlayerImplement
 
 			//m_Player.MessageStatus("I: " + itemPlayerClassname + " == " + itemClassname);
 
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon) && m_Trader_LastSelledItemID != item.GetID())
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon)) // && m_Trader_LastSelledItemID != item.GetID())
 			{
 				return true;
 			}
@@ -775,7 +785,7 @@ modded class DayZPlayerImplement
 				
 				if (itemAmount == amount || isMagazine || isWeapon)
 				{
-					m_Trader_LastSelledItemID = item.GetID();
+					//m_Trader_LastSelledItemID = item.GetID();
 					deleteItem(item);
 					
 					this.UpdateInventoryMenu(); // RPC-Call needed?
@@ -783,7 +793,7 @@ modded class DayZPlayerImplement
 				}
 				else
 				{
-					m_Trader_LastSelledItemID = item.GetID();
+					//m_Trader_LastSelledItemID = item.GetID();
 					SetItemAmount(item, itemAmount - amount);
 				
 					this.UpdateInventoryMenu(); // RPC-Call needed?
@@ -816,7 +826,7 @@ modded class DayZPlayerImplement
 				
 				if (itemAmount == amount || isMagazine || isWeapon)
 				{
-					m_Trader_LastSelledItemID = item.GetID();
+					//m_Trader_LastSelledItemID = item.GetID();
 					deleteItem(item);
 					
 					this.UpdateInventoryMenu(); // RPC-Call needed?
@@ -824,7 +834,7 @@ modded class DayZPlayerImplement
 				}
 				else
 				{
-					m_Trader_LastSelledItemID = item.GetID();
+					//m_Trader_LastSelledItemID = item.GetID();
 					SetItemAmount(item, itemAmount - amount);
 				
 					this.UpdateInventoryMenu(); // RPC-Call needed?
@@ -980,10 +990,10 @@ modded class DayZPlayerImplement
 
 					//TODO: Check if Vehicle Owner is Player or Vehicle Owner is not set.
 
-					if (m_Trader_LastSelledItemID == nearby_objects.Get(i).GetID())
-						continue;
+					//if (m_Trader_LastSelledItemID == nearby_objects.Get(i).GetID())
+					//	continue;
 
-					m_Trader_LastSelledItemID = nearby_objects.Get(i).GetID();
+					//m_Trader_LastSelledItemID = nearby_objects.Get(i).GetID();
 
 					return nearby_objects.Get(i);		
 				}					
