@@ -42,6 +42,7 @@ modded class MissionGameplay
 		if ( key == KeyCode.KC_B )
 		{			
 			bool traderNearby = false;
+			bool playerIsInSafezoneRange = false;
 			int traderID = -1;
 			int traderUID = -1;
 			vector traderVehicleSpawn = "0 0 0";
@@ -54,10 +55,16 @@ modded class MissionGameplay
 			}
 			
 			for ( int i = 0; i < player.m_Trader_TraderPositions.Count(); i++ )
-			{				
-				if (vector.Distance(player.GetPosition(), player.m_Trader_TraderPositions.Get(i)) <= 1.7)
+			{	
+				float playerDistanceToTrader = vector.Distance(player.GetPosition(), player.m_Trader_TraderPositions.Get(i));
+
+				if (playerDistanceToTrader <= player.m_Trader_TraderSafezones.Get(i))
+					playerIsInSafezoneRange = true;
+
+				if (playerDistanceToTrader <= 1.7)
 				{
 					traderNearby = true;
+					playerIsInSafezoneRange = true;
 					traderID = player.m_Trader_TraderIDs.Get(i);
 					traderUID = i;
 					traderVehicleSpawn = player.m_Trader_TraderVehicleSpawns.Get(i);
@@ -65,12 +72,14 @@ modded class MissionGameplay
 				}
 			}
 			
-			if (!traderNearby)
+			if (!traderNearby && playerIsInSafezoneRange)
 			{
 				player.MessageStatus("There is no Trader nearby..");
 				return;
 			}
-				
+
+			if (!playerIsInSafezoneRange)
+				return;				
 			
 			if ( g_Game.GetUIManager().GetMenu() == NULL )
 			{					
