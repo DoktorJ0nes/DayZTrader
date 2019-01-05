@@ -17,8 +17,8 @@ modded class PlayerBase
 		{
 			if (playerKiller && playerKiller != this)
 			{
-				TraderServerLogs.PrintS("[TRADER] Player (" + playerKiller.GetIdentity().GetName() + ") " + playerKiller.GetIdentity().GetId() + " killed someone in the Safezone!");
-				TraderServerLogs.PrintS("[TRADER] Player who got killed: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId());
+				TraderMessage.ServerLog("[TRADER] Player (" + playerKiller.GetIdentity().GetName() + ") " + playerKiller.GetIdentity().GetId() + " killed someone in the Safezone!");
+				TraderMessage.ServerLog("[TRADER] Player who got killed: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId());
 				playerKiller.SetPosition(this.GetPosition());
 				playerKiller.SetHealth( "", "", 0 );
 				playerKiller.SetHealth( "", "Blood", 0 );

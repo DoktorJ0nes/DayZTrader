@@ -20,6 +20,8 @@ modded class MissionGameplay
 		
 		if ( player )
 		{
+			player.m_Trader_TraderNotifications.Update(timeslice);
+
 			traderModIsLoadedReplicationTimer -= timeslice;			
 			if (traderModIsLoadedReplicationTimer > 0)
 				return;			
@@ -74,7 +76,7 @@ modded class MissionGameplay
 			
 			if (!traderNearby && playerIsInSafezoneRange)
 			{
-				player.MessageStatus("There is no Trader nearby..");
+				TraderMessage.PlayerWhite("There is no Trader nearby..", player, 5);
 				return;
 			}
 

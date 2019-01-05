@@ -1,0 +1,48 @@
+FrameWidgetClass TraderNotification
+{
+	clipchildren 0
+	color 0 0 0 0
+	halign right_ref
+	halign top_ref
+	hexactpos 0
+	vexactpos 1
+	hexactsize 0
+	vexactsize 1
+	style EditorPanel
+	Padding 0
+ 	Margin 0
+	{
+        PanelWidgetClass Background
+        {
+			visible 1
+			color 0 0 0 0.65
+			position 0 0
+			size 1 1
+			hexactpos 0
+			vexactpos 0
+			hexactsize 0
+			vexactsize 0
+			style rover_sim_colorable
+        }
+
+		MultilineTextWidgetClass text_message {
+			clipchildren 0
+			size 1 1
+			valign center_ref
+			position 0 0
+			hexactpos 0
+			vexactpos 1
+			hexactsize 0
+			vexactsize 0
+			font "gui/fonts/sdf_MetronLight72"
+			"exact text" 1
+			"exact text size" 15
+			"size to text h" 1
+			"size to text v" 0
+			"text valign" center
+			"text halign" center
+			wrap 1
+         	"condense whitespace" 1
+		}
+	}
+}

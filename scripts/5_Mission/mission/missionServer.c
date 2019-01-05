@@ -82,8 +82,6 @@ modded class MissionServer
 						
 						msgRp0.param1 = " ";
 						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
-
-						Print("PLAYER WITHOUT TRADER MOD DETECTED!");
 					}
 					
 					player.m_Trader_WelcomeMessageHandled = true;
@@ -110,15 +108,13 @@ modded class MissionServer
 			if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout == m_Trader_SafezoneTimeout)
 			{
 				SetPlayerVehicleIsInSafezone( player, false );
+
+				TraderMessage.Safezone(player, m_Trader_SafezoneTimeout);
 			}
 
 			if (!isInSafezone && player.m_Trader_IsInSafezoneTimeout > 0)
 			{
-				float m_Trader_IsInSafezoneTimeout_Last = player.m_Trader_IsInSafezoneTimeout;
 				player.m_Trader_IsInSafezoneTimeout -= timeslice;
-
-				if ((Math.Floor(player.m_Trader_IsInSafezoneTimeout) != Math.Floor(m_Trader_IsInSafezoneTimeout_Last)) && player.m_Trader_IsInSafezoneTimeout > 0)
-					GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You are leaving the Safezone in " + (Math.Floor(player.m_Trader_IsInSafezoneTimeout) + 1) + " Seconds!" ), false, player.GetIdentity());
 			}
 
 			if (player.m_Trader_IsInSafezone == false && isInSafezone == true)
@@ -132,14 +128,17 @@ modded class MissionServer
 				player.GetInputController().OverrideRaise(true, false);
 				SetPlayerVehicleIsInSafezone( player, true );
 				
-				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You entered the Safezone!" ), true, player.GetIdentity());
-				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "Press 'B'-Key to open the Trader Menu." ), true, player.GetIdentity());
+				TraderMessage.DeleteSafezoneMessages(player);
+				TraderMessage.PlayerRed("You entered the Safezone!", player);
+				TraderMessage.PlayerWhite("Press 'B'-Key to open\nthe Trader Menu.", player);
 			}
 
 			if (isInSafezone && player.m_Trader_IsInSafezoneTimeout < m_Trader_SafezoneTimeout)
 			{
 				player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
-				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] Welcome back!" ), true, player.GetIdentity());
+
+				TraderMessage.DeleteSafezoneMessages(player);
+				TraderMessage.PlayerWhite("Welcome back!", player);
 			}
 			
 			if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout <= 0)
@@ -149,7 +148,8 @@ modded class MissionServer
 				player.GetInputController().OverrideRaise(false, false);
 				//SetPlayerVehicleIsInSafezone( player, false );
 				
-				GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>( "[Trader] You left the Safezone!" ), true, player.GetIdentity());
+				TraderMessage.DeleteSafezoneMessages(player);
+				TraderMessage.PlayerRed("You left the Safezone!", player);
 			}
 			
 			if (isInSafezone)
@@ -243,13 +243,13 @@ modded class MissionServer
 		m_Trader_SpawnedTraderCharacters = new array<PlayerBase>;
 		m_Trader_SpawnedFireBarrels = new array<BarrelHoles_ColorBase>;
 		
-		TraderServerLogs.PrintS("[TRADER] DEBUG START");
+		TraderMessage.ServerLog("[TRADER] DEBUG START");
 		
 		FileHandle file_index = OpenFile(m_Trader_ObjectsFilePath, FileMode.READ);
 				
 		if ( file_index == 0 )
 		{
-			TraderServerLogs.PrintS( "[TRADER] FOUND NO TRADEROBJECTS FILE!" );
+			TraderMessage.ServerLog( "[TRADER] FOUND NO TRADEROBJECTS FILE!" );
 			return;
 		}
 		
@@ -272,7 +272,7 @@ modded class MissionServer
 			line_content = FileReadHelper.TrimComment(line_content);
 			line_content = FileReadHelper.TrimSpaces(line_content);
 			
-			TraderServerLogs.PrintS("[TRADER] READING OBJECT TYPE ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING OBJECT TYPE ENTRY..");
 			
 			string traderObjectType = line_content;
 			
@@ -282,7 +282,7 @@ modded class MissionServer
 			line_content.Replace("<ObjectPosition>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
 			
-			TraderServerLogs.PrintS("[TRADER] READING OBJECT POSITION ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING OBJECT POSITION ENTRY..");
 			
 			TStringArray strso = new TStringArray;
 			line_content.Split( ",", strso );
@@ -322,7 +322,7 @@ modded class MissionServer
 
 			Object obj = GetGame().CreateObject( traderObjectType, objectPosition, false, false, true );
 			obj.SetPosition(objectPosition); // prevent automatic on ground placing
-			TraderServerLogs.PrintS("[TRADER] SPAWNED OBJECT '" + traderObjectType + "' AT '" + objectPosition + "'");
+			TraderMessage.ServerLog("[TRADER] SPAWNED OBJECT '" + traderObjectType + "' AT '" + objectPosition + "'");
 			
 			// HANDLE TRADER FIRE BARREL BEGIN
 			if (isPersistant)
@@ -333,7 +333,7 @@ modded class MissionServer
 					ntarget.Trader_IsInSafezone = true;
 
 					ntarget.Open();
-					TraderServerLogs.PrintS("[TRADER] OPENED BARREL");
+					TraderMessage.ServerLog("[TRADER] OPENED BARREL");
 
 					m_Trader_SpawnedFireBarrels.Insert(ntarget);
 				}
@@ -344,7 +344,7 @@ modded class MissionServer
 			PlayerBase man;
 			if (Class.CastTo(man, obj))
 			{
-				TraderServerLogs.PrintS("[TRADER] Object was a Man..");
+				TraderMessage.ServerLog("[TRADER] Object was a Man..");
 				isTrader = true;
 			}
 			
@@ -373,7 +373,7 @@ modded class MissionServer
 			line_content.Replace("<ObjectOrientation>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
 			
-			TraderServerLogs.PrintS("[TRADER] READING OBJECT ORIENTATION ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING OBJECT ORIENTATION ENTRY..");
 			
 			TStringArray strsod = new TStringArray;
 			line_content.Split( ",", strsod );
@@ -394,7 +394,7 @@ modded class MissionServer
 			
 			obj.SetOrientation(objectOrientation);
 
-			TraderServerLogs.PrintS("[TRADER] OBJECT ORIENTATION = '" + obj.GetOrientation() + "'");
+			TraderMessage.ServerLog("[TRADER] OBJECT ORIENTATION = '" + obj.GetOrientation() + "'");
 
 			if (isTrader)
 			{
@@ -407,12 +407,12 @@ modded class MissionServer
 		}
 		
 		CloseFile(file_index);
-		TraderServerLogs.PrintS("[TRADER] DEBUG END");
+		TraderMessage.ServerLog("[TRADER] DEBUG END");
 	}
 
 	void sendTraderDataToPlayer(PlayerBase player)
 	{
-		TraderServerLogs.PrintS("[TRADER] SEND DATA TO PLAYER");
+		TraderMessage.ServerLog("[TRADER] SEND DATA TO PLAYER");
 
 		// request client to clear all data:
 		Param1<bool> crpClr = new Param1<bool>( true );
@@ -421,7 +421,7 @@ modded class MissionServer
 		player.m_Trader_CurrencyName = m_Trader_CurrencyName;
 		Param1<string> crp0 = new Param1<string>( m_Trader_CurrencyName );
 		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CURRENCYNAME_ENTRY, crp0, true, player.GetIdentity());
-		//TraderServerLogs.PrintS("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyName);
+		//TraderMessage.ServerLog("[TRADER] CURRENCYTYPE: " + m_Trader_CurrencyName);
 
 		int i = 0;
 		player.m_Trader_CurrencyClassnames = new array<string>;
@@ -439,14 +439,14 @@ modded class MissionServer
 		{
 			Param1<string> crp2 = new Param1<string>( m_Trader_TraderNames.Get(i) );
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_NAME_ENTRY, crp2, true, player.GetIdentity());
-			//TraderServerLogs.PrintS("[TRADER] TRADERNAME: " + m_Trader_TraderNames.Get(i));
+			//TraderMessage.ServerLog("[TRADER] TRADERNAME: " + m_Trader_TraderNames.Get(i));
 		}
 		
 		for ( i = 0; i < m_Trader_Categorys.Count(); i++ )
 		{
 			Param2<string, int> crp3 = new Param2<string, int>( m_Trader_Categorys.Get(i), m_Trader_CategorysTraderKey.Get(i) );
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CATEGORY_ENTRY, crp3, true, player.GetIdentity());
-			//TraderServerLogs.PrintS("[TRADER] TRADERCATEGORY: " + m_Trader_Categorys.Get(i) + ", " + m_Trader_CategorysTraderKey.Get(i));
+			//TraderMessage.ServerLog("[TRADER] TRADERCATEGORY: " + m_Trader_Categorys.Get(i) + ", " + m_Trader_CategorysTraderKey.Get(i));
 		}
 		
 		player.m_Trader_ItemsClassnames = new array<string>;
@@ -462,7 +462,7 @@ modded class MissionServer
 
 			Param6<int, int, string, int, int, int> crp4 = new Param6<int, int, string, int, int, int>( m_Trader_ItemsTraderId.Get(i), m_Trader_ItemsCategoryId.Get(i), m_Trader_ItemsClassnames.Get(i), m_Trader_ItemsQuantity.Get(i), m_Trader_ItemsBuyValue.Get(i), m_Trader_ItemsSellValue.Get(i) );
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_ITEM_ENTRY, crp4, true, player.GetIdentity());
-			//TraderServerLogs.PrintS("[TRADER] ITEMENTRY: " + m_Trader_ItemsTraderId.Get(i) + ", " + m_Trader_ItemsCategoryId.Get(i) + ", " + m_Trader_ItemsClassnames.Get(i) + ", " + m_Trader_ItemsQuantity.Get(i) + ", " + m_Trader_ItemsBuyValue.Get(i) + ", " + m_Trader_ItemsSellValue.Get(i));
+			//TraderMessage.ServerLog("[TRADER] ITEMENTRY: " + m_Trader_ItemsTraderId.Get(i) + ", " + m_Trader_ItemsCategoryId.Get(i) + ", " + m_Trader_ItemsClassnames.Get(i) + ", " + m_Trader_ItemsQuantity.Get(i) + ", " + m_Trader_ItemsBuyValue.Get(i) + ", " + m_Trader_ItemsSellValue.Get(i));
 		}
 		
 		player.m_Trader_TraderPositions = new array<vector>;
@@ -476,7 +476,7 @@ modded class MissionServer
 
 			Param5<int, vector, int, vector, vector> crp5 = new Param5<int, vector, int, vector, vector>( m_Trader_TraderIDs.Get(i), m_Trader_TraderPositions.Get(i), m_Trader_TraderSafezones.Get(i), m_Trader_TraderVehicleSpawns.Get(i), m_Trader_TraderVehicleSpawnsOrientation.Get(i) );
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_MARKER_ENTRY, crp5, true, player.GetIdentity());
-			//TraderServerLogs.PrintS("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i) + ", " + m_Trader_TraderVehicleSpawns.Get(i) + ", " + m_Trader_TraderVehicleSpawnsOrientation.Get(i));
+			//TraderMessage.ServerLog("[TRADER] MARKERENTRY: " + m_Trader_TraderIDs.Get(i) + ", " + m_Trader_TraderPositions.Get(i) + ", " + m_Trader_TraderSafezones.Get(i) + ", " + m_Trader_TraderVehicleSpawns.Get(i) + ", " + m_Trader_TraderVehicleSpawnsOrientation.Get(i));
 		}
 
 		// Only stored Serverside:
@@ -484,7 +484,7 @@ modded class MissionServer
 		for ( i = 0; i < m_Trader_Vehicles.Count(); i++ )
 		{
 			player.m_Trader_Vehicles.Insert(m_Trader_Vehicles.Get(i));
-			//TraderServerLogs.PrintS("[TRADER] VEHICLEENTRY: " + m_Trader_Vehicles.Get(i));
+			//TraderMessage.ServerLog("[TRADER] VEHICLEENTRY: " + m_Trader_Vehicles.Get(i));
 		}
 
 		// Only stored Serverside:
@@ -494,7 +494,7 @@ modded class MissionServer
 		{
 			player.m_Trader_VehiclesParts.Insert(m_Trader_VehiclesParts.Get(i));
 			player.m_Trader_VehiclesPartsVehicleId.Insert(m_Trader_VehiclesPartsVehicleId.Get(i));
-			//TraderServerLogs.PrintS("[TRADER] VEHICLEPARTENTRY: " + m_Trader_VehiclesPartsVehicleId.Get(i) + ", " + m_Trader_VehiclesParts.Get(i));
+			//TraderMessage.ServerLog("[TRADER] VEHICLEPARTENTRY: " + m_Trader_VehiclesPartsVehicleId.Get(i) + ", " + m_Trader_VehiclesParts.Get(i));
 		}
 		
 		// confirm that all data was sended:
@@ -502,7 +502,7 @@ modded class MissionServer
 		
 		Param1<bool> crpConf = new Param1<bool>( true );
 		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION, crpConf, true, player.GetIdentity());
-		//TraderServerLogs.PrintS("[TRADER] DEBUG END");
+		//TraderMessage.ServerLog("[TRADER] DEBUG END");
 	}
 
 	void readTraderData()
@@ -530,19 +530,19 @@ modded class MissionServer
 		m_Trader_VehiclesParts = new array<string>;
 		m_Trader_VehiclesPartsVehicleId = new array<int>;		
 
-		TraderServerLogs.PrintS("[TRADER] DEBUG START");
+		TraderMessage.ServerLog("[TRADER] DEBUG START");
 		
 		FileHandle file_index = OpenFile(m_Trader_ConfigFilePath, FileMode.READ);
 		
 		if ( file_index == 0 )
 		{
-			TraderServerLogs.PrintS("[TRADER] FOUND NO TRADERCONFIG FILE!");
+			TraderMessage.ServerLog("[TRADER] FOUND NO TRADERCONFIG FILE!");
 			return;
 		}
 		
 		string line_content = "";
 		
-		TraderServerLogs.PrintS("[TRADER] READING CURRENCY NAME ENTRY..");
+		TraderMessage.ServerLog("[TRADER] READING CURRENCY NAME ENTRY..");
 		line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<CurrencyName>", "");
 		line_content.Replace("<CurrencyName>", "");
 		line_content = FileReadHelper.TrimComment(line_content);
@@ -560,7 +560,7 @@ modded class MissionServer
 			if (line_content.Contains("<Trader>"))
 				break;
 
-			TraderServerLogs.PrintS("[TRADER] READING CURRENCY ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING CURRENCY ENTRY..");
 
 			TStringArray crys = new TStringArray;
 			line_content.Split( ",", crys );
@@ -581,7 +581,7 @@ modded class MissionServer
 		//line_content = "";
 		while (traderCounter <= 500 && line_content != "<FileEnd>")
 		{
-			TraderServerLogs.PrintS("[TRADER] READING TRADER ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING TRADER ENTRY..");
 			
 			if (traderInstanceDone == false)
 				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Trader>", "");
@@ -612,7 +612,7 @@ modded class MissionServer
 					break;
 				}
 				
-				TraderServerLogs.PrintS("[TRADER] READING CATEGORY ENTRY..");
+				TraderMessage.ServerLog("[TRADER] READING CATEGORY ENTRY..");
 				line_content.Replace("<Category>", "");
 				m_Trader_Categorys.Insert(FileReadHelper.TrimComment(line_content));
 				m_Trader_CategorysTraderKey.Insert(traderCounter);
@@ -661,7 +661,7 @@ modded class MissionServer
 			if (line_content.Contains("<Currency"))
 				continue;
 
-			TraderServerLogs.PrintS("[TRADER] READING ITEM ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING ITEM ENTRY..");
 		
 			TStringArray strs = new TStringArray;
 			line_content.Split( ",", strs );
@@ -710,7 +710,7 @@ modded class MissionServer
 		
 		if ( file_index == 0 )
 		{
-			TraderServerLogs.PrintS("[TRADER] FOUND NO TRADEROBJECTS FILE!");
+			TraderMessage.ServerLog("[TRADER] FOUND NO TRADEROBJECTS FILE!");
 			return;
 		}
 		
@@ -733,7 +733,7 @@ modded class MissionServer
 			line_content = FileReadHelper.TrimComment(line_content);
 			line_content = FileReadHelper.TrimSpaces(line_content);
 			
-			TraderServerLogs.PrintS("[TRADER] READING MARKER ID ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING MARKER ID ENTRY..");
 								
 			m_Trader_TraderIDs.Insert(line_content.ToInt());
 			
@@ -760,7 +760,7 @@ modded class MissionServer
 			markerPosition[1] = traderMarkerPosY.ToFloat();
 			markerPosition[2] = traderMarkerPosZ.ToFloat();
 			
-			TraderServerLogs.PrintS("[TRADER] READING MARKER POSITION ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING MARKER POSITION ENTRY..");
 			
 			m_Trader_TraderPositions.Insert(markerPosition);
 			
@@ -771,7 +771,7 @@ modded class MissionServer
 			line_content = FileReadHelper.TrimComment(line_content);
 			line_content = FileReadHelper.TrimSpaces(line_content);
 			
-			TraderServerLogs.PrintS("[TRADER] READING MARKER SAFEZONE ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING MARKER SAFEZONE ENTRY..");
 			
 			m_Trader_TraderSafezones.Insert(line_content.ToInt());
 
@@ -809,7 +809,7 @@ modded class MissionServer
 			markerVehiclePosition[1] = traderMarkerVehiclePosY.ToFloat();
 			markerVehiclePosition[2] = traderMarkerVehiclePosZ.ToFloat();
 
-			TraderServerLogs.PrintS("[TRADER] READING MARKER VEHICLE ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING MARKER VEHICLE ENTRY..");
 
 			m_Trader_TraderVehicleSpawns.Insert(markerVehiclePosition);
 
@@ -859,7 +859,7 @@ modded class MissionServer
 		
 		if ( file_index == 0 )
 		{
-			TraderServerLogs.PrintS("[TRADER] FOUND NO VEHICLEPARTS FILE!");
+			TraderMessage.ServerLog("[TRADER] FOUND NO VEHICLEPARTS FILE!");
 			return;
 		}
 		
@@ -882,7 +882,7 @@ modded class MissionServer
 			line_content = FileReadHelper.TrimComment(line_content);
 			line_content = FileReadHelper.TrimSpaces(line_content);
 			
-			TraderServerLogs.PrintS("[TRADER] READING VEHICLE NAME ENTRY..");
+			TraderMessage.ServerLog("[TRADER] READING VEHICLE NAME ENTRY..");
 
 			m_Trader_Vehicles.Insert(line_content);
 
@@ -925,7 +925,7 @@ modded class MissionServer
 		
 		//------------------------------------------------------------------------------------
 
-		TraderServerLogs.PrintS("[TRADER] DONE READING!");
+		TraderMessage.ServerLog("[TRADER] DONE READING!");
 		m_Trader_ReadAllTraderData = true;
 	}
 

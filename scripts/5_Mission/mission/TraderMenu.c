@@ -66,7 +66,7 @@ class TraderMenu extends UIScriptedMenu
 
     override Widget Init()
     {
-		layoutRoot = GetGame().GetWorkspace().CreateWidgets( "TM/Trader/scripts/5_Mission/mission/TraderMenu.layout" );
+		layoutRoot = GetGame().GetWorkspace().CreateWidgets( "TM/Trader/scripts/layouts/TraderMenu.layout" );
 
         m_BtnBuy = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_buy" ) );
 		m_BtnSell = ButtonWidget.Cast( layoutRoot.FindAnyWidget( "btn_sell" ) );
@@ -177,7 +177,7 @@ class TraderMenu extends UIScriptedMenu
 		{
 			if (m_UiBuyTimer > 0)
 			{
-				m_Player.MessageStatus("Trader: Not that fast Bro!");
+				TraderMessage.PlayerWhite("Not that fast Bro!", m_Player);
 				return true;
 			}
 			m_UiBuyTimer = m_buySellTime;
@@ -191,7 +191,7 @@ class TraderMenu extends UIScriptedMenu
 		{
 			if (m_UiSellTimer > 0)
 			{
-				m_Player.MessageStatus("Trader: Not that fast Bro!");
+				TraderMessage.PlayerWhite("Not that fast Bro!", m_Player);
 				return true;
 			}
 			m_UiSellTimer = m_buySellTime;
@@ -432,7 +432,7 @@ class TraderMenu extends UIScriptedMenu
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
-		//m_Player.MessageStatus("--------------");
+		//TraderMessage.PlayerWhite("--------------");
 
 		ItemBase item;		
 		for (int i = 0; i < itemsArray.Count(); i++)
@@ -449,7 +449,7 @@ class TraderMenu extends UIScriptedMenu
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
-			//m_Player.MessageStatus("I: " + itemPlayerClassname + " == " + itemClassname);
+			//TraderMessage.PlayerWhite("I: " + itemPlayerClassname + " == " + itemClassname);
 
 			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
 			{
@@ -626,7 +626,7 @@ class TraderMenu extends UIScriptedMenu
 
 		/*string attachmentInventorySlot;
 		g_Game.ConfigGetText(CFG_VEHICLESPATH + " " + attachmentClassname + " inventorySlot", attachmentInventorySlot);
-		m_Player.MessageStatus("ITEM: " + attachmentInventorySlot);*/
+		TraderMessage.PlayerWhite("ITEM: " + attachmentInventorySlot);*/
 
 
 		/*TStringArray searching_in = new TStringArray;
@@ -662,19 +662,19 @@ class TraderMenu extends UIScriptedMenu
 			string namePath = "CfgSlots" + " Slot_" + slot_name;
 			GetGame().ConfigGetText( namePath + " name", slot_name );
 
-			m_Player.MessageStatus("HANDS: " + slot_name);
+			TraderMessage.PlayerWhite("HANDS: " + slot_name);
 
 			if (slot_name == attachmentInventorySlot)
 				return true;
 
 			
 			//int cfg_count = GetGame().ConfigGetChildrenCount(namePath);
-			//m_Player.MessageStatus("WOW: " + cfg_count);
+			//TraderMessage.PlayerWhite("WOW: " + cfg_count);
 			//for (int j = 0; j < cfg_count; j++)
 			//{
 			//	string childName;
 			//	GetGame().ConfigGetChildName(namePath, j, childName);
-			//	m_Player.MessageStatus("WOWW: " + childName);
+			//	TraderMessage.PlayerWhite("WOWW: " + childName);
 			//}
 		}
 
@@ -683,7 +683,7 @@ class TraderMenu extends UIScriptedMenu
 
 		// Check with Ghostentity
 		/*EntityAI entity = g_Game.GetPlayer().SpawnEntityOnGroundPos(attachmentClassname, vector.Zero); 
-		m_Player.MessageStatus("DEBUG: Placed " + entity.GetDisplayName());
+		TraderMessage.PlayerWhite("DEBUG: Placed " + entity.GetDisplayName());
 
 		if ( parentEntity.GetInventory() && parentEntity.GetInventory().CanAddAttachment( entity ) )
 		{
@@ -722,7 +722,7 @@ class TraderMenu extends UIScriptedMenu
 
 		for (int i = 0; i < cfg_attachments.Count(); i++)
 		{
-			m_Player.MessageStatus(cfg_attachments[i]);
+			TraderMessage.PlayerWhite(cfg_attachments[i]);
 
 			if (attachmentClassname == cfg_attachments[i].GetType)
 			return true;
@@ -741,12 +741,12 @@ class TraderMenu extends UIScriptedMenu
 		//tesstr = GetGame().ConfigGetTextOut(path);
 		//cfg_attachments.Insert(tesstr);
 
-		m_Player.MessageStatus("(" + cfg_attachments.Count() + ") CFGs: " + path + ":");
+		TraderMessage.PlayerWhite("(" + cfg_attachments.Count() + ") CFGs: " + path + ":");
 		Print("(" + cfg_attachments.Count() + ") CFGs: " + path + ":");
 
 		for (int i = 0; i < cfg_attachments.Count(); i++)
 		{
-			m_Player.MessageStatus("x   " + cfg_attachments[i]);
+			TraderMessage.PlayerWhite("x   " + cfg_attachments[i]);
 			Print("x   " + cfg_attachments[i]);
 		}
 
