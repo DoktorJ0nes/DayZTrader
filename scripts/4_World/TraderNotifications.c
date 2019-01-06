@@ -1,3 +1,7 @@
+const int TRADERNOTIFICATION_PADDING = 2;
+const int TRADERNOTIFICATION_TEXTHIGHT = 20;
+const int TRADERNOTIFICATION_MARGIN = 5;
+
 class TraderNotification
 {
     Widget m_Widget;
@@ -30,7 +34,7 @@ class TraderNotification
 
         TStringArray messageLines = new TStringArray;
 		message.Split( "\n", messageLines );
-        m_vsize = (messageLines.Count() * 20) + 5;
+        m_vsize = (messageLines.Count() * TRADERNOTIFICATION_TEXTHIGHT) + TRADERNOTIFICATION_MARGIN;
         m_Widget.SetSize(0.14, m_vsize);
 
         m_Timer = time;
@@ -98,8 +102,7 @@ class TraderNotifications
         if (color != 0)
             notification.SetTextColor(color);
 
-        if (m_Messages.Count() >= 15)
-            m_Messages.RemoveOrdered(0);
+        MakeSpaceForNewMessage(notification.m_vsize);
 
         m_Messages.Insert(notification);
 
@@ -112,7 +115,10 @@ class TraderNotifications
 
         TraderNotification notification = new TraderNotification();
         notification.Init("", time, true);
+
         notification.SetTextColor(0xFFFA6B6B);
+
+        MakeSpaceForNewMessage(notification.m_vsize);
 
         m_Messages.Insert(notification);
 
@@ -127,7 +133,7 @@ class TraderNotifications
         {
             TraderNotification notification = m_Messages.Get(i);
             notification.m_Widget.SetPos(0.01, voffset);
-            voffset += notification.m_vsize + 2;
+            voffset += notification.m_vsize + TRADERNOTIFICATION_PADDING;
         }
     }
 
@@ -144,6 +150,36 @@ class TraderNotifications
 
                 UpdateMessagePositions();
             }
+        }
+    }
+
+    void MakeSpaceForNewMessage(float vsizeNewMessage)
+    {
+        float vsizeMaxTotal = 750; //26 * (25 + 2);
+        float totalSpaceUsed = 0;
+
+        int i;
+        TraderNotification notification;
+
+        for (i = 0; i < m_Messages.Count(); i++)
+        {
+            notification = m_Messages.Get(i);
+            totalSpaceUsed += notification.m_vsize + TRADERNOTIFICATION_PADDING;
+        }
+
+        if (totalSpaceUsed + vsizeNewMessage <= vsizeMaxTotal)
+            return;
+
+        for (i = 0; i < m_Messages.Count(); i++)
+        {
+            notification = m_Messages.Get(i);
+            totalSpaceUsed -= notification.m_vsize - TRADERNOTIFICATION_PADDING;
+
+            m_Messages.RemoveOrdered(i);
+            i--;
+
+            if (totalSpaceUsed + vsizeNewMessage <= vsizeMaxTotal)
+                return;
         }
     }
 }
