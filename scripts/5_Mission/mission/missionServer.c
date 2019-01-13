@@ -131,6 +131,8 @@ modded class MissionServer
 				TraderMessage.DeleteSafezoneMessages(player);
 				TraderMessage.PlayerRed("You entered the Safezone!", player);
 				TraderMessage.PlayerWhite("Press 'B'-Key to open\nthe Trader Menu.", player);
+
+				player.SetFlags(EntityFlags.TRIGGER, true);
 			}
 
 			if (isInSafezone && player.m_Trader_IsInSafezoneTimeout < m_Trader_SafezoneTimeout)
@@ -150,6 +152,8 @@ modded class MissionServer
 				
 				TraderMessage.DeleteSafezoneMessages(player);
 				TraderMessage.PlayerRed("You left the Safezone!", player);
+
+				player.ClearFlags(EntityFlags.TRIGGER, true);
 			}
 			
 			if (isInSafezone)
@@ -173,7 +177,7 @@ modded class MissionServer
 				//player.GetStatStamina().Set(1000);
 
 				if (m_Trader_PlayerHiveUpdateTime == 0 && player.IsAlive())
-					GetHive().CharacterSave(player);
+					//GetHive().CharacterSave(player);
 			}
 		}
 		

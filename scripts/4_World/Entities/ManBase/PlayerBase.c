@@ -31,12 +31,14 @@ modded class PlayerBase
 			this.SetHealth( "", "", this.m_Trader_HealthEnteredSafeZone );
 			this.SetHealth( "","Blood", this.m_Trader_HealthBloodEnteredSafeZone );
 			this.SetHealth( "","Shock", this.GetMaxHealth( "", "Shock" ) );
-
-			if (GetHive())
-				GetHive().CharacterExit(this);
 				
 			if (!this.IsAlive())
+			{
 				SetPosition(vector.Zero);
+
+				if (GetHive())
+					GetHive().CharacterExit(this);
+			}
 
 			return;
 		}
