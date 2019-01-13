@@ -126,6 +126,11 @@ class TraderMenu extends UIScriptedMenu
 				updateItemPreview(itemType);
 			}
 
+			PlayerBase player = g_Game.GetPlayer();
+			float playerDistanceToTrader = vector.Distance(player.GetPosition(), player.m_Trader_TraderPositions.Get(m_TraderUID));
+			if (playerDistanceToTrader > 1.7)
+				GetGame().GetUIManager().Back();
+
 			m_UiUpdateTimer = 0;
 		}
 		else
@@ -140,8 +145,7 @@ class TraderMenu extends UIScriptedMenu
 
 		PPEffects.SetBlurMenu(0.5);
 
-		PlayerBase player = g_Game.GetPlayer();
-		player.GetInputController().SetDisabled(true);
+		GetGame().GetInput().ChangeGameFocus(1);
 
 		SetFocus( layoutRoot );
 	}
@@ -152,8 +156,7 @@ class TraderMenu extends UIScriptedMenu
 
 		PPEffects.SetBlurMenu(0);
 
-		PlayerBase player = g_Game.GetPlayer();
-		player.GetInputController().SetDisabled(false);
+		GetGame().GetInput().ResetGameFocus();
 
 		if ( previewItem ) 
 		{
