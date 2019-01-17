@@ -71,16 +71,10 @@ modded class MissionServer
 				{
 					if ( !player.m_Trader_TraderModIsLoaded )
 					{
-						Param1<string> msgRp0 = new Param1<string>( " " );
-						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
-						
-						msgRp0.param1 = "This Server uses Dr_J0nes Trader Mod.";
+						Param1<string> msgRp0 = new Param1<string>( "This Server uses Dr_J0nes Trader Mod." );
 						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
 						
 						msgRp0.param1 = "Please download and install it!";
-						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
-						
-						msgRp0.param1 = " ";
 						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
 					}
 					
