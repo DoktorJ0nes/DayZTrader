@@ -20,7 +20,8 @@ modded class MissionGameplay
 		
 		if ( player )
 		{
-			player.m_Trader_TraderNotifications.Update(timeslice);
+			if (player.m_Trader_TraderNotifications)
+				player.m_Trader_TraderNotifications.Update(timeslice);
 
 			traderModIsLoadedReplicationTimer -= timeslice;			
 			if (traderModIsLoadedReplicationTimer > 0)
