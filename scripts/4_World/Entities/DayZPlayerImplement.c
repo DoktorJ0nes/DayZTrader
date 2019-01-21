@@ -719,7 +719,7 @@ modded class DayZPlayerImplement
 		{
 			int mergeQuantity;
 
-			if (getItemAmount(mergeableItems.Get(i)) + getItemAmount(item) <= GetItemMaxQuantity(mergeableItems.Get(i).GetType())
+			if (getItemAmount(mergeableItems.Get(i)) + getItemAmount(item) <= GetItemMaxQuantity(mergeableItems.Get(i).GetType()))
 				mergeQuantity = getItemAmount(item);
 			else
 				mergeQuantity = GetItemMaxQuantity(mergeableItems.Get(i).GetType()) - getItemAmount(mergeableItems.Get(i));
