@@ -347,9 +347,88 @@ modded class MissionServer
 			{
 				TraderMessage.ServerLog("[TRADER] Object was a Man..");
 				isTrader = true;
+
+				m_Trader_SpawnedTraderCharacters.Insert(man);
+				man.SetAllowDamage(false);
 			}
-			
+
 			// Get Object Orientation -------------------------------------------------------------------------------
+			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectOrientation>", "<FileEnd>");
+			
+			line_content.Replace("<ObjectOrientation>", "");
+			line_content = FileReadHelper.TrimComment(line_content);
+			
+			TraderMessage.ServerLog("[TRADER] READING OBJECT ORIENTATION ENTRY..");
+
+			TStringArray strsod = new TStringArray;
+			line_content.Split( ",", strsod );
+			
+			string traderObjectOriX = strsod.Get(0);
+			traderObjectOriX = FileReadHelper.TrimSpaces(traderObjectOriX);
+			
+			string traderObjectOriY = strsod.Get(1);
+			traderObjectOriY = FileReadHelper.TrimSpaces(traderObjectOriY);
+			
+			string traderObjectOriZ = strsod.Get(2);
+			traderObjectOriZ = FileReadHelper.TrimSpaces(traderObjectOriZ);
+			
+			vector objectOrientation = vector.Zero;
+			objectOrientation[0] = traderObjectOriX.ToFloat();
+			objectOrientation[1] = traderObjectOriY.ToFloat();
+			objectOrientation[2] = traderObjectOriZ.ToFloat();
+			
+			obj.SetOrientation(objectOrientation);
+
+			TraderMessage.ServerLog("[TRADER] OBJECT ORIENTATION = '" + obj.GetOrientation() + "'");
+
+
+
+
+
+
+
+
+			int attachmentCounter = 0;
+			while ( attachmentCounter <= 100 && line_content.Contains("<Object>") == false)
+			{
+				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectAttachment>", "<Object>");
+
+				if (line_content == string.Empty)	
+				{
+					line_content = "<FileEnd>";
+					break;
+				}
+
+				if (line_content.Contains("<Object>"))
+				{					
+					skipDirEntry = true;
+					markerCounter++;
+					break;
+				}
+
+				//if (!line_content.Contains("<ObjectAttachment>"))
+				//	continue;
+
+				line_content.Replace("<ObjectAttachment>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+				
+				TraderMessage.ServerLog("[TRADER] READING OBJECT ATTACHMENT ENTRY..");
+
+				if (isTrader)
+				{
+					man.GetInventory().CreateInInventory(line_content);
+					TraderMessage.ServerLog("[TRADER] '" + line_content + "' WAS ATTACHED");
+				}
+				else
+					TraderMessage.ServerLog("[TRADER] OBJECT TO ATTACH WAS INVALID!");
+
+				attachmentCounter++;
+			}
+
+
+
+			
+			/*// Get Object Orientation -------------------------------------------------------------------------------
 			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectOrientation>", "<Object>");
 			
 			if (line_content == string.Empty)	
@@ -403,10 +482,10 @@ modded class MissionServer
 				//man.m_Trader_IsInSafezone = true;
 				m_Trader_SpawnedTraderCharacters.Insert(man);
 				man.SetAllowDamage(false);
-			}
+			}*/
 						
 			
-			markerCounter++;
+			//markerCounter++;
 		}
 		
 		CloseFile(file_index);
