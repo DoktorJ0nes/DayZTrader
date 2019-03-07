@@ -39,6 +39,7 @@ modded class MissionServer
 	const float m_Trader_StatUpdateTimeMax = 1;
 	float m_Trader_StatUpdateTime = m_Trader_StatUpdateTimeMax;
 	float m_Trader_SpawnedFireBarrelsUpdateTimer = 0;
+	float m_Trader_ZombieCleanupUpdateTimer = 0;
 	
 	override void OnInit()
 	{		
@@ -208,6 +209,32 @@ modded class MissionServer
 
 				if (ntarget.IsWet())
 					ntarget.SetWet(ntarget.GetWetMin());
+			}
+		}
+
+		m_Trader_ZombieCleanupUpdateTimer += timeslice;
+		if (m_Trader_ZombieCleanupUpdateTimer >= 30)
+		{
+			m_Trader_ZombieCleanupUpdateTimer = 0;
+
+			for (int n = 0; n < m_Trader_TraderPositions.Count(); n++)
+			{
+				vector orientation = Vector(0, 0, 0);
+				int safezoneDiameter = m_Trader_TraderSafezones.Get(n) * 2;
+				vector edgeLength = Vector(safezoneDiameter, safezoneDiameter, safezoneDiameter);
+				array<Object> excludedObjects = new array<Object>;
+				array<Object> collidedObjects = new array<Object>;
+				
+				if (GetGame().IsBoxColliding(m_Trader_TraderPositions.Get(n), orientation, edgeLength, excludedObjects, collidedObjects))
+				{
+					for (int o = 0; o < collidedObjects.Count(); o++)
+					{
+						string objectClass = collidedObjects.Get(o).GetType();
+
+						if (objectClass.Contains("ZmbF_") || objectClass.Contains("ZmbM_"))
+							GetGame().ObjectDelete(collidedObjects.Get(o));	
+					}
+				}
 			}
 		}
 	}
