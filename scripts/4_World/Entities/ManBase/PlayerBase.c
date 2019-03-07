@@ -1,4 +1,4 @@
-modded class PlayerBase
+/*modded class PlayerBase
 {
 	bool m_Trader_IsTrader = false;
 
@@ -60,11 +60,27 @@ modded class PlayerBase
 			DayZAnimal sourceAnimal;
 			Class.CastTo(sourceAnimal, source);
 
+			PlayerBase sourcePlayer;
+			Class.CastTo(sourcePlayer, source);
+
 			if (sourceInfected || sourceAnimal)
 			{
 				//GetGame().ObjectDelete(source);
 				source.SetHealth( "", "", 0 );
 				source.SetHealth( "", "Blood", 0 );
+			}
+
+			if (sourcePlayer)
+			{
+				if (sourcePlayer != this)
+				{
+					TraderMessage.ServerLog("[TRADER] Player (" + sourcePlayer.GetIdentity().GetName() + ") " + sourcePlayer.GetIdentity().GetId() + " shoot at someone in the Safezone!");
+					TraderMessage.ServerLog("[TRADER] Player who got shoot: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId());
+
+					source.SetPosition(this.GetPosition());
+					source.SetHealth( "", "", 0 );
+					source.SetHealth( "", "Blood", 0 );
+				}
 			}
 
 			return;
@@ -73,4 +89,4 @@ modded class PlayerBase
 
 		super.EEHitBy(damageResult, damageType, source, component, dmgZone, ammo, modelPos);
 	}
-}
+}*/

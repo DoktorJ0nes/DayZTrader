@@ -36,7 +36,8 @@ modded class MissionServer
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
 	ref array<BarrelHoles_ColorBase> m_Trader_SpawnedFireBarrels;
 
-	float m_Trader_PlayerHiveUpdateTime = 0;
+	const float m_Trader_StatUpdateTimeMax = 1;
+	float m_Trader_StatUpdateTime = m_Trader_StatUpdateTimeMax;
 	float m_Trader_SpawnedFireBarrelsUpdateTimer = 0;
 	
 	override void OnInit()
@@ -52,145 +53,120 @@ modded class MissionServer
 		super.OnUpdate(timeslice);
 		
 
-		m_Trader_PlayerHiveUpdateTime += timeslice;
-		if (m_Trader_PlayerHiveUpdateTime >= 1)
-			m_Trader_PlayerHiveUpdateTime = 0;
-
-		for (int j = 0; j < m_Players.Count(); j++)
+		m_Trader_StatUpdateTime += timeslice;
+		if (m_Trader_StatUpdateTime >= m_Trader_StatUpdateTimeMax)
 		{
-			PlayerBase player = PlayerBase.Cast(m_Players.Get(j));
-			
-			if ( !player )
-				continue;
-			
-			if ( !player.m_Trader_WelcomeMessageHandled && player.IsAlive() )
-			{				
-				if (player.m_Trader_WelcomeMessageTimer > 0)
-					player.m_Trader_WelcomeMessageTimer -= timeslice;
-				else
-				{
-					if ( !player.m_Trader_TraderModIsLoaded )
+			m_Trader_StatUpdateTime = 0;
+
+			for (int j = 0; j < m_Players.Count(); j++)
+			{
+				PlayerBase player = PlayerBase.Cast(m_Players.Get(j));
+				
+				if ( !player )
+					continue;
+				
+				if ( !player.m_Trader_WelcomeMessageHandled && player.IsAlive() )
+				{				
+					if (player.m_Trader_WelcomeMessageTimer > 0)
+						player.m_Trader_WelcomeMessageTimer -= m_Trader_StatUpdateTimeMax;
+					else
 					{
-						Param1<string> msgRp0 = new Param1<string>( "This Server uses Dr_J0nes Trader Mod." );
-						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
+						if ( !player.m_Trader_TraderModIsLoaded )
+						{
+							Param1<string> msgRp0 = new Param1<string>( "This Server uses Dr_J0nes Trader Mod." );
+							GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
+							
+							msgRp0.param1 = "Please download and install it!";
+							GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
+						}
 						
-						msgRp0.param1 = "Please download and install it!";
-						GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
+						player.m_Trader_WelcomeMessageHandled = true;
 					}
+				}
+
+				if (!player.IsAlive())
+					continue;
+				
+				if (!m_Trader_ReadAllTraderData)
+					continue;
+
+				if (!player.m_Trader_RecievedAllData)
+					sendTraderDataToPlayer(player);
+				
+				bool isInSafezone = false;
+				
+				for (int k = 0; k < m_Trader_TraderPositions.Count(); k++)
+				{
+					if (vector.Distance(player.GetPosition(), m_Trader_TraderPositions.Get(k)) <= m_Trader_TraderSafezones.Get(k))
+						isInSafezone = true;
+				}
+
+				if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout == m_Trader_SafezoneTimeout)
+				{
+					SetPlayerVehicleIsInSafezone( player, false );
+
+					TraderMessage.Safezone(player, m_Trader_SafezoneTimeout);
+				}
+
+				if (!isInSafezone && player.m_Trader_IsInSafezoneTimeout > 0)
+				{
+					player.m_Trader_IsInSafezoneTimeout -= m_Trader_StatUpdateTimeMax;
+				}
+
+				if (player.m_Trader_IsInSafezone == false && isInSafezone == true)
+				{
+					player.m_Trader_IsInSafezone = true;
+					player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
+					GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( true ), true, player.GetIdentity());
+					player.m_Trader_InfluenzaEnteredSafeZone = player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA);
+					player.GetInputController().OverrideRaise(true, false);
+					SetPlayerVehicleIsInSafezone( player, true );
 					
-					player.m_Trader_WelcomeMessageHandled = true;
+					TraderMessage.DeleteSafezoneMessages(player);
+					TraderMessage.PlayerRed("You entered the Safezone!", player);
+					TraderMessage.PlayerWhite("Press 'B'-Key to open\nthe Trader Menu.", player);
+
+					player.SetAllowDamage(false);
+				}
+
+				if (isInSafezone && player.m_Trader_IsInSafezoneTimeout < m_Trader_SafezoneTimeout)
+				{
+					player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
+
+					TraderMessage.DeleteSafezoneMessages(player);
+					TraderMessage.PlayerWhite("Welcome back!", player);
+				}
+				
+				if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout <= 0)
+				{
+					player.m_Trader_IsInSafezone = false;
+					GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( false ), true, player.GetIdentity());
+					player.GetInputController().OverrideRaise(false, false);
+					//SetPlayerVehicleIsInSafezone( player, false );
+					
+					TraderMessage.DeleteSafezoneMessages(player);
+					TraderMessage.PlayerRed("You left the Safezone!", player);
+
+					player.SetAllowDamage(true);
+				}
+				
+				if (isInSafezone)
+				{
+					if ( player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA) < player.m_Trader_InfluenzaEnteredSafeZone) // allow influenza healing
+						player.m_Trader_InfluenzaEnteredSafeZone = player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA);
+
+					player.m_AgentPool.SetAgentCount(eAgents.INFLUENZA, player.m_Trader_InfluenzaEnteredSafeZone);
 				}
 			}
-
-			if (!player.IsAlive())
-				continue;
 			
-			if (!m_Trader_ReadAllTraderData)
-				continue;
-
-			if (!player.m_Trader_RecievedAllData)
-				sendTraderDataToPlayer(player);
-			
-			bool isInSafezone = false;
-			
-			for (int k = 0; k < m_Trader_TraderPositions.Count(); k++)
+			for ( int i = 0; i < m_Trader_SpawnedTraderCharacters.Count(); i++ )
 			{
-				if (vector.Distance(player.GetPosition(), m_Trader_TraderPositions.Get(k)) <= m_Trader_TraderSafezones.Get(k))
-					isInSafezone = true;
+				m_Trader_SpawnedTraderCharacters.Get(i).m_AgentPool.SetAgentCount(eAgents.INFLUENZA, 0);
 			}
-
-			if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout == m_Trader_SafezoneTimeout)
-			{
-				SetPlayerVehicleIsInSafezone( player, false );
-
-				TraderMessage.Safezone(player, m_Trader_SafezoneTimeout);
-			}
-
-			if (!isInSafezone && player.m_Trader_IsInSafezoneTimeout > 0)
-			{
-				player.m_Trader_IsInSafezoneTimeout -= timeslice;
-			}
-
-			if (player.m_Trader_IsInSafezone == false && isInSafezone == true)
-			{
-				player.m_Trader_IsInSafezone = true;
-				player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
-				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( true ), true, player.GetIdentity());
-				player.m_Trader_HealthEnteredSafeZone = player.GetHealth( "", "");
-				player.m_Trader_HealthBloodEnteredSafeZone = player.GetHealth( "", "Blood" );
-				player.m_Trader_InfluenzaEnteredSafeZone = player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA);
-				player.GetInputController().OverrideRaise(true, false);
-				SetPlayerVehicleIsInSafezone( player, true );
-				
-				TraderMessage.DeleteSafezoneMessages(player);
-				TraderMessage.PlayerRed("You entered the Safezone!", player);
-				TraderMessage.PlayerWhite("Press 'B'-Key to open\nthe Trader Menu.", player);
-
-				player.SetFlags(EntityFlags.TRIGGER, true);
-			}
-
-			if (isInSafezone && player.m_Trader_IsInSafezoneTimeout < m_Trader_SafezoneTimeout)
-			{
-				player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
-
-				TraderMessage.DeleteSafezoneMessages(player);
-				TraderMessage.PlayerWhite("Welcome back!", player);
-			}
-			
-			if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout <= 0)
-			{
-				player.m_Trader_IsInSafezone = false;
-				GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( false ), true, player.GetIdentity());
-				player.GetInputController().OverrideRaise(false, false);
-				//SetPlayerVehicleIsInSafezone( player, false );
-				
-				TraderMessage.DeleteSafezoneMessages(player);
-				TraderMessage.PlayerRed("You left the Safezone!", player);
-
-				player.ClearFlags(EntityFlags.TRIGGER, true);
-			}
-			
-			if (isInSafezone)
-			{
-				if (player.GetHealth( "", "") > player.m_Trader_HealthEnteredSafeZone) // allow regaining Health
-					player.m_Trader_HealthEnteredSafeZone = player.GetHealth( "", "");
-					
-				if (player.GetHealth( "", "Blood" ) > player.m_Trader_HealthBloodEnteredSafeZone) // allow regaining Blood
-					player.m_Trader_HealthBloodEnteredSafeZone = player.GetHealth( "", "Blood" );
-
-				if ( player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA) < player.m_Trader_InfluenzaEnteredSafeZone) // allow influenza healing
-					player.m_Trader_InfluenzaEnteredSafeZone = player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA);
-				
-				player.SetHealth( "", "", player.m_Trader_HealthEnteredSafeZone );
-				player.SetHealth( "","Blood", player.m_Trader_HealthBloodEnteredSafeZone );
-
-				player.SetHealth( "","Shock", player.GetMaxHealth( "", "Shock" ) );
-
-				player.m_AgentPool.SetAgentCount(eAgents.INFLUENZA, player.m_Trader_InfluenzaEnteredSafeZone);
-
-				//player.GetStatStamina().Set(1000);
-
-				if (m_Trader_PlayerHiveUpdateTime == 0 && player.IsAlive())
-					//GetHive().CharacterSave(player);
-			}
-		}
-		
-		for ( int i = 0; i < m_Trader_SpawnedTraderCharacters.Count(); i++ )
-		{
-			m_Trader_SpawnedTraderCharacters.Get(i).SetHealth( m_Trader_SpawnedTraderCharacters.Get(i).GetMaxHealth( "", "" ) );
-			m_Trader_SpawnedTraderCharacters.Get(i).SetHealth( "","Blood", m_Trader_SpawnedTraderCharacters.Get(i).GetMaxHealth( "", "Blood" ) );
-			m_Trader_SpawnedTraderCharacters.Get(i).GetStatEnergy().Set(1000);
-			m_Trader_SpawnedTraderCharacters.Get(i).GetStatWater().Set(1000);
-			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachVolume().Set(300);		
-			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachWater().Set(300);
-			m_Trader_SpawnedTraderCharacters.Get(i).GetStatStomachEnergy().Set(300);
-			m_Trader_SpawnedTraderCharacters.Get(i).GetStatHeatComfort().Set(0);
-			m_Trader_SpawnedTraderCharacters.Get(i).SetHealth( "","Shock", m_Trader_SpawnedTraderCharacters.Get(i).GetMaxHealth( "", "Shock" ) );
-			m_Trader_SpawnedTraderCharacters.Get(i).m_AgentPool.SetAgentCount(eAgents.INFLUENZA, 0);
 		}
 
 		m_Trader_SpawnedFireBarrelsUpdateTimer += timeslice;
-		if (m_Trader_SpawnedFireBarrelsUpdateTimer >= 1)
+		if (m_Trader_SpawnedFireBarrelsUpdateTimer >= 5)
 		{
 			m_Trader_SpawnedFireBarrelsUpdateTimer = 0;
 
@@ -356,8 +332,9 @@ modded class MissionServer
 			{				
 				if (isTrader)
 				{
-					man.m_Trader_IsTrader = true;
+					//man.m_Trader_IsTrader = true;
 					m_Trader_SpawnedTraderCharacters.Insert(man);
+					man.SetAllowDamage(false);
 				}
 				
 				skipDirEntry = true;
@@ -396,8 +373,9 @@ modded class MissionServer
 
 			if (isTrader)
 			{
-				man.m_Trader_IsInSafezone = true;
+				//man.m_Trader_IsInSafezone = true;
 				m_Trader_SpawnedTraderCharacters.Insert(man);
+				man.SetAllowDamage(false);
 			}
 						
 			

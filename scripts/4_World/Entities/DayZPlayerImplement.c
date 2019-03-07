@@ -13,10 +13,7 @@ modded class DayZPlayerImplement
 	
 	bool m_Trader_IsInSafezone = false;
 	float m_Trader_IsInSafezoneTimeout = 0;
-	float m_Trader_HealthEnteredSafeZone;
-	float m_Trader_HealthBloodEnteredSafeZone;
 	int m_Trader_InfluenzaEnteredSafeZone;
-	bool m_Trader_PlayerDiedInSafezone = false;
 	
 	bool m_Trader_RecievedAllData = false;
 	
@@ -25,7 +22,6 @@ modded class DayZPlayerImplement
 	ref array<int> m_Trader_CurrencyValues;
 	int m_Player_CurrencyAmount;
 
-	//int m_Trader_LastSelledItemID = -1;
 	int m_Trader_LastSelledTime = 0;
 	int m_Trader_LastBuyedTime = 0;
 	
@@ -340,13 +336,6 @@ modded class DayZPlayerImplement
 					player.GetInputController().OverrideRaise(m_Trader_IsInSafezone, false);
 				break;
 
-				case TRPCs.RPC_SEND_TRADER_PLAYER_DIED_IN_SAFEZONE:
-					ref Param1<bool> safezoneDied_rp = new Param1<bool>( false );
-					ctx.Read( safezoneDied_rp );
-					
-					m_Trader_PlayerDiedInSafezone = safezoneDied_rp.param1;
-				break;
-
 				case TRPCs.RPC_SYNC_OBJECT_ORIENTATION:
 					ref Param2<Object, vector> syncObject_rp = new Param2<Object, vector>( NULL, "0 0 0" );
 					ctx.Read( syncObject_rp );
@@ -355,7 +344,6 @@ modded class DayZPlayerImplement
 					vector objectToSyncOrientation  = syncObject_rp.param2;
 
 					objectToSync.SetOrientation(objectToSyncOrientation);
-					//objectToSync.SetDirection(objectToSync.GetDirection()); // Thats a strange way to synchronize/update Objects.. But it works..
 				break;
 
 				case TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE:
@@ -363,7 +351,6 @@ modded class DayZPlayerImplement
 					ctx.Read( synccarsscript_rp );
 					
 					CarScript carToSync = synccarsscript_rp.param1;
-					//bool objectToSyncOrientation  = synccarsscript_rp.param2;
 
 					carToSync.m_Trader_IsInSafezone = synccarsscript_rp.param2;
 				break;
@@ -848,7 +835,6 @@ modded class DayZPlayerImplement
 				
 				if (itemAmount == amount || isMagazine || isWeapon)
 				{
-					//m_Trader_LastSelledItemID = item.GetID();
 					deleteItem(item);
 					
 					this.UpdateInventoryMenu(); // RPC-Call needed?
@@ -856,7 +842,6 @@ modded class DayZPlayerImplement
 				}
 				else
 				{
-					//m_Trader_LastSelledItemID = item.GetID();
 					SetItemAmount(item, itemAmount - amount);
 				
 					this.UpdateInventoryMenu(); // RPC-Call needed?
@@ -889,7 +874,6 @@ modded class DayZPlayerImplement
 				
 				if (itemAmount == amount || isMagazine || isWeapon)
 				{
-					//m_Trader_LastSelledItemID = item.GetID();
 					deleteItem(item);
 					
 					this.UpdateInventoryMenu(); // RPC-Call needed?
@@ -897,7 +881,6 @@ modded class DayZPlayerImplement
 				}
 				else
 				{
-					//m_Trader_LastSelledItemID = item.GetID();
 					SetItemAmount(item, itemAmount - amount);
 				
 					this.UpdateInventoryMenu(); // RPC-Call needed?
@@ -1068,9 +1051,6 @@ modded class DayZPlayerImplement
 
 	void spawnVehicle(int traderUID, string vehicleType)
 	{
-		//Param3<vector, vector, string> rpv = new Param3<vector, vector, string>( "0 0 0", "0 0 0", "" );
-		//ctx.Read(rpv);
-
 		vector objectPosition = m_Trader_TraderVehicleSpawns.Get(traderUID);
 		vector objectDirection = m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID);
 
@@ -1144,31 +1124,5 @@ modded class DayZPlayerImplement
 				}
 			}
 		}
-	}
-
-	void ShowDeadScreen(bool show, float duration)
-	{
-	#ifndef NO_GUI
-		if (show && IsPlayerSelected())
-		{
-		#ifdef PLATFORM_CONSOLE
-			GetGame().GetUIManager().ScreenFadeIn(duration, "#dayz_implement_dead", FadeColors.DARK_RED, FadeColors.WHITE);
-		#else
-			if (!m_Trader_PlayerDiedInSafezone)
-				GetGame().GetUIManager().ScreenFadeIn(duration, "#dayz_implement_dead", FadeColors.BLACK, FadeColors.WHITE);
-			else
-				GetGame().GetUIManager().ScreenFadeIn(0, "Someone killed you in the Safezone! Just EXIT and RECONNECT to the Server. DO NOT RESPAWN!", FadeColors.BLACK, 0xFFFF0000);
-		#endif
-		}
-		else
-		{
-			GetGame().GetUIManager().ScreenFadeOut(0);
-		}
-		
-		if (duration > 0)
-			GetGame().GetCallQueue(CALL_CATEGORY_GUI).CallLater(StopDeathDarkeningEffect, duration*1000, false);
-		else
-			GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(StopDeathDarkeningEffect);
-	#endif
 	}
 }
