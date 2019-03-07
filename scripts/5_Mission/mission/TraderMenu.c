@@ -17,6 +17,8 @@ class TraderMenu extends UIScriptedMenu
 	float m_UiSellTimer = 0;
 	float m_UiBuyTimer = 0;
 	const float m_buySellTime = 0.3;
+
+	bool m_active = false;
 	
 	int m_TraderID = -1;
 	int m_TraderUID = -1;
@@ -78,6 +80,8 @@ class TraderMenu extends UIScriptedMenu
 		m_XComboboxCategorys = XComboBoxWidget.Cast( layoutRoot.FindAnyWidget( "xcombobox_categorys" ) );
 		m_ItemDescription = MultilineTextWidget.Cast( layoutRoot.FindAnyWidget( "ItemDescWidget" ) );
 		m_ItemWeight = TextWidget.Cast(layoutRoot.FindAnyWidget("ItemWeight") );
+
+		m_active = true;
 		
 		m_Categorys = new array<string>;
 		m_CategorysTraderKey = new array<int>;
@@ -137,6 +141,9 @@ class TraderMenu extends UIScriptedMenu
 		{
 			m_UiUpdateTimer = m_UiUpdateTimer + timeslice;
 		}
+
+		if (!m_active)
+			GetGame().GetUIManager().Back();
 	}
 
 	override void OnShow()

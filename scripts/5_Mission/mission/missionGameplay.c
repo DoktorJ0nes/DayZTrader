@@ -1,6 +1,8 @@
 modded class MissionGameplay
 {	
 	float traderModIsLoadedReplicationTimer = 0.1;
+	
+	ref TraderMenu m_TraderMenu;
 
 	override void OnInit()
   	{
@@ -82,11 +84,14 @@ modded class MissionGameplay
 			}
 
 			if (!playerIsInSafezoneRange)
-				return;				
+				return;		
+
+			if (m_TraderMenu)
+				m_TraderMenu.m_active = false;		
 			
 			if ( g_Game.GetUIManager().GetMenu() == NULL )
 			{					
-				ref TraderMenu m_TraderMenu = new TraderMenu;
+				m_TraderMenu = new TraderMenu;
 				m_TraderMenu.m_TraderID = traderID;
 				m_TraderMenu.m_TraderUID = traderUID;
 				m_TraderMenu.m_TraderVehicleSpawn = traderVehicleSpawn;
@@ -94,6 +99,12 @@ modded class MissionGameplay
 				m_TraderMenu.Init();
 				GetGame().GetUIManager().ShowScriptedMenu( m_TraderMenu, NULL );
 			}
+		}
+
+		if ( key == KeyCode.KC_ESCAPE )
+		{	
+			if (m_TraderMenu)
+				m_TraderMenu.m_active = false;
 		}
 	}
 }
