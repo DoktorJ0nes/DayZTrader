@@ -680,6 +680,8 @@ modded class MissionServer
 				variableCounter++;
 		}
 
+		CloseFile(file_index);
+		
 		TraderMessage.ServerLog("[TRADER] DONE END!");
 	}
 
