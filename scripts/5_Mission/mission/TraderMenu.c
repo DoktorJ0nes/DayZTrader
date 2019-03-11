@@ -439,6 +439,10 @@ class TraderMenu extends UIScriptedMenu
 		if (amount == -4)
 			isWeapon = true;
 
+		bool isSteak = false
+		if (amount == -5)
+			isSteak = true;
+
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
@@ -456,18 +460,41 @@ class TraderMenu extends UIScriptedMenu
 			if (item.IsRuined())
 				continue;
 
+			if (isAttached(item))
+				continue;
+
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
 			//TraderMessage.PlayerWhite("I: " + itemPlayerClassname + " == " + itemClassname);
 
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.7)))
 			{
 				return true;
 			}
 		}
 		
 		return false;
+	}
+
+	int GetItemMaxQuantity(string itemClassname) // duplicate
+	{
+		TStringArray searching_in = new TStringArray;
+		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
+		//searching_in.Insert( CFG_WEAPONSPATH );
+		searching_in.Insert( CFG_VEHICLESPATH + " " + itemClassname + " varQuantityMax");
+
+		for ( int s = 0; s < searching_in.Count(); ++s )
+		{
+			string path = searching_in.Get( s );
+
+			if ( GetGame().ConfigIsExisting( path ) )
+			{
+				return g_Game.ConfigGetInt( path );
+			}
+		}
+
+		return 0;
 	}
 	
 	int getItemAmount(ItemBase item) // duplicate
@@ -585,6 +612,21 @@ class TraderMenu extends UIScriptedMenu
 			if ( attachment.IsKindOf ( attachmentClassname ) )
 				return true;
 		}
+
+		return false;
+	}
+
+	bool isAttached(ItemBase item) // duplicate
+	{
+		EntityAI parent = item.GetHierarchyParent();
+
+		if (!parent)
+			return false;
+
+		PlayerBase m_Player = g_Game.GetPlayer();
+
+		if (parent.IsWeapon() || parent.IsMagazine())
+			return true;
 
 		return false;
 	}

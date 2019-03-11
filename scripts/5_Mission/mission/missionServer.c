@@ -681,7 +681,7 @@ modded class MissionServer
 		}
 
 		CloseFile(file_index);
-		
+
 		TraderMessage.ServerLog("[TRADER] DONE END!");
 	}
 
@@ -865,6 +865,9 @@ modded class MissionServer
 
 			if (qntStr.Contains("W") || qntStr.Contains("w"))
 				qntStr = "-4";
+
+			if (qntStr.Contains("S") || qntStr.Contains("s"))
+				qntStr = "-5";
 			
 			string buyStr = strs.Get(2);
 			buyStr = FileReadHelper.TrimSpaces(buyStr);

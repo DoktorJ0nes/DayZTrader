@@ -470,7 +470,7 @@ modded class DayZPlayerImplement
 			return itemClassname;
 	}
 
-	int GetItemMaxQuantity(string itemClassname)
+	int GetItemMaxQuantity(string itemClassname) // duplicate
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
@@ -520,6 +520,9 @@ modded class DayZPlayerImplement
 
 		if (amount == -4)
 			amount = 0;
+
+		if (amount == -5)
+			amount = Math.RandomIntInclusive(GetItemMaxQuantity(item.GetType()) * 0.7, GetItemMaxQuantity(item.GetType()));
 
 		Magazine mgzn = Magazine.Cast(item);
 				
@@ -580,6 +583,10 @@ modded class DayZPlayerImplement
 		if (amount == -4)
 			isWeapon = true;
 
+		bool isSteak = false
+		if (amount == -5)
+			isSteak = true;
+
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		this.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
@@ -597,12 +604,15 @@ modded class DayZPlayerImplement
 			if (item.IsRuined())
 				continue;
 
+			if (isAttached(item))
+				continue;
+
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
 			//TraderMessage.PlayerWhite("I: " + itemPlayerClassname + " == " + itemClassname);
 
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon)) // && m_Trader_LastSelledItemID != item.GetID())
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.7))) // && m_Trader_LastSelledItemID != item.GetID())
 			{
 				return true;
 			}
@@ -827,6 +837,10 @@ modded class DayZPlayerImplement
 		bool isWeapon = false;
 		if (amount == -4)
 			isWeapon = true;
+
+		bool isSteak = false
+		if (amount == -5)
+			isSteak = true;
 		
 
 		string itemPlayerClassname = "";
@@ -838,11 +852,11 @@ modded class DayZPlayerImplement
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
-			if(!item.IsRuined() && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
+			if(!isAttached(item) && !item.IsRuined() && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.7)))
 			{
 				itemAmount = getItemAmount(item);
 				
-				if (itemAmount == amount || isMagazine || isWeapon)
+				if (itemAmount == amount || isMagazine || isWeapon || isSteak)
 				{
 					deleteItem(item);
 					
@@ -874,14 +888,17 @@ modded class DayZPlayerImplement
 			if (item.IsRuined())
 				continue;
 
+			if (isAttached(item))
+				continue;
+
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon) || isMagazine || isWeapon))
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.7)))
 			{
 				itemAmount = getItemAmount(item);
 				
-				if (itemAmount == amount || isMagazine || isWeapon)
+				if (itemAmount == amount || isMagazine || isWeapon || isSteak)
 				{
 					deleteItem(item);
 					
@@ -1133,5 +1150,18 @@ modded class DayZPlayerImplement
 				}
 			}
 		}
+	}
+
+	bool isAttached(ItemBase item) // duplicate
+	{
+		EntityAI parent = item.GetHierarchyParent();
+
+		if (!parent)
+			return false;
+
+		if (parent.IsWeapon() || parent.IsMagazine())
+			return true;
+
+		return false;
 	}
 }
