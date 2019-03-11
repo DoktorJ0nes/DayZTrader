@@ -3,8 +3,9 @@ modded class MissionServer
 	static const string m_Trader_ConfigFilePath = "$profile:Trader/TraderConfig.txt";
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
 	static const string m_Trader_VehiclePartsFilePath = "$profile:Trader/TraderVehicleParts.txt";
+	static const string m_Trader_VariableFilePath = "$profile:Trader/TraderVariables.txt";
 
-	static const float m_Trader_SafezoneTimeout = 30;
+	float m_Trader_SafezoneTimeout = 30;
 
 	bool m_Trader_ReadAllTraderData = false;
 
@@ -32,13 +33,19 @@ modded class MissionServer
 	ref array<string> m_Trader_Vehicles;
 	ref array<string> m_Trader_VehiclesParts;
 	ref array<int> m_Trader_VehiclesPartsVehicleId;
+
+	float m_Trader_BuySellTimer = 0.3;
 		
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
 	ref array<BarrelHoles_ColorBase> m_Trader_SpawnedFireBarrels;
 
-	const float m_Trader_StatUpdateTimeMax = 1;
+	float m_Trader_StatUpdateTimeMax = 1;
 	float m_Trader_StatUpdateTime = m_Trader_StatUpdateTimeMax;
+
+	float m_Trader_SpawnedFireBarrelsUpdateTimerMax = 5;
 	float m_Trader_SpawnedFireBarrelsUpdateTimer = 0;
+
+	float m_Trader_ZombieCleanupUpdateTimerMax = 30;
 	float m_Trader_ZombieCleanupUpdateTimer = 0;
 	
 	override void OnInit()
@@ -47,6 +54,7 @@ modded class MissionServer
 
 		SpawnTraderObjects();
 		readTraderData();
+		readTraderVariables();
 	}
 	
 	override void OnUpdate(float timeslice)
@@ -167,7 +175,7 @@ modded class MissionServer
 		}
 
 		m_Trader_SpawnedFireBarrelsUpdateTimer += timeslice;
-		if (m_Trader_SpawnedFireBarrelsUpdateTimer >= 5)
+		if (m_Trader_SpawnedFireBarrelsUpdateTimer >= m_Trader_SpawnedFireBarrelsUpdateTimerMax)
 		{
 			m_Trader_SpawnedFireBarrelsUpdateTimer = 0;
 
@@ -213,7 +221,7 @@ modded class MissionServer
 		}
 
 		m_Trader_ZombieCleanupUpdateTimer += timeslice;
-		if (m_Trader_ZombieCleanupUpdateTimer >= 30)
+		if (m_Trader_ZombieCleanupUpdateTimer >= m_Trader_ZombieCleanupUpdateTimerMax)
 		{
 			m_Trader_ZombieCleanupUpdateTimer = 0;
 
@@ -578,6 +586,9 @@ modded class MissionServer
 			player.m_Trader_VehiclesPartsVehicleId.Insert(m_Trader_VehiclesPartsVehicleId.Get(i));
 			//TraderMessage.ServerLog("[TRADER] VEHICLEPARTENTRY: " + m_Trader_VehiclesPartsVehicleId.Get(i) + ", " + m_Trader_VehiclesParts.Get(i));
 		}
+
+		player.m_Trader_BuySellTimer = m_Trader_BuySellTimer;
+		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VARIABLES_ENTRY, new Param1<float>(m_Trader_BuySellTimer), true, player.GetIdentity());
 		
 		// confirm that all data was sended:
 		player.m_Trader_RecievedAllData = true;
@@ -585,6 +596,91 @@ modded class MissionServer
 		Param1<bool> crpConf = new Param1<bool>( true );
 		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION, crpConf, true, player.GetIdentity());
 		//TraderMessage.ServerLog("[TRADER] DEBUG END");
+	}
+
+	void readTraderVariables()
+	{
+		TraderMessage.ServerLog("[TRADER] DEBUG START");
+
+		FileHandle file_index = OpenFile(m_Trader_VariableFilePath, FileMode.READ);
+		
+		if ( file_index == 0 )
+		{
+			TraderMessage.ServerLog("[TRADER] FOUND NO TRADERVARIABLE FILE!");
+			return;
+		}
+
+		int variableCounter = 0;
+		
+		string line_content = "";
+		while (variableCounter <= 500 && !line_content.Contains("<FileEnd>"))
+		{
+			bool validEntry = false;
+
+			line_content = "";
+			int char_count = FGets( file_index,  line_content );
+			line_content = FileReadHelper.TrimComment(line_content);
+
+			if (line_content.Contains("<BuySellTimer>"))
+			{
+				line_content.Replace("<BuySellTimer>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+
+				m_Trader_BuySellTimer = line_content.ToFloat();
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] BUYSELLTIMER = " + line_content);
+			}
+			
+			if (line_content.Contains("<StatUpdateTimer>"))
+			{
+				line_content.Replace("<StatUpdateTimer>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+
+				m_Trader_StatUpdateTimeMax = line_content.ToFloat();
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] STATUPDATETIMER = " + line_content);
+			}
+
+			if (line_content.Contains("<FireBarrelUpdateTimer>"))
+			{
+				line_content.Replace("<FireBarrelUpdateTimer>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+
+				m_Trader_SpawnedFireBarrelsUpdateTimerMax = line_content.ToFloat();
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] FIREBARRELUPDATETIMER = " + line_content);
+			}
+
+			if (line_content.Contains("<ZombieCleanupTimer>"))
+			{
+				line_content.Replace("<ZombieCleanupTimer>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+
+				m_Trader_ZombieCleanupUpdateTimerMax = line_content.ToFloat();
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] ZOMBIECLEANUPTIMER = " + line_content);
+			}
+
+			if (line_content.Contains("<SafezoneTimeout>"))
+			{
+				line_content.Replace("<SafezoneTimeout>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+
+				m_Trader_SafezoneTimeout = line_content.ToFloat();
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] SAFEZONETIMEOUT = " + line_content);
+			}
+
+			if (validEntry)
+				variableCounter++;
+		}
+
+		TraderMessage.ServerLog("[TRADER] DONE END!");
 	}
 
 	void readTraderData()

@@ -46,6 +46,8 @@ modded class DayZPlayerImplement
 	ref array<string> m_Trader_VehiclesParts;
 	ref array<int> m_Trader_VehiclesPartsVehicleId;
 
+	float m_Trader_BuySellTimer = 0.3;
+
 	string itemDisplayNameClient;
 	bool m_Trader_IsSelling;
 	
@@ -91,7 +93,7 @@ modded class DayZPlayerImplement
 
 				m_Trader_IsSelling = false;
 
-				if (GetGame().GetTime() - m_Trader_LastBuyedTime < 300)
+				if (GetGame().GetTime() - m_Trader_LastBuyedTime < m_Trader_BuySellTimer * 1000)
 					return;
 				m_Trader_LastBuyedTime = GetGame().GetTime();
 
@@ -177,7 +179,7 @@ modded class DayZPlayerImplement
 
 				m_Trader_IsSelling = true;
 
-				if (GetGame().GetTime() - m_Trader_LastSelledTime < 300)
+				if (GetGame().GetTime() - m_Trader_LastSelledTime < m_Trader_BuySellTimer * 1000)
 					return;
 				m_Trader_LastSelledTime = GetGame().GetTime();
 
@@ -382,6 +384,13 @@ modded class DayZPlayerImplement
 
 				case TRPCs.RPC_DELETE_SAFEZONE_MESSAGES:					
 					deleteAllSafezoneMessages();
+				break;
+
+				case TRPCs.RPC_SEND_TRADER_VARIABLES_ENTRY:
+					ref Param1<float> traderVariables_rp = new Param1<float>(  0 );
+					ctx.Read( traderVariables_rp );
+					
+					m_Trader_BuySellTimer = traderVariables_rp.param1;
 				break;
 			}
 		}

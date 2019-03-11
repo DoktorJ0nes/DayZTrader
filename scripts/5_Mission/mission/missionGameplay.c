@@ -96,6 +96,7 @@ modded class MissionGameplay
 				m_TraderMenu.m_TraderUID = traderUID;
 				m_TraderMenu.m_TraderVehicleSpawn = traderVehicleSpawn;
 				m_TraderMenu.m_TraderVehicleSpawnOrientation = traderVehicleSpawnOrientation;
+				m_TraderMenu.m_buySellTime = player.m_Trader_BuySellTimer;
 				m_TraderMenu.Init();
 				GetGame().GetUIManager().ShowScriptedMenu( m_TraderMenu, NULL );
 			}

@@ -16,7 +16,7 @@ class TraderMenu extends UIScriptedMenu
 	float m_UiUpdateTimer = 0;
 	float m_UiSellTimer = 0;
 	float m_UiBuyTimer = 0;
-	const float m_buySellTime = 0.3;
+	float m_buySellTime = 0.3;
 
 	bool m_active = false;
 	
