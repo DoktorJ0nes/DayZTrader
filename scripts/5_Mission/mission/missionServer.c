@@ -135,6 +135,17 @@ modded class MissionServer
 					TraderMessage.PlayerRed("You entered the Safezone!", player);
 					TraderMessage.PlayerWhite("Press 'B'-Key to open\nthe Trader Menu.", player);
 
+					if(player.IsRestrained())
+					{
+						player.SetRestrained(false);
+
+						//EntityAI item_in_hands = action_data.m_MainItem;
+						EntityAI item_in_hands = player.GetHumanInventory().GetEntityInHands();
+						if(item_in_hands)
+						{
+							MiscGameplayFunctions.TransformRestrainItem(item_in_hands, null, null, player);
+						}
+					}
 					player.SetAllowDamage(false);
 				}
 

@@ -1164,4 +1164,12 @@ modded class DayZPlayerImplement
 
 		return false;
 	}
+
+	override void SetSuicide(bool state)
+	{
+		super.SetSuicide(state);
+
+		if (state && m_Trader_IsInSafezone && GetGame().IsServer())
+			SetAllowDamage(true);
+	}
 }
