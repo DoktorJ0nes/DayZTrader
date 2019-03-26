@@ -335,6 +335,18 @@ modded class DayZPlayerImplement
 					
 					m_Trader_IsInSafezone = safezone_rp.param1;
 
+					if(IsRestrained())
+					{
+						PlayerBase player_this = PlayerBase.Cast(this);
+						player_this.SetRestrained(false);
+
+						EntityAI item_in_hands = GetHumanInventory().GetEntityInHands();
+						if(item_in_hands)
+						{
+							MiscGameplayFunctions.TransformRestrainItem(item_in_hands, null, null, player_this);
+						}
+					}
+
 					player.GetInputController().OverrideRaise(m_Trader_IsInSafezone, false);
 				break;
 
