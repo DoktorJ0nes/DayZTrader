@@ -439,7 +439,7 @@ class TraderMenu extends UIScriptedMenu
 		if (amount == -4)
 			isWeapon = true;
 
-		bool isSteak = false
+		bool isSteak = false;
 		if (amount == -5)
 			isSteak = true;
 
@@ -468,7 +468,7 @@ class TraderMenu extends UIScriptedMenu
 
 			//TraderMessage.PlayerWhite("I: " + itemPlayerClassname + " == " + itemClassname);
 
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.7)))
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.7))));
 			{
 				return true;
 			}
