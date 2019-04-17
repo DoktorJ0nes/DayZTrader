@@ -80,7 +80,7 @@ class Stage6
 };
 class Stage7
 {
-	texture="TM\Trader\data\ruble100_co.paa";
+	texture="dz\data\data\env_land_co.paa";
 	uvSource="tex";
 	class uvTransform
 	{

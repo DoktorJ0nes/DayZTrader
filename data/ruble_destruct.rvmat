@@ -32,7 +32,7 @@ class Stage2
 };
 class Stage3
 {
-	texture="#(argb,8,8,3)color(0,0,0,0,MC)";
+	texture="dz\characters\data\generic_destruct_mc.paa";
 	uvSource="tex";
 	class uvTransform
 	{
@@ -80,7 +80,7 @@ class Stage6
 };
 class Stage7
 {
-	texture="TM\Trader\data\ruble5_co.paa";
+	texture="dz\data\data\env_land_co.paa";
 	uvSource="tex";
 	class uvTransform
 	{
