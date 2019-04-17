@@ -552,7 +552,7 @@ modded class DayZPlayerImplement
 			amount = 0;
 
 		if (amount == -5)
-			amount = Math.RandomIntInclusive(GetItemMaxQuantity(item.GetType()) * 0.7, GetItemMaxQuantity(item.GetType()));
+			amount = Math.RandomIntInclusive(GetItemMaxQuantity(item.GetType()) * 0.5, GetItemMaxQuantity(item.GetType()));
 
 		Magazine mgzn = Magazine.Cast(item);
 				
