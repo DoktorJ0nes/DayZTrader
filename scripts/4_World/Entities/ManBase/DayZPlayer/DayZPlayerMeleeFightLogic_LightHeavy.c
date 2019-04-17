@@ -1,7 +1,6 @@
-//modded class DayZPlayerMeleeFightLogic // Will likely be changed to this Class in a future DayZ Update!
 modded class DayZPlayerMeleeFightLogic_LightHeavy
 {
-    override bool Process(int pCurrentCommandID, HumanInputController pInputs, EntityAI pEntityInHands, HumanMovementState pMovementState)
+    override bool HandleFightLogic(int pCurrentCommandID, HumanInputController pInputs, EntityAI pEntityInHands, HumanMovementState pMovementState)
 	{
         PlayerBase playerClone = PlayerBase.Cast(m_DZPlayer);
         
@@ -11,6 +10,6 @@ modded class DayZPlayerMeleeFightLogic_LightHeavy
             return false;
         }
 
-        return super.Process(pCurrentCommandID, pInputs, pEntityInHands, pMovementState);
+        return super.HandleFightLogic(pCurrentCommandID, pInputs, pEntityInHands, pMovementState);
     }
 }

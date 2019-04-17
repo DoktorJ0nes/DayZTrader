@@ -1,92 +1,46 @@
-/*modded class PlayerBase
+modded class PlayerBase
 {
-	bool m_Trader_IsTrader = false;
+    ref ActionBase actionUnlockVehicle;
+    ref ActionBase actionLockVehicle;
+    ref ActionBase actionUnlockVehicleInside;
+    ref ActionBase actionLockVehicleInside;
 
-    override void EEKilled( Object killer )
-	{		
-		if (m_Suicide)
-			m_Trader_PlayerDiedInSafezone = false;
-		else
-			m_Trader_PlayerDiedInSafezone = m_Trader_IsInSafezone;
+    override void Init()
+    {
+        DayzPlayerItemBehaviorCfg toolsOneHanded = new DayzPlayerItemBehaviorCfg;
+        toolsOneHanded.SetToolsOneHanded();   
 
-		GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_TRADER_PLAYER_DIED_IN_SAFEZONE, new Param1<bool>( m_Trader_PlayerDiedInSafezone ), true, this.GetIdentity());
+        GetDayZPlayerType().AddItemInHandsProfileIK("VehicleKeyBase", "dz/anims/workspaces/player/player_main/props/player_main_1h_keys.asi", toolsOneHanded, "dz/anims/anm/player/ik/gear/handcuff_keys.anm");
+        super.Init();
+    }
 
-		PlayerBase playerKiller = PlayerBase.Cast( EntityAI.Cast(killer).GetHierarchyParent() );
+    override void OnSelectPlayer()
+    {
+        super.OnSelectPlayer();
 
-		if (playerKiller && (m_Trader_PlayerDiedInSafezone || m_Trader_IsTrader))
-		{
-			if (playerKiller && playerKiller != this)
-			{
-				TraderMessage.ServerLog("[TRADER] Player (" + playerKiller.GetIdentity().GetName() + ") " + playerKiller.GetIdentity().GetId() + " killed someone in the Safezone!");
-				TraderMessage.ServerLog("[TRADER] Player who got killed: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId());
-				playerKiller.SetPosition(this.GetPosition());
-				playerKiller.SetHealth( "", "", 0 );
-				playerKiller.SetHealth( "", "Blood", 0 );
-			}
-		}
+        actionUnlockVehicle = new ActionUnlockVehicle();
+        actionLockVehicle = new ActionLockVehicle();
+        actionUnlockVehicleInside = new ActionUnlockVehicleInside();
+        actionLockVehicleInside = new ActionLockVehicleInside();
 
-		if (m_Trader_PlayerDiedInSafezone)
-		{
-			
-			this.SetHealth( "", "", this.m_Trader_HealthEnteredSafeZone );
-			this.SetHealth( "","Blood", this.m_Trader_HealthBloodEnteredSafeZone );
-			this.SetHealth( "","Shock", this.GetMaxHealth( "", "Shock" ) );
-				
-			if (!this.IsAlive())
-			{
-				SetPosition(vector.Zero);
+        actionUnlockVehicle.CreateConditionComponents();
+        actionLockVehicle.CreateConditionComponents();
+        actionUnlockVehicleInside.CreateConditionComponents();
+        actionLockVehicleInside.CreateConditionComponents();
 
-				if (GetHive())
-					GetHive().CharacterExit(this);
-			}
+        m_ActionManager.m_ActionsMap.Set(3555, actionUnlockVehicle);
+        m_ActionManager.m_ActionsMap.Set(3556, actionLockVehicle);
+        m_ActionManager.m_ActionsMap.Set(3557, actionUnlockVehicleInside);
+        m_ActionManager.m_ActionsMap.Set(3558, actionLockVehicleInside);
+    }
 
-			return;
-		}
-		
-		if (m_Trader_IsTrader) // TODO!
-			return;
-
-
-		super.EEKilled(killer);
-	}
-
-	override void EEHitBy(TotalDamageResult damageResult, int damageType, EntityAI source, int component, string dmgZone, string ammo, vector modelPos)
+    override void GetContinuousActions(out TIntArray actions)
 	{
-		if ( m_Trader_IsInSafezone )
-		{
-			DayZInfected sourceInfected;
-			Class.CastTo(sourceInfected, source);
+        actions.Insert(3555);
+        actions.Insert(3556);
+        actions.Insert(3557);
+        actions.Insert(3558);
 
-			DayZAnimal sourceAnimal;
-			Class.CastTo(sourceAnimal, source);
-
-			PlayerBase sourcePlayer;
-			Class.CastTo(sourcePlayer, source);
-
-			if (sourceInfected || sourceAnimal)
-			{
-				//GetGame().ObjectDelete(source);
-				source.SetHealth( "", "", 0 );
-				source.SetHealth( "", "Blood", 0 );
-			}
-
-			if (sourcePlayer)
-			{
-				if (sourcePlayer != this)
-				{
-					TraderMessage.ServerLog("[TRADER] Player (" + sourcePlayer.GetIdentity().GetName() + ") " + sourcePlayer.GetIdentity().GetId() + " shoot at someone in the Safezone!");
-					TraderMessage.ServerLog("[TRADER] Player who got shoot: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId());
-
-					source.SetPosition(this.GetPosition());
-					source.SetHealth( "", "", 0 );
-					source.SetHealth( "", "Blood", 0 );
-				}
-			}
-
-			return;
-		}
-
-
-		super.EEHitBy(damageResult, damageType, source, component, dmgZone, ammo, modelPos);
-	}
-}*/
+        super.GetContinuousActions(actions);
+    }
+}

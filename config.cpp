@@ -52,6 +52,12 @@ class CfgPatches
 		};
 	};
 };
+class CfgModels
+{
+	class keyLada{
+		sections[]={"WholeObject"};
+	};
+};
 class CfgVehicles
 {
 	class Inventory_Base;
@@ -141,5 +147,61 @@ class CfgVehicles
 		scope = 2;
 		visibilityModifier = 0.95;
 		hiddenSelectionsTextures[] = {"","","","","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa"};
+	};
+
+	class VehicleKeyBase: Inventory_Base
+	{
+		scope=2;
+		//ContinuousActions[] = {3555,3556};
+		displayName="Vehicle Key";
+		descriptionShort="This is just a normal Key to lock and unlock your Vehicle.";
+		model="TM\Trader\keyLada.p3d";
+		rotationFlags = 17;
+		lootCategory="Materials";
+		lootTag[]=
+		{
+			"Civilian",
+			"Work"
+		};
+		weight=4;
+		itemSize[]={1,1};
+		fragility = 0.01;
+		hiddenSelections[]={"WholeObject"};
+		class DamageSystem
+		{
+			class GlobalHealth
+			{
+				class Health
+				{
+					hitpoints = 100;
+					healthLevels[] = {{1.0,{"TM\Trader\data\keyLada.rvmat"}},{0.7,{"TM\Trader\data\keyLada.rvmat"}},{0.5,{"TM\Trader\data\keyLada_damage.rvmat"}},{0.3,{"TM\Trader\data\keyLada_damage.rvmat"}},{0.0,{"TM\Trader\data\keyLada_destruct.rvmat"}}};
+				};
+			};
+		};
+	};
+
+	class VehicleKeyRed: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaRed_co.paa"};
+	};
+
+	class VehicleKeyBlack: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaBlack_co.paa"};
+	};
+
+	class VehicleKeyGrayCyan: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaGrayCyan_co.paa"};
+	};
+
+	class VehicleKeyYellow: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaYellow_co.paa"};
+	};
+
+	class VehicleKeyPurple: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaPurple_co.paa"};
 	};
 };

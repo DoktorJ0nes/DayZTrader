@@ -137,11 +137,29 @@ modded class DayZPlayerImplement
 						return;
 					}
 
+					int vehicleKeyHash = 0;
+					if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
+					{
+						TraderMessage.PlayerWhite("The Vehicle Key\nwas added to your Inventory!", this);
+						
+						vehicleKeyHash = createVehicleKeyInPlayerInventory();
+					}
+					else
+					{
+						TraderMessage.PlayerWhite("Your Inventory is full!\n The Vehicle Key\nwas placed on Ground!", this);
+											
+						vehicleKeyHash = spawnVehicleKeyOnGround();
+						
+						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
+					}
+					//TraderMessage.PlayerWhite("KeyHash:\n" + vehicleKeyHash, this);
+
+
 					deductPlayerCurrency(itemCosts);
 
 					TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\nwas parked next to you!", this);
 
-					spawnVehicle(traderUID, itemType);
+					spawnVehicle(traderUID, itemType, vehicleKeyHash);
 
 					GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
 				}
@@ -213,7 +231,7 @@ modded class DayZPlayerImplement
 					TraderMessage.PlayerWhite("Sorry, but you can't\nsell that!", this);
 
 					if (itemQuantity == -2)
-						TraderMessage.PlayerWhite("Place the Vehicle inside\nthe Traffic Cones!", this);
+						TraderMessage.PlayerWhite("Place the Vehicle inside\nthe Traffic Cones!\nMake sure you was\nthe last Driver!", this);
 						//TraderMessage.PlayerWhite("Turn the Engine on and place it inside the Traffic Cones!", this);
 
 					return;
@@ -360,14 +378,14 @@ modded class DayZPlayerImplement
 					objectToSync.SetOrientation(objectToSyncOrientation);
 				break;
 
-				case TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE:
+				/*case TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE:
 					ref Param2<CarScript, bool> synccarsscript_rp = new Param2<CarScript, bool>( NULL, false );
 					ctx.Read( synccarsscript_rp );
 					
 					CarScript carToSync = synccarsscript_rp.param1;
 
 					carToSync.m_Trader_IsInSafezone = synccarsscript_rp.param2;
-				break;
+				break;*/
 
 				case TRPCs.RPC_SEND_MENU_BACK:
 					GetGame().GetUIManager().Back();
@@ -688,6 +706,46 @@ modded class DayZPlayerImplement
 			return true;
 
 		return false;			
+	}
+
+	int createVehicleKeyInPlayerInventory()
+	{
+		ref array<string> vehicleKeyClasses = {"VehicleKeyRed", "VehicleKeyBlack", "VehicleKeyGrayCyan", "VehicleKeyYellow", "VehicleKeyPurple"};
+
+		EntityAI entity;
+		entity = this.GetHumanInventory().CreateInInventory(vehicleKeyClasses.Get(vehicleKeyClasses.GetRandomIndex()));
+
+		if (!entity)
+			return 0;
+
+		VehicleKeyBase vehicleKey;
+		Class.CastTo(vehicleKey, entity);
+
+		if (!vehicleKey)
+			return 0;
+
+		//GetHive().CharacterSave(this);
+
+		return vehicleKey.GenerateNewHash();
+	}
+
+	int spawnVehicleKeyOnGround()
+	{
+		EntityAI entity;
+		entity = this.SpawnEntityOnGroundPos("VehicleKeyBase", this.GetPosition());
+
+		if (!entity)
+			return 0;
+
+		VehicleKeyBase vehicleKey;
+		Class.CastTo(vehicleKey, entity);
+
+		if (!vehicleKey)
+			return 0;
+
+		//GetHive().CharacterSave(this);
+
+		return vehicleKey.GenerateNewHash();
 	}
 
 	void createItemInPlayerInventory(string itemType, int amount)
@@ -1063,21 +1121,13 @@ modded class DayZPlayerImplement
 					if (!vehicleIsEmpty)
 						continue;
 
-					// Check if Engine is running:
-					/*Car car;
-					Class.CastTo(car, nearby_objects.Get(i));
-					if (car && vehicleIsEmpty)
-					{
-						if (car.EngineIsOn())
-							return nearby_objects.Get(i);
-					}*/
-
-					//TODO: Check if Vehicle Owner is Player or Vehicle Owner is not set.
-
-					//if (m_Trader_LastSelledItemID == nearby_objects.Get(i).GetID())
-					//	continue;
-
-					//m_Trader_LastSelledItemID = nearby_objects.Get(i).GetID();
+					// Check if Player was last Driver:
+					CarScript carsScript = CarScript.Cast(nearby_objects.Get(i));
+					if(!carsScript)
+						continue;
+					
+					if(carsScript.m_Trader_LastDriverId != this.GetIdentity().GetId())
+						continue;					
 
 					return nearby_objects.Get(i);		
 				}					
@@ -1087,7 +1137,7 @@ modded class DayZPlayerImplement
 		return NULL;
 	}
 
-	void spawnVehicle(int traderUID, string vehicleType)
+	void spawnVehicle(int traderUID, string vehicleType, int vehicleKeyHash)
 	{
 		vector objectPosition = m_Trader_TraderVehicleSpawns.Get(traderUID);
 		vector objectDirection = m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID);
@@ -1148,10 +1198,15 @@ modded class DayZPlayerImplement
 			CarScript carScript;
 			if (Class.CastTo(carScript, vehicle))
 			{
-				carScript.m_Trader_OwnerPlayerUID = this.GetIdentity().GetId();
 				carScript.m_Trader_IsInSafezone = true;
+				carScript.m_Trader_Locked = true;
+				carScript.m_Trader_HasKey = true;
+				carScript.m_Trader_VehicleKeyHash = vehicleKeyHash;
+				carScript.SynchronizeValues();
 
-				for (i = 0; i < m_Players.Count(); i++)
+				car.SetAllowDamage(false);
+
+				/*for (i = 0; i < m_Players.Count(); i++)
 				{
 					currentPlayer = PlayerBase.Cast(m_Players.Get(i));
 					
@@ -1159,7 +1214,7 @@ modded class DayZPlayerImplement
 						continue;
 
 					GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE, new Param2<CarScript, bool>( car, true ), true, currentPlayer.GetIdentity());
-				}
+				}*/
 			}
 		}
 	}

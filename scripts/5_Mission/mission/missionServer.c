@@ -47,6 +47,9 @@ modded class MissionServer
 
 	float m_Trader_ZombieCleanupUpdateTimerMax = 30;
 	float m_Trader_ZombieCleanupUpdateTimer = 0;
+
+	float m_Trader_VehicleCleanupUpdateTimerMax = 15 * 60;
+	float m_Trader_VehicleCleanupUpdateTimer = m_Trader_VehicleCleanupUpdateTimerMax;
 	
 	override void OnInit()
 	{		
@@ -231,6 +234,9 @@ modded class MissionServer
 			}
 		}
 
+		array<Object> excludedObjects;
+		array<Object> collidedObjects;
+
 		m_Trader_ZombieCleanupUpdateTimer += timeslice;
 		if (m_Trader_ZombieCleanupUpdateTimer >= m_Trader_ZombieCleanupUpdateTimerMax)
 		{
@@ -241,8 +247,8 @@ modded class MissionServer
 				vector orientation = Vector(0, 0, 0);
 				int safezoneDiameter = m_Trader_TraderSafezones.Get(n) * 2;
 				vector edgeLength = Vector(safezoneDiameter, safezoneDiameter, safezoneDiameter);
-				array<Object> excludedObjects = new array<Object>;
-				array<Object> collidedObjects = new array<Object>;
+				excludedObjects = new array<Object>;
+				collidedObjects = new array<Object>;
 				
 				if (GetGame().IsBoxColliding(m_Trader_TraderPositions.Get(n), orientation, edgeLength, excludedObjects, collidedObjects))
 				{
@@ -252,6 +258,42 @@ modded class MissionServer
 
 						if (objectClass.Contains("ZmbF_") || objectClass.Contains("ZmbM_"))
 							GetGame().ObjectDelete(collidedObjects.Get(o));	
+					}
+				}
+			}
+		}
+
+		m_Trader_VehicleCleanupUpdateTimer += timeslice;
+		if (m_Trader_VehicleCleanupUpdateTimer >= m_Trader_VehicleCleanupUpdateTimerMax)
+		{
+			m_Trader_VehicleCleanupUpdateTimer = 0;
+
+			for (int p = 0; p < m_Trader_TraderVehicleSpawns.Count(); p++)
+			{
+				vector size = "3 5 9";
+				excludedObjects = new array<Object>;
+				collidedObjects = new array<Object>;
+
+				if (GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(p), m_Trader_TraderVehicleSpawnsOrientation.Get(p), size, excludedObjects, collidedObjects))
+				{
+					for (int q = 0; q < collidedObjects.Count(); q++)
+					{
+						CarScript carScript = CarScript.Cast(collidedObjects.Get(q));
+						if (!carScript)
+							continue;
+
+						if (carScript.m_Trader_Locked)
+						{
+							carScript.m_Trader_CleanupCount++;
+
+							if (carScript.m_Trader_CleanupCount >= 3)
+							{
+								carScript.m_Trader_CleanupCount = 0;
+								carScript.m_Trader_Locked = false;
+							}
+
+							carScript.SynchronizeValues();
+						}
 					}
 				}
 			}
@@ -649,6 +691,7 @@ modded class MissionServer
 				line_content = FileReadHelper.TrimComment(line_content);
 
 				m_Trader_StatUpdateTimeMax = line_content.ToFloat();
+				m_Trader_StatUpdateTime = m_Trader_StatUpdateTimeMax;
 				validEntry = true;
 
 				TraderMessage.ServerLog("[TRADER] STATUPDATETIMER = " + line_content);
@@ -674,6 +717,18 @@ modded class MissionServer
 				validEntry = true;
 
 				TraderMessage.ServerLog("[TRADER] ZOMBIECLEANUPTIMER = " + line_content);
+			}
+
+			if (line_content.Contains("<VehicleCleanupTimer>"))
+			{
+				line_content.Replace("<VehicleCleanupTimer>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+
+				m_Trader_VehicleCleanupUpdateTimerMax = line_content.ToFloat() * 60;
+				m_Trader_VehicleCleanupUpdateTimer = m_Trader_VehicleCleanupUpdateTimerMax;
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] VEHICLECLEANUPTIMER = " + line_content);
 			}
 
 			if (line_content.Contains("<SafezoneTimeout>"))
@@ -1148,9 +1203,13 @@ modded class MissionServer
 		CarScript car = CarScript.Cast(player.GetParent());
 
 		if (car)
+		{
 			car.m_Trader_IsInSafezone = isInSafezone;
+			car.SynchronizeValues();
+			car.SetAllowDamage(!isInSafezone);
+		}
 
-		for (int j = 0; j < m_Players.Count(); j++)
+		/*for (int j = 0; j < m_Players.Count(); j++)
 		{
 			PlayerBase currentPlayer = PlayerBase.Cast(m_Players.Get(j));
 			
@@ -1158,6 +1217,6 @@ modded class MissionServer
 				continue;
 
 			GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE, new Param2<CarScript, bool>( car, isInSafezone ), true, currentPlayer.GetIdentity());
-		}
+		}*/
 	}
 }
