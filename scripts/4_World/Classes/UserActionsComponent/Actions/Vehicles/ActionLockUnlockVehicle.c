@@ -34,7 +34,7 @@ class ActionLockUnlockVehicle: ActionContinuousBase
 
         if(vehicleKey)
         {
-            if(vehicleKey.hash == vehicleKeyHash)
+            if(vehicleKey.GetHash() == vehicleKeyHash)
                 return true;
         }
 

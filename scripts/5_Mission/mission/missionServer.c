@@ -937,6 +937,9 @@ modded class MissionServer
 
 			if (qntStr.Contains("S") || qntStr.Contains("s"))
 				qntStr = "-5";
+
+			if (qntStr.Contains("K") || qntStr.Contains("k"))
+				qntStr = "-7";
 			
 			string buyStr = strs.Get(2);
 			buyStr = FileReadHelper.TrimSpaces(buyStr);

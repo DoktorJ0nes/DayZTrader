@@ -1,6 +1,6 @@
 class VehicleKeyBase : ItemBase
 {
-    int hash = 0;
+    protected int hash = 0;
 
     void VehicleKeyBase()
     {
@@ -44,6 +44,22 @@ class VehicleKeyBase : ItemBase
             generateHash();
         }
 
+        return hash;
+    }
+
+    int SetNewHash(int newHash)
+    {
+        if ( GetGame().IsServer() )
+        {
+            hash = newHash;
+            Synchronize();
+        }
+
+        return hash;
+    }
+
+    int GetHash()
+    {
         return hash;
     }
 

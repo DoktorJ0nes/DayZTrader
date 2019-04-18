@@ -127,6 +127,25 @@ modded class DayZPlayerImplement
 					return;
 				}
 
+				int vehicleKeyHash = 0;
+
+				bool isDuplicatingKey = false;
+				if (itemQuantity == -7) // is Key duplication
+				{
+					VehicleKeyBase vehicleKeyinHands = VehicleKeyBase.Cast(this.GetHumanInventory().GetEntityInHands());
+
+					if (!vehicleKeyinHands)
+					{
+						TraderMessage.PlayerWhite("Put the Key you\nwant to duplicate\nin your Hands!", this);
+						return;
+					}
+
+					isDuplicatingKey = true;
+					vehicleKeyHash = vehicleKeyinHands.GetHash();
+					itemType = vehicleKeyinHands.GetType();
+					itemQuantity = 1;
+				}
+
 				traderServerLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 
 				if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
@@ -137,7 +156,7 @@ modded class DayZPlayerImplement
 						return;
 					}
 
-					int vehicleKeyHash = 0;
+					//int vehicleKeyHash = 0;
 					if (itemQuantity == -2)
 					{
 						if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
@@ -170,17 +189,29 @@ modded class DayZPlayerImplement
 				{		
 					deductPlayerCurrency(itemCosts);
 
+					/*bool canCreateItemInPlayerInventory = false;
+					if (itemQuantity == -7) // is Key duplication
+						canCreateItemInPlayerInventory = canCreateItemInPlayerInventory(itemType, 1);
+					else
+						canCreateItemInPlayerInventory = canCreateItemInPlayerInventory(itemType, itemQuantity);*/
+
 					if (canCreateItemInPlayerInventory(itemType, itemQuantity))
 					{
 						TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\nwas added to your Inventory!", this);
 						
-						createItemInPlayerInventory(itemType, itemQuantity);
+						if (isDuplicatingKey)
+							createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
+						else
+							createItemInPlayerInventory(itemType, itemQuantity);
 					}
 					else
 					{
 						TraderMessage.PlayerWhite("Your Inventory is full!\n " + itemDisplayNameClient + "\nwas placed on Ground!", this);
-											
-						spawnItemOnGround(itemType, itemQuantity, playerPosition);
+
+						if (isDuplicatingKey)
+							spawnVehicleKeyOnGround(vehicleKeyHash, itemType);
+						else			
+							spawnItemOnGround(itemType, itemQuantity, playerPosition);
 						
 						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
 					}
@@ -711,12 +742,15 @@ modded class DayZPlayerImplement
 		return false;			
 	}
 
-	int createVehicleKeyInPlayerInventory()
+	int createVehicleKeyInPlayerInventory(int hash = 0, string classname = "")
 	{
 		ref array<string> vehicleKeyClasses = {"VehicleKeyRed", "VehicleKeyBlack", "VehicleKeyGrayCyan", "VehicleKeyYellow", "VehicleKeyPurple"};
 
+		if (classname == "")
+			classname = vehicleKeyClasses.Get(vehicleKeyClasses.GetRandomIndex());
+
 		EntityAI entity;
-		entity = this.GetHumanInventory().CreateInInventory(vehicleKeyClasses.Get(vehicleKeyClasses.GetRandomIndex()));
+		entity = this.GetHumanInventory().CreateInInventory(classname);
 
 		if (!entity)
 			return 0;
@@ -729,13 +763,23 @@ modded class DayZPlayerImplement
 
 		//GetHive().CharacterSave(this);
 
-		return vehicleKey.GenerateNewHash();
+		if (hash <= 0)
+			hash = vehicleKey.GenerateNewHash();
+		else
+			hash = vehicleKey.SetNewHash(hash);
+
+		return hash;
 	}
 
-	int spawnVehicleKeyOnGround()
+	int spawnVehicleKeyOnGround(int hash = 0, string classname = "")
 	{
+		ref array<string> vehicleKeyClasses = {"VehicleKeyRed", "VehicleKeyBlack", "VehicleKeyGrayCyan", "VehicleKeyYellow", "VehicleKeyPurple"};
+
+		if (classname == "")
+			classname = vehicleKeyClasses.Get(vehicleKeyClasses.GetRandomIndex());
+
 		EntityAI entity;
-		entity = this.SpawnEntityOnGroundPos("VehicleKeyBase", this.GetPosition());
+		entity = this.SpawnEntityOnGroundPos(classname, this.GetPosition());
 
 		if (!entity)
 			return 0;
@@ -748,7 +792,12 @@ modded class DayZPlayerImplement
 
 		//GetHive().CharacterSave(this);
 
-		return vehicleKey.GenerateNewHash();
+		if (hash <= 0)
+			hash = vehicleKey.GenerateNewHash();
+		else
+			hash = vehicleKey.SetNewHash(hash);
+
+		return hash;
 	}
 
 	void createItemInPlayerInventory(string itemType, int amount)

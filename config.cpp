@@ -185,6 +185,13 @@ class CfgVehicles
 		};
 	};
 
+	class VehicleKeyDuplicate: VehicleKeyBase
+	{
+		displayName="Vehicle Key Duplication";
+		descriptionShort="Duplicates the Vehicle Key that you are holding in your Hands.";
+		//hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaBlack_co.paa"};
+	};
+
 	class VehicleKeyRed: VehicleKeyBase
 	{
 		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaRed_co.paa"};
