@@ -129,7 +129,7 @@ modded class DayZPlayerImplement
 
 				traderServerLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 
-				if (itemQuantity == -2) // Is a Vehicle
+				if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
 				{
 					if (!isVehicleSpawnFree(traderUID))
 					{
@@ -138,21 +138,24 @@ modded class DayZPlayerImplement
 					}
 
 					int vehicleKeyHash = 0;
-					if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
+					if (itemQuantity == -2)
 					{
-						TraderMessage.PlayerWhite("The Vehicle Key\nwas added to your Inventory!", this);
-						
-						vehicleKeyHash = createVehicleKeyInPlayerInventory();
+						if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
+						{
+							TraderMessage.PlayerWhite("The Vehicle Key\nwas added to your Inventory!", this);
+							
+							vehicleKeyHash = createVehicleKeyInPlayerInventory();
+						}
+						else
+						{
+							TraderMessage.PlayerWhite("Your Inventory is full!\n The Vehicle Key\nwas placed on Ground!", this);
+												
+							vehicleKeyHash = spawnVehicleKeyOnGround();
+							
+							GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
+						}
+						//TraderMessage.PlayerWhite("KeyHash:\n" + vehicleKeyHash, this);
 					}
-					else
-					{
-						TraderMessage.PlayerWhite("Your Inventory is full!\n The Vehicle Key\nwas placed on Ground!", this);
-											
-						vehicleKeyHash = spawnVehicleKeyOnGround();
-						
-						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
-					}
-					//TraderMessage.PlayerWhite("KeyHash:\n" + vehicleKeyHash, this);
 
 
 					deductPlayerCurrency(itemCosts);
@@ -218,7 +221,7 @@ modded class DayZPlayerImplement
 
 
 				Object vehicleToSell = GetVehicleToSell(traderUID, itemType);
-				bool isValidVehicle = (itemQuantity == -2 && vehicleToSell);
+				bool isValidVehicle = ((itemQuantity == -2 || itemQuantity == -6) && vehicleToSell);
 
 				if (itemSellValue < 0)
 				{
@@ -230,7 +233,7 @@ modded class DayZPlayerImplement
 				{
 					TraderMessage.PlayerWhite("Sorry, but you can't\nsell that!", this);
 
-					if (itemQuantity == -2)
+					if (itemQuantity == -2 || itemQuantity == -6)
 						TraderMessage.PlayerWhite("Place the Vehicle inside\nthe Traffic Cones!\nMake sure you was\nthe last Driver!", this);
 						//TraderMessage.PlayerWhite("Turn the Engine on and place it inside the Traffic Cones!", this);
 
@@ -1199,9 +1202,14 @@ modded class DayZPlayerImplement
 			if (Class.CastTo(carScript, vehicle))
 			{
 				carScript.m_Trader_IsInSafezone = true;
-				carScript.m_Trader_Locked = true;
-				carScript.m_Trader_HasKey = true;
-				carScript.m_Trader_VehicleKeyHash = vehicleKeyHash;
+
+				if (vehicleKeyHash != 0)
+				{
+					carScript.m_Trader_Locked = true;
+					carScript.m_Trader_HasKey = true;
+					carScript.m_Trader_VehicleKeyHash = vehicleKeyHash;
+				}
+
 				carScript.SynchronizeValues();
 
 				car.SetAllowDamage(false);

@@ -290,7 +290,7 @@ class TraderMenu extends UIScriptedMenu
 			{
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(0, 1, 1, 1) );
 			}
-			else if (isInPlayerInventory(itemClassname, itemQuantity) || (itemQuantity == -2 && GetVehicleToSell(itemClassname)))
+			else if (isInPlayerInventory(itemClassname, itemQuantity) || ((itemQuantity == -2 || itemQuantity == -6) && GetVehicleToSell(itemClassname)))
 			{
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(1, 0, 1, 0) );
 			}

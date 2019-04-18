@@ -923,6 +923,9 @@ modded class MissionServer
 				qntStr = GetItemMaxQuantity(itemStr).ToString();
 			}
 
+			if (qntStr.Contains("VNK") || qntStr.Contains("vnk"))
+				qntStr = "-6";
+
 			if (qntStr.Contains("V") || qntStr.Contains("v"))
 				qntStr = "-2";
 
