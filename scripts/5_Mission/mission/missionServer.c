@@ -1148,9 +1148,13 @@ modded class MissionServer
 		CarScript car = CarScript.Cast(player.GetParent());
 
 		if (car)
+		{
 			car.m_Trader_IsInSafezone = isInSafezone;
+			car.SynchronizeValues();
+			car.SetAllowDamage(!isInSafezone);
+		}
 
-		for (int j = 0; j < m_Players.Count(); j++)
+		/*for (int j = 0; j < m_Players.Count(); j++)
 		{
 			PlayerBase currentPlayer = PlayerBase.Cast(m_Players.Get(j));
 			
@@ -1158,6 +1162,6 @@ modded class MissionServer
 				continue;
 
 			GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE, new Param2<CarScript, bool>( car, isInSafezone ), true, currentPlayer.GetIdentity());
-		}
+		}*/
 	}
 }
