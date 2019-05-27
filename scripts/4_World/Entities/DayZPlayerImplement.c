@@ -643,7 +643,7 @@ modded class DayZPlayerImplement
 
 			//TraderMessage.PlayerWhite("I: " + itemPlayerClassname + " == " + itemClassname);
 
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.7)))) // && m_Trader_LastSelledItemID != item.GetID())
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.5)))) // && m_Trader_LastSelledItemID != item.GetID())
 			{
 				return true;
 			}
@@ -921,7 +921,7 @@ modded class DayZPlayerImplement
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
-			if(!isAttached(item) && !item.IsRuined() && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.7))))
+			if(!isAttached(item) && !item.IsRuined() && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.5))))
 			{
 				itemAmount = getItemAmount(item);
 				
@@ -963,7 +963,7 @@ modded class DayZPlayerImplement
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.7))))
+			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.5))))
 			{
 				itemAmount = getItemAmount(item);
 				
