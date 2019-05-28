@@ -54,27 +54,39 @@ class CfgPatches
 		requiredAddons[] = {"DZ_Data"};
 	};
 };
+class CfgModels
+{
+	class ruble{
+		sections[]={"WholeObject"};
+	};
+};
 class CfgVehicles
 {
 	class Inventory_Base;
 	class MoneyRuble1: Inventory_Base
 	{
-		scope = 2;
-		displayName = "1 Ruble Note";
-		descriptionShort = "This Currency was used in Chernarus before the Disease. It is now only used for trading.";
-		model = "TM\Trader\Money_Ruble1.p3d";
-		canBeSplit = 1;
+		scope=2;
+		displayName="1 Ruble Note";
+		descriptionShort="This Currency was used in Chernarus before the Disease. It is now only used for trading.";
+		model="TM\Trader\ruble.p3d";
+		canBeSplit=1;
 		rotationFlags = 16;
-		lootCategory = "Materials";
-		lootTag[] = {"Civilian","Work"};
-		itemSize[] = {1,2};
-		weight = 1;
-		varQuantityInit = 1;
-		varQuantityMin = 0;
-		varQuantityMax = 500;
-		varQuantityDestroyOnMin = 1;
-		destroyOnEmpty = 1;
-		absorbency = 1;
+		lootCategory="Materials";
+		lootTag[]=
+		{
+			"Civilian",
+			"Work"
+		};
+		itemSize[]={1,2};
+		weight=1;
+		varQuantityInit=1;
+		varQuantityMin=0;
+		varQuantityMax=500;
+		varQuantityDestroyOnMin=1;
+		destroyOnEmpty=1;
+		absorbency=1;
+		hiddenSelections[]={"WholeObject"};
+		hiddenSelectionsTextures[]={"TM\Trader\data\ruble1_co.paa"};
 		class DamageSystem
 		{
 			class GlobalHealth
@@ -82,37 +94,42 @@ class CfgVehicles
 				class Health
 				{
 					hitpoints = 100;
-					healthLabels[] = {1.0,0.7,0.5,0.3,0.0};
-					healthLevels[] = {{1.0,{}},{0.5,{}},{0.0,{}}};
+					healthLevels[] = {{1.0,{"TM\Trader\data\ruble.rvmat"}},{0.7,{"TM\Trader\data\ruble.rvmat"}},{0.5,{"TM\Trader\data\ruble_damage.rvmat"}},{0.3,{"TM\Trader\data\ruble_damage.rvmat"}},{0.0,{"TM\Trader\data\ruble_destruct.rvmat"}}};
 				};
 			};
 		};
 	};
+	
 	class MoneyRuble5: MoneyRuble1
 	{
-		displayName = "5 Ruble Note";
-		model = "TM\Trader\Money_Ruble5.p3d";
+		displayName="5 Ruble Note";
+		hiddenSelectionsTextures[]={"TM\Trader\data\ruble5_co.paa"};
 	};
+	
 	class MoneyRuble10: MoneyRuble1
 	{
-		displayName = "10 Ruble Note";
-		model = "TM\Trader\Money_Ruble10.p3d";
+		displayName="10 Ruble Note";
+		hiddenSelectionsTextures[]={"TM\Trader\data\ruble10_co.paa"};
 	};
+	
 	class MoneyRuble25: MoneyRuble1
 	{
-		displayName = "25 Ruble Note";
-		model = "TM\Trader\Money_Ruble25.p3d";
+		displayName="25 Ruble Note";
+		hiddenSelectionsTextures[]={"TM\Trader\data\ruble25_co.paa"};
 	};
+	
 	class MoneyRuble50: MoneyRuble1
 	{
-		displayName = "50 Ruble Note";
-		model = "TM\Trader\Money_Ruble50.p3d";
+		displayName="50 Ruble Note";
+		hiddenSelectionsTextures[]={"TM\Trader\data\ruble50_co.paa"};
 	};
+	
 	class MoneyRuble100: MoneyRuble1
 	{
-		displayName = "100 Ruble Note";
-		model = "TM\Trader\Money_Ruble100.p3d";
+		displayName="100 Ruble Note";
+		hiddenSelectionsTextures[]={"TM\Trader\data\ruble100_co.paa"};
 	};
+
 	class HouseNoDestruct;
 	class Land_RoadCone: HouseNoDestruct
 	{
