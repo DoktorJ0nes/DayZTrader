@@ -363,7 +363,7 @@ class TraderMenu extends UIScriptedMenu
 	{
 		ItemBase item_IB = ItemBase.Cast( previewItem );
 
-		int weight = item_IB.GetItemWeight();
+		int weight = item_IB.GetSingleInventoryItemWeight();
 		//string weightStr = "";
 		
 		if (weight >= 1000)
