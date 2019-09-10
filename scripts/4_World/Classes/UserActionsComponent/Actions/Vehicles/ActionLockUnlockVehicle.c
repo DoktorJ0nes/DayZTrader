@@ -17,7 +17,7 @@ modded class ActionDetach
 
 //-------------------------------------------------------------------------------------------------------------- PUT ABOVE CLASS INTO A NEW FILE!
 
-class ActionLockUnlockVehicleCB : ActionContinuousBaseCB
+/*class ActionLockUnlockVehicleCB : ActionContinuousBaseCB
 {
 	override void CreateActionComponent()
 	{
@@ -104,17 +104,17 @@ class ActionLockUnlockVehicle: ActionContinuousBase
 			}
 		}
 
-		/*if(!carDoor)
-			return false;
-
-		array<string> selections = new array<string>();
-		carDoor.GetActionComponentNameList(target.GetComponentIndex(), selections);
-
-		for (int i = 0; i < selections.Count(); i++)
-		{
-			if(selections[i] == "DoorsHood")
-				return true;
-		}*/
+		//if(!carDoor)
+		//	return false;
+		//
+		//array<string> selections = new array<string>();
+		//carDoor.GetActionComponentNameList(target.GetComponentIndex(), selections);
+		//
+		//for (int i = 0; i < selections.Count(); i++)
+		//{
+		//	if(selections[i] == "DoorsHood")
+		//		return true;
+		//}
 
 		return false;
 	}
@@ -127,10 +127,10 @@ class ActionUnlockVehicle: ActionLockUnlockVehicle
 		ActionLockUnlockVehicle();
 	}
 		
-	/*override int GetType()
-	{
-		return 3555;
-	}*/
+	//override int GetType()
+	//{
+	//	return 3555;
+	//}
 		
 	override string GetText()
 	{
@@ -178,10 +178,10 @@ class ActionLockVehicle: ActionLockUnlockVehicle
 		ActionLockUnlockVehicle();
 	}
 		
-	/*override int GetType()
-	{
-		return 3556;
-	}*/
+	//override int GetType()
+	//{
+	//	return 3556;
+	//}
 		
 	override string GetText()
 	{
@@ -254,10 +254,10 @@ class ActionUnlockVehicleInside: ActionLockUnlockVehicleInside
 		ActionLockUnlockVehicleInside();
 	}
 		
-	/*override int GetType()
-	{
-		return 3557;
-	}*/
+	//override int GetType()
+	//{
+	//	return 3557;
+	//}
 		
 	override string GetText()
 	{
@@ -305,10 +305,10 @@ class ActionLockVehicleInside: ActionLockUnlockVehicleInside
 		ActionLockUnlockVehicleInside();
 	}
 		
-	/*override int GetType()
-	{
-		return 3558;
-	}*/
+	//override int GetType()
+	//{
+	//	return 3558;
+	//}
 		
 	override string GetText()
 	{
@@ -347,7 +347,7 @@ class ActionLockVehicleInside: ActionLockUnlockVehicleInside
 			carScript.SynchronizeValues();
 		}
 	}
-};
+};*/
 
 
 //------------------------------------------------------------------------------------------------------------------
