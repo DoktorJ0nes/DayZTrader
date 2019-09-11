@@ -132,8 +132,8 @@ modded class MissionServer
 					SetPlayerVehicleIsInSafezone( player, true );
 					
 					TraderMessage.DeleteSafezoneMessages(player);
-					TraderMessage.PlayerRed("You entered the Safezone!", player);
-					TraderMessage.PlayerWhite("Press 'B'-Key to open\nthe Trader Menu.", player);
+					TraderMessage.PlayerRed("#tm_entered_safezone", player);
+					TraderMessage.PlayerWhite("#tm_press_to_open_menu", player);
 
 					if(player.IsRestrained())
 					{
@@ -154,7 +154,7 @@ modded class MissionServer
 					player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
 
 					TraderMessage.DeleteSafezoneMessages(player);
-					TraderMessage.PlayerWhite("Welcome back!", player);
+					TraderMessage.PlayerWhite("#tm_welcome_back", player);
 				}
 				
 				if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout <= 0)
@@ -165,7 +165,7 @@ modded class MissionServer
 					//SetPlayerVehicleIsInSafezone( player, false );
 					
 					TraderMessage.DeleteSafezoneMessages(player);
-					TraderMessage.PlayerRed("You left the Safezone!", player);
+					TraderMessage.PlayerRed("#tm_left_safezone", player);
 
 					player.SetAllowDamage(true);
 				}

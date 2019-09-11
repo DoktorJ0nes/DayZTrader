@@ -79,7 +79,7 @@ modded class MissionGameplay
 			
 			if (!traderNearby && playerIsInSafezoneRange)
 			{
-				TraderMessage.PlayerWhite("There is no Trader nearby..", player, 5);
+				TraderMessage.PlayerWhite("#tm_no_trader_nearby", player, 5);
 				return;
 			}
 

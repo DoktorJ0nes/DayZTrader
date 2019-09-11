@@ -187,7 +187,7 @@ class TraderMenu extends UIScriptedMenu
 		{
 			if (m_UiBuyTimer > 0)
 			{
-				TraderMessage.PlayerWhite("Not that fast Bro!", m_Player);
+				TraderMessage.PlayerWhite("#tm_not_that_fast", m_Player);
 				return true;
 			}
 			m_UiBuyTimer = m_buySellTime;
@@ -201,7 +201,7 @@ class TraderMenu extends UIScriptedMenu
 		{
 			if (m_UiSellTimer > 0)
 			{
-				TraderMessage.PlayerWhite("Not that fast Bro!", m_Player);
+				TraderMessage.PlayerWhite("#tm_not_that_fast", m_Player);
 				return true;
 			}
 			m_UiSellTimer = m_buySellTime;

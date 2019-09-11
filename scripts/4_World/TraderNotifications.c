@@ -5,7 +5,7 @@ const int TRADERNOTIFICATION_MARGIN = 5;
 class TraderNotification
 {
     Widget m_Widget;
-    MultilineTextWidget m_Message;
+    RichTextWidget m_Message;
 
     float m_Timer = 0;
     float m_vsize = 0;
@@ -22,7 +22,7 @@ class TraderNotification
     void Init(string message, float time, bool isSafezoneMessage = false)
     {
 		m_Widget = GetGame().GetWorkspace().CreateWidgets( "TM/Trader/scripts/layouts/TraderNotification.layout" );
-        m_Message = MultilineTextWidget.Cast(m_Widget.FindAnyWidget("text_message") );
+        m_Message = RichTextWidget.Cast(m_Widget.FindAnyWidget("text_message") );
 
         if (isSafezoneMessage)
         {
@@ -32,9 +32,10 @@ class TraderNotification
 
         m_Message.SetText(message);
 
-        TStringArray messageLines = new TStringArray;
-		message.Split( "\n", messageLines );
-        m_vsize = (messageLines.Count() * TRADERNOTIFICATION_TEXTHIGHT) + TRADERNOTIFICATION_MARGIN;
+        if (m_Message.GetContentHeight() == 0)
+            m_Message.SetText("Please restart your Game\nto make Language Changes\nvalid!");
+
+        m_vsize = (m_Message.GetNumLines() * TRADERNOTIFICATION_TEXTHIGHT) + TRADERNOTIFICATION_MARGIN;
         m_Widget.SetSize(0.14, m_vsize);
 
         m_Timer = time;
@@ -62,7 +63,7 @@ class TraderNotification
 
     string getSafezoneMessage(float time)
     {
-        return "You are leaving the\nSafezone in " + (Math.Floor(m_Timer) + 1) + " Seconds!";
+        return "#tm_leaving_the_safezone_in" + " " + (Math.Floor(m_Timer) + 1) + " " + "#tm_seconds" + "!";
     }
 }
 

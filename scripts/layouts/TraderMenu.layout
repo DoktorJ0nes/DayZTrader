@@ -80,7 +80,7 @@ FrameWidgetClass TraderMenu
 			vexactpos 1
 			hexactsize 1
 			vexactsize 1
-			text "Balance: "
+			text "Money: "
 			"exact text" 1
 			font "gui/fonts/Metron28"
 			"text halign" right
@@ -113,7 +113,7 @@ FrameWidgetClass TraderMenu
          style Default
          lines 1
 		 "title visible" 1
-		 colums "Item;70;Price Buy;15;Price Sell;15"
+		 colums "#tm_item;70;#tm_price_buy;15;#tm_price_sell;15"
          font "gui/fonts/Metron22"
         }
 
@@ -174,7 +174,7 @@ FrameWidgetClass TraderMenu
             vexactpos 1
             hexactsize 1
             vexactsize 1
-            text "Cancel"
+            text "#tm_cancel"
         }
 		
 		ButtonWidgetClass btn_buy
@@ -187,7 +187,7 @@ FrameWidgetClass TraderMenu
             vexactpos 1
             hexactsize 1
             vexactsize 1
-            text "Buy"
+            text "#tm_buy"
         }
 		
 		ButtonWidgetClass btn_sell
@@ -200,7 +200,7 @@ FrameWidgetClass TraderMenu
             vexactpos 1
             hexactsize 1
             vexactsize 1
-            text "Sell"
+            text "#tm_sell"
         }
 	}
 }
