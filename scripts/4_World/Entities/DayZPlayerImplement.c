@@ -142,13 +142,13 @@ modded class DayZPlayerImplement
 					int vehicleKeyHash = 0;
 					/*if (canCreateItemInPlayerInventory("VehicleKey", 1))
 					{
-						TraderMessage.PlayerWhite("The Vehicle Key\nwas added to your Inventory!", this);
+						TraderMessage.PlayerWhite(getItemDisplayName("VehicleKey") + "\n " + "#tm_added_to_inventory", this);
 						
 						vehicleKeyHash = createVehicleKeyInPlayerInventory();
 					}
 					else
 					{
-						TraderMessage.PlayerWhite("Your Inventory is full!\n The Vehicle Key\nwas placed on Ground!", this);
+						TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + getItemDisplayName("VehicleKey") + "\n" + "#tm_was_placed_on_ground", this);
 											
 						vehicleKeyHash = spawnVehicleKeyOnGround();
 						
