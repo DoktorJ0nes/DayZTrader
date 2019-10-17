@@ -127,9 +127,68 @@ modded class DayZPlayerImplement
 					return;
 				}
 
+				int vehicleKeyHash = 0;
+
+				bool isDuplicatingKey = false;
+				if (itemQuantity == -7) // is Key duplication
+				{
+					VehicleKeyBase vehicleKeyinHands = VehicleKeyBase.Cast(this.GetHumanInventory().GetEntityInHands());
+
+					if (!vehicleKeyinHands)
+					{
+						TraderMessage.PlayerWhite("Put the Key you\nwant to duplicate\nin your Hands!", this);
+						return;
+					}
+
+					isDuplicatingKey = true;
+					vehicleKeyHash = vehicleKeyinHands.GetHash();
+					itemType = vehicleKeyinHands.GetType();
+					itemQuantity = 1;
+				}
+
 				traderServerLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 
-				if (itemQuantity == -2) // Is a Vehicle
+				/******************************************
+				if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
+				{
+					if (!isVehicleSpawnFree(traderUID))
+					{
+						TraderMessage.PlayerWhite("Something is blocking\nthe Way!", this);
+						return;
+					}
+
+					//int vehicleKeyHash = 0;
+					if (itemQuantity == -2)
+					{
+						if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
+						{
+							TraderMessage.PlayerWhite("The Vehicle Key\nwas added to your Inventory!", this);
+							
+							vehicleKeyHash = createVehicleKeyInPlayerInventory();
+						}
+						else
+						{
+							TraderMessage.PlayerWhite("Your Inventory is full!\n The Vehicle Key\nwas placed on Ground!", this);
+												
+							vehicleKeyHash = spawnVehicleKeyOnGround();
+							
+							GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
+						}
+						//TraderMessage.PlayerWhite("KeyHash:\n" + vehicleKeyHash, this);
+					}
+
+
+					deductPlayerCurrency(itemCosts);
+
+					TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\nwas parked next to you!", this);
+
+					spawnVehicle(traderUID, itemType, vehicleKeyHash);
+
+					GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
+				}
+				**********************************************/
+
+				if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
 				{
 					string blockingObject = isVehicleSpawnFree(traderUID);
 
@@ -139,24 +198,25 @@ modded class DayZPlayerImplement
 						return;
 					}
 
-					int vehicleKeyHash = 0;
-					/*if (canCreateItemInPlayerInventory("VehicleKey", 1))
+					//int vehicleKeyHash = 0;
+					if (itemQuantity == -2)
 					{
-						TraderMessage.PlayerWhite(getItemDisplayName("VehicleKey") + "\n " + "#tm_added_to_inventory", this);
-						
-						vehicleKeyHash = createVehicleKeyInPlayerInventory();
+						if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
+						{
+							TraderMessage.PlayerWhite(getItemDisplayName("VehicleKey") + "\n " + "#tm_added_to_inventory", this);
+							
+							vehicleKeyHash = createVehicleKeyInPlayerInventory();
+						}
+						else
+						{
+							TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + getItemDisplayName("VehicleKey") + "\n" + "#tm_was_placed_on_ground", this);
+												
+							vehicleKeyHash = spawnVehicleKeyOnGround();
+							
+							GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
+						}
+						//TraderMessage.PlayerWhite("KeyHash:\n" + vehicleKeyHash, this);
 					}
-					else
-					{
-						TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + getItemDisplayName("VehicleKey") + "\n" + "#tm_was_placed_on_ground", this);
-											
-						vehicleKeyHash = spawnVehicleKeyOnGround();
-						
-						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
-					}
-					//TraderMessage.PlayerWhite("KeyHash:\n" + vehicleKeyHash, this);
-					*/
-
 
 					deductPlayerCurrency(itemCosts);
 
@@ -174,13 +234,19 @@ modded class DayZPlayerImplement
 					{
 						TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_added_to_inventory", this);
 						
-						createItemInPlayerInventory(itemType, itemQuantity);
+						if (isDuplicatingKey)
+							createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
+						else
+							createItemInPlayerInventory(itemType, itemQuantity);
 					}
 					else
 					{
 						TraderMessage.PlayerWhite("#tm_inventory_full" + "\n " + itemDisplayNameClient + "\n" + "#tm_was_placed_on_ground", this);
 											
-						spawnItemOnGround(itemType, itemQuantity, playerPosition);
+						if (isDuplicatingKey)
+							spawnVehicleKeyOnGround(vehicleKeyHash, itemType);
+						else			
+							spawnItemOnGround(itemType, itemQuantity, playerPosition);
 						
 						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
 					}
@@ -221,7 +287,7 @@ modded class DayZPlayerImplement
 
 
 				Object vehicleToSell = GetVehicleToSell(traderUID, itemType);
-				bool isValidVehicle = (itemQuantity == -2 && vehicleToSell);
+				bool isValidVehicle = ((itemQuantity == -2 || itemQuantity == -6) && vehicleToSell);
 
 				if (itemSellValue < 0)
 				{
@@ -233,7 +299,7 @@ modded class DayZPlayerImplement
 				{
 					TraderMessage.PlayerWhite("#tm_you_cant_sell", this);
 
-					if (itemQuantity == -2)
+					if (itemQuantity == -2 || itemQuantity == -6)
 						TraderMessage.PlayerWhite("#tm_cant_sell_vehicle", this);
 						//TraderMessage.PlayerWhite("Turn the Engine on and place it inside the Traffic Cones!", this);
 
@@ -711,42 +777,62 @@ modded class DayZPlayerImplement
 		return false;			
 	}
 
-	int createVehicleKeyInPlayerInventory()
+	int createVehicleKeyInPlayerInventory(int hash = 0, string classname = "")
 	{
+		ref array<string> vehicleKeyClasses = {"VehicleKeyRed", "VehicleKeyBlack", "VehicleKeyGrayCyan", "VehicleKeyYellow", "VehicleKeyPurple"};
+
+		if (classname == "")
+			classname = vehicleKeyClasses.Get(vehicleKeyClasses.GetRandomIndex());
+
 		EntityAI entity;
-		entity = this.GetHumanInventory().CreateInInventory("VehicleKey");
+		entity = this.GetHumanInventory().CreateInInventory(classname);
 
 		if (!entity)
 			return 0;
 
-		VehicleKey vehicleKey;
+		VehicleKeyBase vehicleKey;
 		Class.CastTo(vehicleKey, entity);
 
 		if (!vehicleKey)
 			return 0;
 
-		GetHive().CharacterSave(this);
+		//GetHive().CharacterSave(this);
 
-		return vehicleKey.GenerateNewHash();
+		if (hash <= 0)
+			hash = vehicleKey.GenerateNewHash();
+		else
+			hash = vehicleKey.SetNewHash(hash);
+
+		return hash;
 	}
 
-	int spawnVehicleKeyOnGround()
+	int spawnVehicleKeyOnGround(int hash = 0, string classname = "")
 	{
+		ref array<string> vehicleKeyClasses = {"VehicleKeyRed", "VehicleKeyBlack", "VehicleKeyGrayCyan", "VehicleKeyYellow", "VehicleKeyPurple"};
+
+		if (classname == "")
+			classname = vehicleKeyClasses.Get(vehicleKeyClasses.GetRandomIndex());
+
 		EntityAI entity;
-		entity = this.SpawnEntityOnGroundPos("VehicleKey", this.GetPosition());
+		entity = this.SpawnEntityOnGroundPos(classname, this.GetPosition());
 
 		if (!entity)
 			return 0;
 
-		VehicleKey vehicleKey;
+		VehicleKeyBase vehicleKey;
 		Class.CastTo(vehicleKey, entity);
 
 		if (!vehicleKey)
 			return 0;
 
-		GetHive().CharacterSave(this);
+		//GetHive().CharacterSave(this);
 
-		return vehicleKey.GenerateNewHash();
+		if (hash <= 0)
+			hash = vehicleKey.GenerateNewHash();
+		else
+			hash = vehicleKey.SetNewHash(hash);
+
+		return hash;
 	}
 
 	void createItemInPlayerInventory(string itemType, int amount)
@@ -1219,24 +1305,18 @@ modded class DayZPlayerImplement
 			CarScript carScript;
 			if (Class.CastTo(carScript, vehicle))
 			{
-				//carScript.m_Trader_OwnerPlayerUID = this.GetIdentity().GetId();
 				carScript.m_Trader_IsInSafezone = true;
-				/*carScript.m_Trader_Locked = true;
-				carScript.m_Trader_HasKey = true;
-				carScript.m_Trader_VehicleKeyHash = vehicleKeyHash;
-				carScript.SynchronizeValues();*/
+
+				if (vehicleKeyHash != 0)
+				{
+					carScript.m_Trader_Locked = true;
+					carScript.m_Trader_HasKey = true;
+					carScript.m_Trader_VehicleKeyHash = vehicleKeyHash;
+				}
+
+				carScript.SynchronizeValues();
 
 				car.SetAllowDamage(false);
-
-				/*for (i = 0; i < m_Players.Count(); i++)
-				{
-					currentPlayer = PlayerBase.Cast(m_Players.Get(i));
-					
-					if ( !currentPlayer )
-						continue;
-
-					GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE, new Param2<CarScript, bool>( car, true ), true, currentPlayer.GetIdentity());
-				}*/
 			}
 		}
 	}

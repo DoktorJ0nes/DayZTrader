@@ -1,24 +1,21 @@
-class VehicleKey : ItemBase
+class VehicleKeyBase : ItemBase
 {
-    //private bool m_handledHashSetting = false;
-    int hash = 0;
+    protected int hash = 0;
 
-    void VehicleKey()
+    void VehicleKeyBase()
     {
         RegisterNetSyncVariableInt( "hash", 0, int.MAX - 1);
 
-        Print("[VehicleKey] Constructed Vehicle Key!");
+        //Print("[VehicleKey] Constructed Vehicle Key!");
     }
 
     override void OnStoreSave( ParamsWriteContext ctx )
 	{   
 		super.OnStoreSave( ctx );
 
-        //handleHash();
-
         ctx.Write( hash );
 
-        Print("[VehicleKey] Saving Vehicle Key with Hash " + hash);
+        //Print("[VehicleKey] Saving Vehicle Key with Hash " + hash);
 	}
 	
 	override bool OnStoreLoad( ParamsReadContext ctx, int version )
@@ -30,13 +27,12 @@ class VehicleKey : ItemBase
 		{
             hash = 0;
 
-            Print("[VehicleKey] Using Vehicle Key default Hash!");
+            //Print("[VehicleKey] Using Vehicle Key default Hash!");
 		}
 
-        //handleHash();
         Synchronize();
 
-        Print("[VehicleKey] Loaded Vehicle Key with Hash " + hash);
+        //Print("[VehicleKey] Loaded Vehicle Key with Hash " + hash);
 		
 		return true;
 	}
@@ -51,14 +47,21 @@ class VehicleKey : ItemBase
         return hash;
     }
 
-    /*protected void handleHash()
+    int SetNewHash(int newHash)
     {
-        if (!m_handledHashSetting)
+        if ( GetGame().IsServer() )
         {
-            generateHash();
-            m_handledHashSetting = true;
+            hash = newHash;
+            Synchronize();
         }
-    }*/
+
+        return hash;
+    }
+
+    int GetHash()
+    {
+        return hash;
+    }
 
     protected void generateHash()
     {
@@ -66,7 +69,7 @@ class VehicleKey : ItemBase
         {
             hash = Math.RandomIntInclusive(1, int.MAX - 1);
 
-            Print("[VehicleKey] Generated new Hash " + hash);
+            //Print("[VehicleKey] Generated new Hash " + hash);
         }
 
         Synchronize();

@@ -1,23 +1,4 @@
-modded class ActionDetach
-{
-    override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
-    {
-		if (target)
-		{
-			if (target.GetObject().IsInherited(CarWheel))
-			{
-				if (CarScript.Cast(target.GetParent()).m_Trader_Locked)
-					return false;
-			}
-		}
-
-        return super.ActionCondition(player, target, item);
-    }
-}
-
-//-------------------------------------------------------------------------------------------------------------- PUT ABOVE CLASS INTO A NEW FILE!
-
-/*class ActionLockUnlockVehicleCB : ActionContinuousBaseCB
+class ActionLockUnlockVehicleCB : ActionContinuousBaseCB
 {
 	override void CreateActionComponent()
 	{
@@ -31,17 +12,15 @@ class ActionLockUnlockVehicle: ActionContinuousBase
 	{
 		m_CallbackClass = ActionLockUnlockVehicleCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
-		//m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_STARTENGINE;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
-		//m_StanceMask = DayZPlayerConstants.STANCEMASK_ALL;
 		//m_MessageSuccess = "";
 	}
 
 	override void CreateConditionComponents()
 	{
 		m_ConditionItem = new CCINonRuined;
-		m_ConditionTarget = new CCTNonRuined(1.5);//UAMaxDistances.DEFAULT);
+		m_ConditionTarget = new CCTNonRuined(1.5);
 	}
 
 	override bool CanBeUsedInVehicle()
@@ -51,11 +30,11 @@ class ActionLockUnlockVehicle: ActionContinuousBase
 
 	protected bool playerHasVehicleKeyInHands(PlayerBase player, int vehicleKeyHash)
     {
-        VehicleKey vehicleKey = VehicleKey.Cast(player.GetHumanInventory().GetEntityInHands());
+        VehicleKeyBase vehicleKey = VehicleKeyBase.Cast(player.GetHumanInventory().GetEntityInHands());
 
         if(vehicleKey)
         {
-            if(vehicleKey.hash == vehicleKeyHash)
+            if(vehicleKey.GetHash() == vehicleKeyHash)
                 return true;
         }
 
@@ -103,18 +82,6 @@ class ActionLockUnlockVehicle: ActionContinuousBase
 					return true;
 			}
 		}
-
-		//if(!carDoor)
-		//	return false;
-		//
-		//array<string> selections = new array<string>();
-		//carDoor.GetActionComponentNameList(target.GetComponentIndex(), selections);
-		//
-		//for (int i = 0; i < selections.Count(); i++)
-		//{
-		//	if(selections[i] == "DoorsHood")
-		//		return true;
-		//}
 
 		return false;
 	}
@@ -347,208 +314,4 @@ class ActionLockVehicleInside: ActionLockUnlockVehicleInside
 			carScript.SynchronizeValues();
 		}
 	}
-};*/
-
-
-//------------------------------------------------------------------------------------------------------------------
-
-
-/*class ActionLockUnlockVehicleCB : ActionContinuousBaseCB
-{
-	override void CreateActionComponent()
-	{
-		m_ActionData.m_ActionComponent = new CAContinuousTime(0.5); //UATimeSpent.LOCK);
-	}
-}
-
-class ActionLockUnlockVehicle: ActionContinuousBase
-{	
-	void ActionLockUnlockVehicle()
-	{
-		m_CallbackClass = ActionLockUnlockVehicleCB;
-		m_MessageSuccess = "";
-		
-		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
-		m_FullBody = true;
-		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
-		//m_HUDCursorIcon = CursorIcons.OpenDoors;
-	}
-
-	override void CreateConditionComponents()
-	{
-		m_ConditionTarget = new CCTNone; //CCTNonRuined( UAMaxDistances.DEFAULT );
-		m_ConditionItem = new CCINone; //CCINonRuined; ////CCINotPresent;
-	}
-	
-	override bool CanBeUsedInVehicle()
-	{
-		return true;
-	}
-
-	protected bool playerHasVehicleKeyInHands(PlayerBase player, int vehicleKeyHash)
-    {
-        VehicleKey vehicleKey = VehicleKey.Cast(player.GetHumanInventory().GetEntityInHands());
-
-        if(vehicleKey)
-        {
-            if(vehicleKey.hash == vehicleKeyHash)
-                return true;
-        }
-
-        return false;
-    }
-
-	override void OnUpdate(ActionData action_data)
-	{
-		super.OnUpdate(action_data);
-
-		Print("[LockUnlockVehicle] Update" + action_data.m_State);
-	}
-}
-
-
-class ActionUnlockVehicle: ActionLockUnlockVehicle
-{	
-	void ActionUnlockVehicle()
-	{
-		ActionLockUnlockVehicle();
-	}
-
-	override int GetType()
-	{
-		return 3555;
-	}
-
-	override string GetText()
-	{
-		return "#unlock";
-	}
-
-	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
-	{	
-		// if(!target) 
-		// 	return false;
-
-		// if (!target.GetObject().IsInherited(CarDoor))
-		// 	return false;
-
-		// CarScript carScript;
-		// if (Class.CastTo(carScript, target.GetParent()))
-		// {
-		// 	if (carScript.m_Trader_Locked && playerHasVehicleKeyInHands(player, carScript.m_Trader_VehicleKeyHash))
-		// 		return true;
-		// }
-
-        // return false;
-
-		return true;
-	}
-
-	override void OnStartServer( ActionData action_data )
-	{
-		Print("[LockUnlockVehicle] OnStartServer");
-
-		CarScript carScript = CarScript.Cast(action_data.m_Target.GetParent());
-		if( carScript )
-		{
-			carScript.m_Trader_Locked = false;
-			carScript.SynchronizeValues();
-		}
-	}
-
-	override void OnStartClient( ActionData action_data )
-	{
-		Print("[LockUnlockVehicle] OnStartServer");
-
-		CarScript carScript = CarScript.Cast(action_data.m_Target.GetParent());
-		if( carScript )
-		{
-			carScript.m_Trader_Locked = false;
-			carScript.SynchronizeValues();
-		}
-	}
-
-	override void OnEndServer( ActionData action_data )
-	{
-		Print("[LockUnlockVehicle] OnStartServer");
-
-		CarScript carScript = CarScript.Cast(action_data.m_Target.GetParent());
-		if( carScript )
-		{
-			carScript.m_Trader_Locked = false;
-			carScript.SynchronizeValues();
-		}
-	}
-
-	override void OnEndClient( ActionData action_data )
-	{
-		Print("[LockUnlockVehicle] OnStartServer");
-
-		CarScript carScript = CarScript.Cast(action_data.m_Target.GetParent());
-		if( carScript )
-		{
-			carScript.m_Trader_Locked = false;
-			carScript.SynchronizeValues();
-		}
-	}
-
-	override void OnFinishProgressServer( ActionData action_data )
-    {
-		Print("[LockUnlockVehicle] OnFinishProgressServer");
-
-		CarScript carScript = CarScript.Cast(action_data.m_Target.GetParent());
-		if( carScript )
-		{
-			carScript.m_Trader_Locked = false;
-			carScript.SynchronizeValues();
-		}
-    }
-}
-
-class ActionLockVehicle: ActionLockUnlockVehicle
-{	
-	void ActionLockVehicle()
-	{
-		ActionLockUnlockVehicle();
-	}
-
-	override int GetType()
-	{
-		return 3556;
-	}
-
-	override string GetText()
-	{
-		return "#lock_door";
-	}
-
-	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
-	{	
-		// if(!target)
-		// 	return false;
-
-		// if (!target.GetObject().IsInherited(CarDoor))
-		// 	return false;
-
-		// CarScript carScript;
-		// if (Class.CastTo(carScript, target.GetParent()))
-		// {
-		// 	if (!carScript.m_Trader_Locked && playerHasVehicleKeyInHands(player, carScript.m_Trader_VehicleKeyHash))
-		// 		return true;
-		// }
-
-        // return false;
-
-		return false;
-	}
-
-	override void OnFinishProgressServer( ActionData action_data )
-    {
-		CarScript carScript = CarScript.Cast(action_data.m_Target.GetParent());
-		if( carScript )
-		{
-			carScript.m_Trader_Locked = true;
-			carScript.SynchronizeValues();
-		}
-	}
-}*/
+};

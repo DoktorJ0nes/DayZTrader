@@ -154,37 +154,6 @@ class CfgVehicles
 		visibilityModifier = 0.95;
 		hiddenSelectionsTextures[] = {"","","","","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa"};
 	};
-	/*class VehicleKey: Inventory_Base
-	{
-		scope = 2;
-		displayName = $STR_tm_vehicle_key;
-		descriptionShort = "$STR_tm_vehicle_key_description";
-		model = "TM\Trader\Money_Ruble1.p3d";
-		canBeSplit = 0;
-		rotationFlags = 16;
-		lootCategory = "Materials";
-		lootTag[] = {"Civilian","Work"};
-		itemSize[] = {1,1};
-		weight = 1;
-		varQuantityInit = 1;
-		varQuantityMin = 0;
-		varQuantityMax = 1;
-		varQuantityDestroyOnMin = 1;
-		destroyOnEmpty = 1;
-		absorbency = 1;
-		class DamageSystem
-		{
-			class GlobalHealth
-			{
-				class Health
-				{
-					hitpoints = 100;
-					healthLabels[] = {1.0,0.7,0.5,0.3,0.0};
-					healthLevels[] = {{1.0,{}},{0.5,{}},{0.0,{}}};
-				};
-			};
-		};
-	};*/
 	class VehicleKeyBase: Inventory_Base
 	{
 		scope = 2;
@@ -212,7 +181,7 @@ class CfgVehicles
 	};
 	class VehicleKeyDuplicate: VehicleKeyBase
 	{
-		displayName = "Vehicle Key Duplication";
+		displayName = "Duplicated Key";
 		descriptionShort = "Duplicates the Vehicle Key that you are holding in your Hands.";
 	};
 	class VehicleKeyRed: VehicleKeyBase

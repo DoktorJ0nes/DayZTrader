@@ -47,6 +47,9 @@ modded class MissionServer
 
 	float m_Trader_ZombieCleanupUpdateTimerMax = 30;
 	float m_Trader_ZombieCleanupUpdateTimer = 0;
+
+	float m_Trader_VehicleCleanupUpdateTimerMax = 15 * 60;
+	float m_Trader_VehicleCleanupUpdateTimer = m_Trader_VehicleCleanupUpdateTimerMax;
 	
 	override void OnInit()
 	{		
@@ -252,6 +255,42 @@ modded class MissionServer
 
 						if (objectClass.Contains("ZmbF_") || objectClass.Contains("ZmbM_"))
 							GetGame().ObjectDelete(collidedObjects.Get(o));	
+					}
+				}
+			}
+		}
+
+		m_Trader_VehicleCleanupUpdateTimer += timeslice;
+		if (m_Trader_VehicleCleanupUpdateTimer >= m_Trader_VehicleCleanupUpdateTimerMax && m_Trader_VehicleCleanupUpdateTimerMax != 0)
+		{
+			m_Trader_VehicleCleanupUpdateTimer = 0;
+
+			for (int p = 0; p < m_Trader_TraderVehicleSpawns.Count(); p++)
+			{
+				vector size = "3 5 9";
+				excludedObjects = new array<Object>;
+				collidedObjects = new array<Object>;
+
+				if (GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(p), m_Trader_TraderVehicleSpawnsOrientation.Get(p), size, excludedObjects, collidedObjects))
+				{
+					for (int q = 0; q < collidedObjects.Count(); q++)
+					{
+						CarScript carScript = CarScript.Cast(collidedObjects.Get(q));
+						if (!carScript)
+							continue;
+
+						if (carScript.m_Trader_Locked)
+						{
+							carScript.m_Trader_CleanupCount++;
+
+							if (carScript.m_Trader_CleanupCount >= 3)
+							{
+								carScript.m_Trader_CleanupCount = 0;
+								carScript.m_Trader_Locked = false;
+							}
+
+							carScript.SynchronizeValues();
+						}
 					}
 				}
 			}
@@ -649,6 +688,7 @@ modded class MissionServer
 				line_content = FileReadHelper.TrimComment(line_content);
 
 				m_Trader_StatUpdateTimeMax = line_content.ToFloat();
+				m_Trader_StatUpdateTime = m_Trader_StatUpdateTimeMax;
 				validEntry = true;
 
 				TraderMessage.ServerLog("[TRADER] STATUPDATETIMER = " + line_content);
@@ -674,6 +714,18 @@ modded class MissionServer
 				validEntry = true;
 
 				TraderMessage.ServerLog("[TRADER] ZOMBIECLEANUPTIMER = " + line_content);
+			}
+
+			if (line_content.Contains("<VehicleCleanupTimer>"))
+			{
+				line_content.Replace("<VehicleCleanupTimer>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+
+				m_Trader_VehicleCleanupUpdateTimerMax = line_content.ToFloat() * 60;
+				m_Trader_VehicleCleanupUpdateTimer = m_Trader_VehicleCleanupUpdateTimerMax;
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] VEHICLECLEANUPTIMER = " + line_content);
 			}
 
 			if (line_content.Contains("<SafezoneTimeout>"))
@@ -868,6 +920,9 @@ modded class MissionServer
 				qntStr = GetItemMaxQuantity(itemStr).ToString();
 			}
 
+			if (qntStr.Contains("VNK") || qntStr.Contains("vnk"))
+				qntStr = "-6";
+
 			if (qntStr.Contains("V") || qntStr.Contains("v"))
 				qntStr = "-2";
 
@@ -879,6 +934,9 @@ modded class MissionServer
 
 			if (qntStr.Contains("S") || qntStr.Contains("s"))
 				qntStr = "-5";
+
+			if (qntStr.Contains("K") || qntStr.Contains("k"))
+				qntStr = "-7";
 			
 			string buyStr = strs.Get(2);
 			buyStr = FileReadHelper.TrimSpaces(buyStr);

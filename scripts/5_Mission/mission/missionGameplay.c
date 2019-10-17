@@ -36,6 +36,42 @@ modded class MissionGameplay
 			}
 		}
 	}
+
+	/*void DEBUG_PrintVehiclesNearbyHash(vector positionAt)
+	{
+		PlayerBase player = GetGame().GetPlayer();
+
+		vector size = "3 5 9";
+		array<Object> excluded_objects = new array<Object>;
+		array<Object> nearby_objects = new array<Object>;
+
+		if (GetGame().IsBoxColliding( positionAt, "0 0 0", size, excluded_objects, nearby_objects))
+		{
+			for (int i = 0; i < nearby_objects.Count(); i++)
+			{					
+				Transport transport;
+				Class.CastTo(transport, nearby_objects.Get(i));
+				if (!transport)
+					continue;
+
+				CarScript carScript = CarScript.Cast(nearby_objects.Get(i));
+				if(!carScript)
+					continue;
+
+				TraderMessage.PlayerWhite("[" + nearby_objects.Get(i).GetType() + "]\nHasKey: " + carScript.m_Trader_HasKey + "\nLocked: " + carScript.m_Trader_Locked + "\nHash: " + carScript.m_Trader_VehicleKeyHash, player);
+			}
+		}
+	}
+
+	void DEBUG_PrintVehicleKeyInHandsHash()
+    {
+		PlayerBase player = GetGame().GetPlayer();
+
+        VehicleKeyBase vehicleKey = VehicleKeyBase.Cast(player.GetHumanInventory().GetEntityInHands());
+
+        if(vehicleKey)
+			TraderMessage.PlayerWhite("[" + vehicleKey.GetType() + "]\nHash: " + vehicleKey.GetHash(), player);
+    }*/
 	
 	override void OnKeyRelease(int key)
 	{
@@ -43,6 +79,12 @@ modded class MissionGameplay
 		
 		
 		PlayerBase player = GetGame().GetPlayer();
+
+		/*if ( key == KeyCode.KC_O )
+		{
+			DEBUG_PrintVehiclesNearbyHash(player.GetPosition());
+			DEBUG_PrintVehicleKeyInHandsHash();
+		}*/
 
 		if ( key == KeyCode.KC_B )
 		{			
