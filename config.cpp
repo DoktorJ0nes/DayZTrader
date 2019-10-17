@@ -48,7 +48,7 @@ class CfgPatches
 {
 	class trader
 	{
-		units[] = {"MoneyRuble1","MoneyRuble5","MoneyRuble10","MoneyRuble25","MoneyRuble50","MoneyRuble100","Land_RoadCone","Hoodie_GraffitiTiles","Hoodie_DrJ0nes","VehicleKey"};
+		units[] = {"MoneyRuble1","MoneyRuble5","MoneyRuble10","MoneyRuble25","MoneyRuble50","MoneyRuble100","Land_RoadCone","Hoodie_GraffitiTiles","Hoodie_DrJ0nes","VehicleKeyBase","VehicleKeyDuplicate","VehicleKeyRed","VehicleKeyBlack","VehicleKeyGrayCyan","VehicleKeyYellow","VehicleKeyPurple"};
 		weapons[] = {};
 		requiredVersion = 0.1;
 		requiredAddons[] = {"DZ_Data"};
@@ -56,8 +56,13 @@ class CfgPatches
 };
 class CfgModels
 {
-	class ruble{
+	class ruble
+	{
 		sections[]={"WholeObject"};
+	};
+	class keyLada
+	{
+		sections[] = {"WholeObject"};
 	};
 };
 class CfgVehicles
@@ -149,7 +154,7 @@ class CfgVehicles
 		visibilityModifier = 0.95;
 		hiddenSelectionsTextures[] = {"","","","","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa"};
 	};
-	class VehicleKey: Inventory_Base
+	/*class VehicleKey: Inventory_Base
 	{
 		scope = 2;
 		displayName = $STR_tm_vehicle_key;
@@ -179,5 +184,55 @@ class CfgVehicles
 				};
 			};
 		};
+	};*/
+	class VehicleKeyBase: Inventory_Base
+	{
+		scope = 2;
+		displayName = $STR_tm_vehicle_key;
+		descriptionShort = "$STR_tm_vehicle_key_description";
+		model = "TM\Trader\keyLada.p3d";
+		rotationFlags = 17;
+		lootCategory = "Materials";
+		lootTag[] = {"Civilian","Work"};
+		weight = 4;
+		itemSize[] = {1,1};
+		fragility = 0.01;
+		hiddenSelections[] = {"WholeObject"};
+		class DamageSystem
+		{
+			class GlobalHealth
+			{
+				class Health
+				{
+					hitpoints = 100;
+					healthLevels[] = {{1.0,{"TM\Trader\data\keyLada.rvmat"}},{0.7,{"TM\Trader\data\keyLada.rvmat"}},{0.5,{"TM\Trader\data\keyLada_damage.rvmat"}},{0.3,{"TM\Trader\data\keyLada_damage.rvmat"}},{0.0,{"TM\Trader\data\keyLada_destruct.rvmat"}}};
+				};
+			};
+		};
+	};
+	class VehicleKeyDuplicate: VehicleKeyBase
+	{
+		displayName = "Vehicle Key Duplication";
+		descriptionShort = "Duplicates the Vehicle Key that you are holding in your Hands.";
+	};
+	class VehicleKeyRed: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaRed_co.paa"};
+	};
+	class VehicleKeyBlack: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaBlack_co.paa"};
+	};
+	class VehicleKeyGrayCyan: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaGrayCyan_co.paa"};
+	};
+	class VehicleKeyYellow: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaYellow_co.paa"};
+	};
+	class VehicleKeyPurple: VehicleKeyBase
+	{
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaPurple_co.paa"};
 	};
 };
