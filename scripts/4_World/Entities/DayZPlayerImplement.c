@@ -51,415 +51,508 @@ modded class DayZPlayerImplement
 	string itemDisplayNameClient;
 	bool m_Trader_IsSelling;
 	
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// OVERRIDES
 	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
 		super.OnRPC(sender, rpc_type, ctx);
-			
+
 		
-		PlayerBase player;
-		Object obj;
-		string itemType;
-		ItemBase item;
-		EntityAI entity;
-		int amount;
-		int itemQuantity; // same as amount
-		vector position;
-		int traderUID;
-		int itemID;
-		vector playerPosition;
+		if (GetGame().IsServer())
+			handleServerRPCs(sender, rpc_type, ctx);
+		else
+			handleClientRPCs(sender, rpc_type, ctx);
+	}
+
+	override void SetSuicide(bool state)
+	{
+		super.SetSuicide(state);
+
+		if (state && m_Trader_IsInSafezone && GetGame().IsServer())
+			SetAllowDamage(true);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// SERVER RPC HANDLING
+	void handleServerRPCs(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		if (rpc_type == TRPCs.RPC_TRADER_MOD_IS_LOADED && !m_Trader_TraderModIsLoaded)
+				handleTraderModIsLoadedRPC(sender, rpc_type, ctx);
+
+		if (rpc_type == TRPCs.RPC_BUY)
+			handleBuyRPC(sender, rpc_type, ctx);
+
+		if (rpc_type == TRPCs.RPC_SELL)
+			handleSellRPC(sender, rpc_type, ctx);
+	}
+
+	void handleTraderModIsLoadedRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		Param1<PlayerBase> rp0 = new Param1<PlayerBase>( NULL );
+		ctx.Read(rp0);
 		
-		if (GetGame().IsServer()) //////////////////////////////////////////////////////////////////////////////////////////////////////////////// SERVER RPC ///////////////////////////////////////////////////////////
-		{			
-			if (rpc_type == TRPCs.RPC_TRADER_MOD_IS_LOADED && !m_Trader_TraderModIsLoaded)
+		PlayerBase player = rp0.param1;
+		
+		m_Trader_TraderModIsLoaded = true;
+		
+		GetGame().RPCSingleParam(player, TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM, new Param1<PlayerBase>( player ), true, player.GetIdentity());
+	}
+
+	void handleBuyRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		Param3<int, int, string> rpb = new Param3<int, int, string>( -1, -1, "" );
+		ctx.Read(rpb);
+
+		int traderUID = rpb.param1;
+		int itemID = rpb.param2;
+		itemDisplayNameClient = rpb.param3;
+
+		m_Trader_IsSelling = false;
+
+		if (GetGame().GetTime() - m_Trader_LastBuyedTime < m_Trader_BuySellTimer * 1000)
+			return;
+		m_Trader_LastBuyedTime = GetGame().GetTime();
+
+		if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
+			return;
+
+		string itemType = m_Trader_ItemsClassnames.Get(itemID);
+		int itemQuantity = m_Trader_ItemsQuantity.Get(itemID);
+		int itemCosts = m_Trader_ItemsBuyValue.Get(itemID);
+
+		vector playerPosition = this.GetPosition();	
+
+		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > 1.7)
+		{
+			traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
+			return;
+		}
+
+		m_Player_CurrencyAmount = getPlayerCurrencyAmount();
+
+		if (itemCosts < 0)
+		{
+			TraderMessage.PlayerWhite("#tm_cant_be_bought", this);
+			return;
+		}
+
+		if (m_Player_CurrencyAmount < itemCosts)
+		{
+			TraderMessage.PlayerWhite("#tm_cant_afford", this);
+			return;
+		}
+
+		int vehicleKeyHash = 0;
+
+		bool isDuplicatingKey = false;
+		if (itemQuantity == -7) // is Key duplication
+		{
+			VehicleKeyBase vehicleKeyinHands = VehicleKeyBase.Cast(this.GetHumanInventory().GetEntityInHands());
+
+			if (!vehicleKeyinHands)
 			{
-				Param1<PlayerBase> rp0 = new Param1<PlayerBase>( NULL );
-				ctx.Read(rp0);
-				
-				player = rp0.param1;
-				
-				m_Trader_TraderModIsLoaded = true;
-				
-				GetGame().RPCSingleParam(player, TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM, new Param1<PlayerBase>( player ), true, player.GetIdentity());
+				TraderMessage.PlayerWhite("Put the Key you\nwant to duplicate\nin your Hands!", this);
+				return;
 			}
 
-			if (rpc_type == TRPCs.RPC_BUY)
+			isDuplicatingKey = true;
+			vehicleKeyHash = vehicleKeyinHands.GetHash();
+			itemType = vehicleKeyinHands.GetType();
+			itemQuantity = 1;
+		}
+
+		traderServerLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
+
+		if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
+		{
+			string blockingObject = isVehicleSpawnFree(traderUID);
+
+			if (blockingObject != "FREE")
 			{
-				Param3<int, int, string> rpb = new Param3<int, int, string>( -1, -1, "" );
-				ctx.Read(rpb);
+				TraderMessage.PlayerWhite(getItemDisplayName(blockingObject) + " " + "#tm_way_blocked", this);
+				return;
+			}
 
-				traderUID = rpb.param1;
-				itemID = rpb.param2;
-				itemDisplayNameClient = rpb.param3;
-
-				m_Trader_IsSelling = false;
-
-				if (GetGame().GetTime() - m_Trader_LastBuyedTime < m_Trader_BuySellTimer * 1000)
-					return;
-				m_Trader_LastBuyedTime = GetGame().GetTime();
-
-				if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
-					return;
-
-				itemType = m_Trader_ItemsClassnames.Get(itemID);
-				itemQuantity = m_Trader_ItemsQuantity.Get(itemID);
-				int itemCosts = m_Trader_ItemsBuyValue.Get(itemID);
-
-				playerPosition = this.GetPosition();	
-
-				if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > 1.7)
+			if (itemQuantity == -2)
+			{
+				if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
 				{
-					traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
-					return;
+					TraderMessage.PlayerWhite(getItemDisplayName("VehicleKey") + "\n " + "#tm_added_to_inventory", this);
+					
+					vehicleKeyHash = createVehicleKeyInPlayerInventory();
 				}
-
-
-				m_Player_CurrencyAmount = getPlayerCurrencyAmount();
-
-				if (itemCosts < 0)
+				else
 				{
-					TraderMessage.PlayerWhite("#tm_cant_be_bought", this);
-					return;
-				}
-
-				if (m_Player_CurrencyAmount < itemCosts)
-				{
-					TraderMessage.PlayerWhite("#tm_cant_afford", this);
-					return;
-				}
-
-				int vehicleKeyHash = 0;
-
-				bool isDuplicatingKey = false;
-				if (itemQuantity == -7) // is Key duplication
-				{
-					VehicleKeyBase vehicleKeyinHands = VehicleKeyBase.Cast(this.GetHumanInventory().GetEntityInHands());
-
-					if (!vehicleKeyinHands)
-					{
-						TraderMessage.PlayerWhite("Put the Key you\nwant to duplicate\nin your Hands!", this);
-						return;
-					}
-
-					isDuplicatingKey = true;
-					vehicleKeyHash = vehicleKeyinHands.GetHash();
-					itemType = vehicleKeyinHands.GetType();
-					itemQuantity = 1;
-				}
-
-				traderServerLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
-
-				if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
-				{
-					if (!isVehicleSpawnFree(traderUID))
-					{
-						TraderMessage.PlayerWhite("Something is blocking\nthe Way!", this);
-						return;
-					}
-
-					//int vehicleKeyHash = 0;
-					if (itemQuantity == -2)
-					{
-						if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
-						{
-							TraderMessage.PlayerWhite("The Vehicle Key\nwas added to your Inventory!", this);
-							
-							vehicleKeyHash = createVehicleKeyInPlayerInventory();
-						}
-						else
-						{
-							TraderMessage.PlayerWhite("Your Inventory is full!\n The Vehicle Key\nwas placed on Ground!", this);
-												
-							vehicleKeyHash = spawnVehicleKeyOnGround();
-							
-							GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
-						}
-						//TraderMessage.PlayerWhite("KeyHash:\n" + vehicleKeyHash, this);
-					}
-
-
-					deductPlayerCurrency(itemCosts);
-
-					TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\nwas parked next to you!", this);
-
-					spawnVehicle(traderUID, itemType, vehicleKeyHash);
-
+					TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + getItemDisplayName("VehicleKey") + "\n" + "#tm_was_placed_on_ground", this);
+										
+					vehicleKeyHash = spawnVehicleKeyOnGround();
+					
 					GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
 				}
-				else // Is not a Vehicle
-				{		
-					deductPlayerCurrency(itemCosts);
-
-					/*bool canCreateItemInPlayerInventory = false;
-					if (itemQuantity == -7) // is Key duplication
-						canCreateItemInPlayerInventory = canCreateItemInPlayerInventory(itemType, 1);
-					else
-						canCreateItemInPlayerInventory = canCreateItemInPlayerInventory(itemType, itemQuantity);*/
-
-					if (canCreateItemInPlayerInventory(itemType, itemQuantity))
-					{
-						TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_added_to_inventory", this);
-						
-						if (isDuplicatingKey)
-							createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
-						else
-							createItemInPlayerInventory(itemType, itemQuantity);
-					}
-					else
-					{
-						TraderMessage.PlayerWhite("Your Inventory is full!\n " + itemDisplayNameClient + "\nwas placed on Ground!", this);
-
-						if (isDuplicatingKey)
-							spawnVehicleKeyOnGround(vehicleKeyHash, itemType);
-						else			
-							spawnItemOnGround(itemType, itemQuantity, playerPosition);
-						
-						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
-					}
-				}
-
-				//deductPlayerCurrency(itemCosts);
+				//TraderMessage.PlayerWhite("KeyHash:\n" + vehicleKeyHash, this);
 			}
 
-			if (rpc_type == TRPCs.RPC_SELL)
+			deductPlayerCurrency(itemCosts);
+
+			TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_parked_next_to_you", this);
+
+			spawnVehicle(traderUID, itemType, vehicleKeyHash);
+
+			GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
+		}
+		else // Is not a Vehicle
+		{		
+			deductPlayerCurrency(itemCosts);
+
+			if (canCreateItemInPlayerInventory(itemType, itemQuantity))
 			{
-				Param3<int, int, string> rps = new Param3<int, int, string>( -1, -1, "" );
-				ctx.Read(rps);
-
-				traderUID = rps.param1;
-				itemID = rps.param2;
-				itemDisplayNameClient = rps.param3;
-
-				m_Trader_IsSelling = true;
-
-				if (GetGame().GetTime() - m_Trader_LastSelledTime < m_Trader_BuySellTimer * 1000)
-					return;
-				m_Trader_LastSelledTime = GetGame().GetTime();
-
-				if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
-					return;
-
-				itemType = m_Trader_ItemsClassnames.Get(itemID);
-				itemQuantity = m_Trader_ItemsQuantity.Get(itemID);
-				int itemSellValue = m_Trader_ItemsSellValue.Get(itemID);
-
-				playerPosition = this.GetPosition();	
-
-				if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > 1.7)
-				{
-					traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
-					return;
-				}
-
-
-				Object vehicleToSell = GetVehicleToSell(traderUID, itemType);
-				bool isValidVehicle = ((itemQuantity == -2 || itemQuantity == -6) && vehicleToSell);
-
-				if (itemSellValue < 0)
-				{
-					TraderMessage.PlayerWhite("#tm_cant_be_sold", this);
-					return;
-				}
-
-				if (!isInPlayerInventory(itemType, itemQuantity) && !isValidVehicle)
-				{
-					TraderMessage.PlayerWhite("#tm_you_cant_sell", this);
-
-					if (itemQuantity == -2 || itemQuantity == -6)
-						TraderMessage.PlayerWhite("Place the Vehicle inside\nthe Traffic Cones!\nMake sure you was\nthe last Driver!", this);
-						//TraderMessage.PlayerWhite("Turn the Engine on and place it inside the Traffic Cones!", this);
-
-					return;
-				}
-
-				traderServerLog("#tm_sold" + " " + getItemDisplayName(itemType) + " (" + itemType + ")");
-
-				TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_was_sold", this);
-
-				if (isValidVehicle)
-					deleteObject(vehicleToSell);
-				else
-					removeFromPlayerInventory(itemType, itemQuantity);
+				TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_added_to_inventory", this);
 				
-				increasePlayerCurrency(itemSellValue);
+				if (isDuplicatingKey)
+					createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
+				else
+					createItemInPlayerInventory(itemType, itemQuantity);
+			}
+			else
+			{
+				TraderMessage.PlayerWhite("#tm_inventory_full" + "\n " + itemDisplayNameClient + "\n" + "#tm_was_placed_on_ground", this);
+									
+				if (isDuplicatingKey)
+					spawnVehicleKeyOnGround(vehicleKeyHash, itemType);
+				else			
+					spawnItemOnGround(itemType, itemQuantity, playerPosition);
+				
+				GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
 			}
 		}
-		else ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// CLIENT RPC ///////////////////////////////////////////////////////////
+
+		//deductPlayerCurrency(itemCosts);
+	}
+
+	void handleSellRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		Param3<int, int, string> rps = new Param3<int, int, string>( -1, -1, "" );
+		ctx.Read(rps);
+
+		int traderUID = rps.param1;
+		int itemID = rps.param2;
+		itemDisplayNameClient = rps.param3;
+
+		m_Trader_IsSelling = true;
+
+		if (GetGame().GetTime() - m_Trader_LastSelledTime < m_Trader_BuySellTimer * 1000)
+			return;
+		m_Trader_LastSelledTime = GetGame().GetTime();
+
+		if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
+			return;
+
+		string itemType = m_Trader_ItemsClassnames.Get(itemID);
+		int itemQuantity = m_Trader_ItemsQuantity.Get(itemID);
+		int itemSellValue = m_Trader_ItemsSellValue.Get(itemID);
+
+		vector playerPosition = this.GetPosition();	
+
+		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > 1.7)
 		{
-			switch(rpc_type)
-			{
-				case TRPCs.RPC_SEND_TRADER_CURRENCYNAME_ENTRY:
-					ref Param1<string> currencyName_rp = new Param1<string>( "" );
-					ctx.Read( currencyName_rp );
-					
-					m_Trader_CurrencyName = currencyName_rp.param1;
-				break;
+			traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
+			return;
+		}
 
-				case TRPCs.RPC_SEND_TRADER_CURRENCY_ENTRY:
-					ref Param2<string, int> currency_rp = new Param2<string, int>( "", -1 );
-					ctx.Read( currency_rp );
-					
-					m_Trader_CurrencyClassnames.Insert(currency_rp.param1);
-					m_Trader_CurrencyValues.Insert(currency_rp.param2);
-				break;
-				
-				case TRPCs.RPC_SEND_TRADER_MANCLASSNAME_ENTRY:
-					
-				break;
-				
-				case TRPCs.RPC_SEND_TRADER_NAME_ENTRY:
-					ref Param1<string> tradername_rp = new Param1<string>( "" );
-					ctx.Read( tradername_rp );
-					
-					m_Trader_TraderNames.Insert(tradername_rp.param1);
-				break;
-				
-				case TRPCs.RPC_SEND_TRADER_CATEGORY_ENTRY:
-					ref Param2<string, int> category_rp = new Param2<string, int>( "", 0 );
-					ctx.Read( category_rp );					
-					
-					m_Trader_Categorys.Insert(category_rp.param1);
-					m_Trader_CategorysTraderKey.Insert(category_rp.param2);
-				break;
-				
-				case TRPCs.RPC_SEND_TRADER_ITEM_ENTRY:
-					Param6<int, int, string, int, int, int> itemEntry_rp = new Param6<int, int, string, int, int, int>( 0, 0, "", 0, 0, 0);
-					ctx.Read( itemEntry_rp );
-					
-					m_Trader_ItemsTraderId.Insert(itemEntry_rp.param1);
-					m_Trader_ItemsCategoryId.Insert(itemEntry_rp.param2);
-					m_Trader_ItemsClassnames.Insert(itemEntry_rp.param3);
-					m_Trader_ItemsQuantity.Insert(itemEntry_rp.param4);
-					m_Trader_ItemsBuyValue.Insert(itemEntry_rp.param5);
-					m_Trader_ItemsSellValue.Insert(itemEntry_rp.param6);
-				break;
-				
-				case TRPCs.RPC_SEND_TRADER_MARKER_ENTRY:
-					ref Param5<int, vector, int, vector, vector> markerEntry = new Param5<int, vector, int, vector, vector>( 0, "0 0 0", 0, "0 0 0", "0 0 0" );
-					ctx.Read( markerEntry );					
-					
-					m_Trader_TraderIDs.Insert(markerEntry.param1);
-					m_Trader_TraderPositions.Insert(markerEntry.param2);
-					m_Trader_TraderSafezones.Insert(markerEntry.param3);
-					m_Trader_TraderVehicleSpawns.Insert(markerEntry.param4);
-					m_Trader_TraderVehicleSpawnsOrientation.Insert(markerEntry.param5);
-				break;
-				
-				case TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION:
-					ref Param1<bool> conf_rp = new Param1<bool>( false );
-					ctx.Read( conf_rp );
-					
-					m_Trader_RecievedAllData = conf_rp.param1;
-				break;
-				
-				case TRPCs.RPC_SEND_TRADER_CLEAR:
-					// clear all data here:
-					m_Trader_RecievedAllData = false;	
-					m_Trader_CurrencyName = "";
-					m_Trader_CurrencyClassnames = new array<string>;
-					m_Trader_CurrencyValues = new array<int>;
-					m_Trader_TraderNames = new array<string>;
-					m_Trader_TraderPositions = new array<vector>;
-					m_Trader_TraderIDs = new array<int>;
-					m_Trader_TraderSafezones = new array<int>;
-					m_Trader_TraderVehicleSpawns = new array<vector>;
-					m_Trader_TraderVehicleSpawnsOrientation = new array<vector>;
-					m_Trader_Categorys = new array<string>;
-					m_Trader_CategorysTraderKey = new array<int>;
-					m_Trader_ItemsTraderId = new array<int>;
-					m_Trader_ItemsCategoryId = new array<int>;
-					m_Trader_ItemsClassnames = new array<string>;
-					m_Trader_ItemsQuantity = new array<int>;
-					m_Trader_ItemsBuyValue = new array<int>;
-					m_Trader_ItemsSellValue = new array<int>;
-					m_Trader_Vehicles = new array<string>;
-					m_Trader_VehiclesParts = new array<string>;
-					m_Trader_VehiclesPartsVehicleId = new array<int>;
-				break;
-				
-				case TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM:
-					m_Trader_TraderModIsLoaded = true;
-					m_Trader_TraderModIsLoadedHandled = true;
-				break;
 
-				case TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE:
-					ref Param1<bool> safezone_rp = new Param1<bool>( false );
-					ctx.Read( safezone_rp );
-					
-					m_Trader_IsInSafezone = safezone_rp.param1;
+		Object vehicleToSell = GetVehicleToSell(traderUID, itemType);
+		bool isValidVehicle = ((itemQuantity == -2 || itemQuantity == -6) && vehicleToSell);
 
-					if(IsRestrained())
-					{
-						PlayerBase player_this = PlayerBase.Cast(this);
-						player_this.SetRestrained(false);
+		if (itemSellValue < 0)
+		{
+			TraderMessage.PlayerWhite("#tm_cant_be_sold", this);
+			return;
+		}
 
-						EntityAI item_in_hands = GetHumanInventory().GetEntityInHands();
-						if(item_in_hands)
-						{
-							MiscGameplayFunctions.TransformRestrainItem(item_in_hands, null, null, player_this);
-						}
-					}
+		if (!isInPlayerInventory(itemType, itemQuantity) && !isValidVehicle)
+		{
+			TraderMessage.PlayerWhite("#tm_you_cant_sell", this);
 
-					player.GetInputController().OverrideRaise(m_Trader_IsInSafezone, false);
-				break;
+			if (itemQuantity == -2 || itemQuantity == -6)
+				TraderMessage.PlayerWhite("#tm_cant_sell_vehicle", this);
+				//TraderMessage.PlayerWhite("Turn the Engine on and place it inside the Traffic Cones!", this);
 
-				case TRPCs.RPC_SYNC_OBJECT_ORIENTATION:
-					ref Param2<Object, vector> syncObject_rp = new Param2<Object, vector>( NULL, "0 0 0" );
-					ctx.Read( syncObject_rp );
-					
-					Object objectToSync = syncObject_rp.param1;
-					vector objectToSyncOrientation  = syncObject_rp.param2;
+			return;
+		}
 
-					objectToSync.SetOrientation(objectToSyncOrientation);
-				break;
+		traderServerLog("#tm_sold" + " " + getItemDisplayName(itemType) + " (" + itemType + ")");
 
-				/*case TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE:
-					ref Param2<CarScript, bool> synccarsscript_rp = new Param2<CarScript, bool>( NULL, false );
-					ctx.Read( synccarsscript_rp );
-					
-					CarScript carToSync = synccarsscript_rp.param1;
+		TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_was_sold", this);
 
-					carToSync.m_Trader_IsInSafezone = synccarsscript_rp.param2;
-				break;*/
+		if (isValidVehicle)
+			deleteObject(vehicleToSell);
+		else
+			removeFromPlayerInventory(itemType, itemQuantity);
+		
+		increasePlayerCurrency(itemSellValue);
+	}
 
-				case TRPCs.RPC_SEND_MENU_BACK:
-					GetGame().GetUIManager().Back();
-				break;
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// CLIENT RPC HANDLING
+	void handleClientRPCs(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		switch(rpc_type)
+		{
+			case TRPCs.RPC_SEND_TRADER_CURRENCYNAME_ENTRY:
+				handleSendTraderCurrencyNameEntryRPC(sender, rpc_type, ctx);
+			break;
 
-				case TRPCs.RPC_SEND_MESSAGE_WHITE:
-					ref Param2<string, float> sendMessageWhite_rp = new Param2<string, float>( "", 0 );
-					ctx.Read( sendMessageWhite_rp );
-					
-					showTraderMessage(sendMessageWhite_rp.param1, sendMessageWhite_rp.param2);
-				break;
+			case TRPCs.RPC_SEND_TRADER_CURRENCY_ENTRY:
+				handleSendTraderCurrencyEntryRPC(sender, rpc_type, ctx);
+			break;
+			
+			case TRPCs.RPC_SEND_TRADER_NAME_ENTRY:
+				handleSendTraderNameEntryRPC(sender, rpc_type, ctx);
+			break;
+			
+			case TRPCs.RPC_SEND_TRADER_CATEGORY_ENTRY:
+				handleSendTraderCategoryEntryRPC(sender, rpc_type, ctx);
+			break;
+			
+			case TRPCs.RPC_SEND_TRADER_ITEM_ENTRY:
+				handleSendTraderItemEntryRPC(sender, rpc_type, ctx);
+			break;
+			
+			case TRPCs.RPC_SEND_TRADER_MARKER_ENTRY:
+				handleSendTraderMarkerEntryRPC(sender, rpc_type, ctx);
+			break;
+			
+			case TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION:
+				handleSendTraderDataConfirmationRPC(sender, rpc_type, ctx);
+			break;
+			
+			case TRPCs.RPC_SEND_TRADER_CLEAR:
+				handleSendTraderClearRPC(sender, rpc_type, ctx);
+			break;
+			
+			case TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM:
+				handleTraderModIsLoadedConfirmRPC(sender, rpc_type, ctx);
+			break;
 
-				case TRPCs.RPC_SEND_MESSAGE_RED:
-					ref Param2<string, float> sendMessageRed_rp = new Param2<string, float>( "", 0 );
-					ctx.Read( sendMessageRed_rp );
-					
-					showTraderMessage(sendMessageRed_rp.param1, sendMessageRed_rp.param2, 0xFFFA6B6B);
-				break;
+			case TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE:
+				handleSendTraderIsInSafezoneRPC(sender, rpc_type, ctx);
+			break;
 
-				case TRPCs.RPC_SEND_MESSAGE_SAFEZONE:
-					ref Param1<float> sendMessageSafezone_rp = new Param1<float>(  0 );
-					ctx.Read( sendMessageSafezone_rp );
-					
-					showSafezoneMessage(sendMessageSafezone_rp.param1);
-				break;
+			case TRPCs.RPC_SYNC_OBJECT_ORIENTATION:
+				handleSyncObjectOrientationRPC(sender, rpc_type, ctx);
+			break;
 
-				case TRPCs.RPC_DELETE_SAFEZONE_MESSAGES:					
-					deleteAllSafezoneMessages();
-				break;
+			/*case TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE:
+				handleSyncCarscriptIsInSafezoneRPC(sender, rpc_type, ctx);
+			break;*/
 
-				case TRPCs.RPC_SEND_TRADER_VARIABLES_ENTRY:
-					ref Param1<float> traderVariables_rp = new Param1<float>(  0 );
-					ctx.Read( traderVariables_rp );
-					
-					m_Trader_BuySellTimer = traderVariables_rp.param1;
-				break;
-			}
+			case TRPCs.RPC_SEND_MENU_BACK:
+				handleSendMenuBackRPC(sender, rpc_type, ctx);
+			break;
+
+			case TRPCs.RPC_SEND_MESSAGE_WHITE:
+				handleSendMessageWhiteRPC(sender, rpc_type, ctx);
+			break;
+
+			case TRPCs.RPC_SEND_MESSAGE_RED:
+				handleSendMessageRedRPC(sender, rpc_type, ctx);
+			break;
+
+			case TRPCs.RPC_SEND_MESSAGE_SAFEZONE:
+				handleSendMessageSafezoneRPC(sender, rpc_type, ctx);
+			break;
+
+			case TRPCs.RPC_DELETE_SAFEZONE_MESSAGES:					
+				handleDeleteSafezoneMessagesRPC(sender, rpc_type, ctx);
+			break;
+
+			case TRPCs.RPC_SEND_TRADER_VARIABLES_ENTRY:
+				handleSendTraderVariablesEntryRPC(sender, rpc_type, ctx);
+			break;
 		}
 	}
 
+	void handleSendTraderCurrencyNameEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param1<string> currencyName_rp = new Param1<string>( "" );
+		ctx.Read( currencyName_rp );
+		
+		m_Trader_CurrencyName = currencyName_rp.param1;
+	}
+
+	void handleSendTraderCurrencyEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param2<string, int> currency_rp = new Param2<string, int>( "", -1 );
+		ctx.Read( currency_rp );
+		
+		m_Trader_CurrencyClassnames.Insert(currency_rp.param1);
+		m_Trader_CurrencyValues.Insert(currency_rp.param2);
+	}
+	
+	void handleSendTraderNameEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param1<string> tradername_rp = new Param1<string>( "" );
+		ctx.Read( tradername_rp );
+		
+		m_Trader_TraderNames.Insert(tradername_rp.param1);
+	}
+	
+	void handleSendTraderCategoryEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param2<string, int> category_rp = new Param2<string, int>( "", 0 );
+		ctx.Read( category_rp );					
+		
+		m_Trader_Categorys.Insert(category_rp.param1);
+		m_Trader_CategorysTraderKey.Insert(category_rp.param2);
+	}
+	
+	void handleSendTraderItemEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		Param6<int, int, string, int, int, int> itemEntry_rp = new Param6<int, int, string, int, int, int>( 0, 0, "", 0, 0, 0);
+		ctx.Read( itemEntry_rp );
+		
+		m_Trader_ItemsTraderId.Insert(itemEntry_rp.param1);
+		m_Trader_ItemsCategoryId.Insert(itemEntry_rp.param2);
+		m_Trader_ItemsClassnames.Insert(itemEntry_rp.param3);
+		m_Trader_ItemsQuantity.Insert(itemEntry_rp.param4);
+		m_Trader_ItemsBuyValue.Insert(itemEntry_rp.param5);
+		m_Trader_ItemsSellValue.Insert(itemEntry_rp.param6);
+	}
+	
+	void handleSendTraderMarkerEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param5<int, vector, int, vector, vector> markerEntry = new Param5<int, vector, int, vector, vector>( 0, "0 0 0", 0, "0 0 0", "0 0 0" );
+		ctx.Read( markerEntry );					
+		
+		m_Trader_TraderIDs.Insert(markerEntry.param1);
+		m_Trader_TraderPositions.Insert(markerEntry.param2);
+		m_Trader_TraderSafezones.Insert(markerEntry.param3);
+		m_Trader_TraderVehicleSpawns.Insert(markerEntry.param4);
+		m_Trader_TraderVehicleSpawnsOrientation.Insert(markerEntry.param5);
+	}
+	
+	void handleSendTraderDataConfirmationRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param1<bool> conf_rp = new Param1<bool>( false );
+		ctx.Read( conf_rp );
+		
+		m_Trader_RecievedAllData = conf_rp.param1;
+	}
+	
+	void handleSendTraderClearRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		m_Trader_RecievedAllData = false;	
+		m_Trader_CurrencyName = "";
+		m_Trader_CurrencyClassnames = new array<string>;
+		m_Trader_CurrencyValues = new array<int>;
+		m_Trader_TraderNames = new array<string>;
+		m_Trader_TraderPositions = new array<vector>;
+		m_Trader_TraderIDs = new array<int>;
+		m_Trader_TraderSafezones = new array<int>;
+		m_Trader_TraderVehicleSpawns = new array<vector>;
+		m_Trader_TraderVehicleSpawnsOrientation = new array<vector>;
+		m_Trader_Categorys = new array<string>;
+		m_Trader_CategorysTraderKey = new array<int>;
+		m_Trader_ItemsTraderId = new array<int>;
+		m_Trader_ItemsCategoryId = new array<int>;
+		m_Trader_ItemsClassnames = new array<string>;
+		m_Trader_ItemsQuantity = new array<int>;
+		m_Trader_ItemsBuyValue = new array<int>;
+		m_Trader_ItemsSellValue = new array<int>;
+		m_Trader_Vehicles = new array<string>;
+		m_Trader_VehiclesParts = new array<string>;
+		m_Trader_VehiclesPartsVehicleId = new array<int>;
+	}
+	
+	void handleTraderModIsLoadedConfirmRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		m_Trader_TraderModIsLoaded = true;
+		m_Trader_TraderModIsLoadedHandled = true;
+	}
+
+	void handleSendTraderIsInSafezoneRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param1<bool> safezone_rp = new Param1<bool>( false );
+		ctx.Read( safezone_rp );
+		
+		m_Trader_IsInSafezone = safezone_rp.param1;
+
+		PlayerBase player = PlayerBase.Cast(this);
+		if(IsRestrained())
+		{
+			player.SetRestrained(false);
+
+			EntityAI item_in_hands = GetHumanInventory().GetEntityInHands();
+			if(item_in_hands)
+			{
+				MiscGameplayFunctions.TransformRestrainItem(item_in_hands, null, null, player);
+			}
+		}
+
+		player.GetInputController().OverrideRaise(m_Trader_IsInSafezone, false);
+	}
+
+	void handleSyncObjectOrientationRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param2<Object, vector> syncObject_rp = new Param2<Object, vector>( NULL, "0 0 0" );
+		ctx.Read( syncObject_rp );
+		
+		Object objectToSync = syncObject_rp.param1;
+		vector objectToSyncOrientation  = syncObject_rp.param2;
+
+		objectToSync.SetOrientation(objectToSyncOrientation);
+	}
+
+	/*void handleSyncCarscriptIsInSafezoneRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param2<CarScript, bool> synccarsscript_rp = new Param2<CarScript, bool>( NULL, false );
+		ctx.Read( synccarsscript_rp );
+		
+		CarScript carToSync = synccarsscript_rp.param1;
+
+		carToSync.m_Trader_IsInSafezone = synccarsscript_rp.param2;
+	}*/
+
+	void handleSendMenuBackRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		GetGame().GetUIManager().Back();
+	}
+
+	void handleSendMessageWhiteRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param2<string, float> sendMessageWhite_rp = new Param2<string, float>( "", 0 );
+		ctx.Read( sendMessageWhite_rp );
+		
+		showTraderMessage(sendMessageWhite_rp.param1, sendMessageWhite_rp.param2);
+	}
+
+	void handleSendMessageRedRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param2<string, float> sendMessageRed_rp = new Param2<string, float>( "", 0 );
+		ctx.Read( sendMessageRed_rp );
+		
+		showTraderMessage(sendMessageRed_rp.param1, sendMessageRed_rp.param2, 0xFFFA6B6B);
+	}
+
+	void handleSendMessageSafezoneRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param1<float> sendMessageSafezone_rp = new Param1<float>(  0 );
+		ctx.Read( sendMessageSafezone_rp );
+		
+		showSafezoneMessage(sendMessageSafezone_rp.param1);
+	}
+
+	void handleDeleteSafezoneMessagesRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{					
+		deleteAllSafezoneMessages();
+	}
+
+	void handleSendTraderVariablesEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param1<float> traderVariables_rp = new Param1<float>(  0 );
+		ctx.Read( traderVariables_rp );
+		
+		m_Trader_BuySellTimer = traderVariables_rp.param1;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// LOGS & MESSAGES
 	void traderServerLog(string message)
 	{
 		TraderMessage.ServerLog("[TRADER] Player: (" + this.GetIdentity().GetName() + ") " + this.GetIdentity().GetId() + " " + message);
@@ -489,6 +582,7 @@ modded class DayZPlayerImplement
 		m_Trader_TraderNotifications.DeleteAllSafezoneMessages();
 	}
 
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ITEM & INVENTORY
 	string TrimUntPrefix(string str) // duplicate
 	{
 		str.Replace("$UNT$", "");
@@ -603,36 +697,6 @@ modded class DayZPlayerImplement
 		}
 
 		return true;
-	}
-
-	int getPlayerCurrencyAmount() // duplicate
-	{
-		PlayerBase m_Player = this;
-		
-		int currencyAmount = 0;
-		
-		array<EntityAI> itemsArray = new array<EntityAI>;
-		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
-
-		ItemBase item;
-		
-		for (int i = 0; i < itemsArray.Count(); i++)
-		{
-			Class.CastTo(item, itemsArray.Get(i));
-
-			if (!item)
-				continue;
-
-			for (int j = 0; j < m_Player.m_Trader_CurrencyClassnames.Count(); j++)
-			{
-				if(item.GetType() == m_Player.m_Trader_CurrencyClassnames.Get(j))
-				{
-					currencyAmount += getItemAmount(item) * m_Player.m_Trader_CurrencyValues.Get(j);
-				}
-			}
-		}
-		
-		return currencyAmount;
 	}
 
 	bool isInPlayerInventory(string itemClassname, int amount) // duplicate
@@ -889,65 +953,6 @@ modded class DayZPlayerImplement
 		SetItemAmount(item, amount);
 	}
 
-	void increasePlayerCurrency(int currencyAmount)
-	{
-		if (currencyAmount == 0)
-			return;
-
-		EntityAI entity;
-		ItemBase item;		
-		
-		for (int i = m_Trader_CurrencyClassnames.Count() - 1; i < m_Trader_CurrencyClassnames.Count(); i--)
-		{
-			int itemMaxAmount = GetItemMaxQuantity(m_Trader_CurrencyClassnames.Get(i));
-
-			while (currencyAmount / m_Trader_CurrencyValues.Get(i) > 0)
-			{
-				if (currencyAmount > itemMaxAmount * m_Trader_CurrencyValues.Get(i))
-				{
-					if (canCreateItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), itemMaxAmount))
-					{
-						createItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
-					}
-					else
-					{
-						TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + "#tm_your_currency_on_ground", this);
-						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
-
-						entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());						
-
-						Class.CastTo(item, entity);
-						SetItemAmount(item, itemMaxAmount);
-					}
-
-					currencyAmount -= itemMaxAmount * m_Trader_CurrencyValues.Get(i);
-				}
-				else
-				{		
-					if (canCreateItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i)))
-					{
-						createItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i));
-					}
-					else
-					{		
-						TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + "#tm_your_currency_on_ground", this);
-						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
-
-						entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());	
-
-						Class.CastTo(item, entity);
-						SetItemAmount(item, currencyAmount / m_Trader_CurrencyValues.Get(i));		
-					}
-
-					currencyAmount -= (currencyAmount / m_Trader_CurrencyValues.Get(i) * m_Trader_CurrencyValues.Get(i));
-				}
-
-				if (currencyAmount == 0)
-					return;
-			}
-		}
-	}
-
 	bool removeFromPlayerInventory(string itemClassname, int amount)
 	{
 		itemClassname.ToLower();
@@ -1041,6 +1046,118 @@ modded class DayZPlayerImplement
 		return false;
 	}
 
+	void deleteItem(ItemBase item)
+	{
+		if (item)
+			GetGame().ObjectDelete(item);
+			//item.Delete();
+
+		//TraderMessage.PlayerWhite("DELETED " + item.GetType() + "; QTY: " + getItemAmount(item), this);
+	}
+
+	bool isAttached(ItemBase item) // duplicate
+	{
+		EntityAI parent = item.GetHierarchyParent();
+
+		if (!parent)
+			return false;
+
+		if (parent.IsWeapon() || parent.IsMagazine())
+			return true;
+
+		return false;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// CURRENCY
+	int getPlayerCurrencyAmount() // duplicate
+	{
+		PlayerBase m_Player = this;
+		
+		int currencyAmount = 0;
+		
+		array<EntityAI> itemsArray = new array<EntityAI>;
+		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+
+		ItemBase item;
+		
+		for (int i = 0; i < itemsArray.Count(); i++)
+		{
+			Class.CastTo(item, itemsArray.Get(i));
+
+			if (!item)
+				continue;
+
+			for (int j = 0; j < m_Player.m_Trader_CurrencyClassnames.Count(); j++)
+			{
+				if(item.GetType() == m_Player.m_Trader_CurrencyClassnames.Get(j))
+				{
+					currencyAmount += getItemAmount(item) * m_Player.m_Trader_CurrencyValues.Get(j);
+				}
+			}
+		}
+		
+		return currencyAmount;
+	}
+
+	void increasePlayerCurrency(int currencyAmount)
+	{
+		if (currencyAmount == 0)
+			return;
+
+		EntityAI entity;
+		ItemBase item;		
+		
+		for (int i = m_Trader_CurrencyClassnames.Count() - 1; i < m_Trader_CurrencyClassnames.Count(); i--)
+		{
+			int itemMaxAmount = GetItemMaxQuantity(m_Trader_CurrencyClassnames.Get(i));
+
+			while (currencyAmount / m_Trader_CurrencyValues.Get(i) > 0)
+			{
+				if (currencyAmount > itemMaxAmount * m_Trader_CurrencyValues.Get(i))
+				{
+					if (canCreateItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), itemMaxAmount))
+					{
+						createItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
+					}
+					else
+					{
+						TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + "#tm_your_currency_on_ground", this);
+						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
+
+						entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());						
+
+						Class.CastTo(item, entity);
+						SetItemAmount(item, itemMaxAmount);
+					}
+
+					currencyAmount -= itemMaxAmount * m_Trader_CurrencyValues.Get(i);
+				}
+				else
+				{		
+					if (canCreateItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i)))
+					{
+						createItemInPlayerInventory(m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i));
+					}
+					else
+					{		
+						TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + "#tm_your_currency_on_ground", this);
+						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
+
+						entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());	
+
+						Class.CastTo(item, entity);
+						SetItemAmount(item, currencyAmount / m_Trader_CurrencyValues.Get(i));		
+					}
+
+					currencyAmount -= (currencyAmount / m_Trader_CurrencyValues.Get(i) * m_Trader_CurrencyValues.Get(i));
+				}
+
+				if (currencyAmount == 0)
+					return;
+			}
+		}
+	}
+
 	void deductPlayerCurrency(int currencyAmount)
 	{		
 		if (currencyAmount == 0)
@@ -1115,21 +1232,7 @@ modded class DayZPlayerImplement
 		increasePlayerCurrency(currencyValue - currencyAmount);
 	}
 
-	void deleteItem(ItemBase item)
-	{
-		if (item)
-			GetGame().ObjectDelete(item);
-			//item.Delete();
-
-		//TraderMessage.PlayerWhite("DELETED " + item.GetType() + "; QTY: " + getItemAmount(item), this);
-	}
-
-	void deleteObject(Object obj)
-	{
-		if (obj)
-			GetGame().ObjectDelete(obj);
-	}
-
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// VEHICLE
 	string isVehicleSpawnFree(int traderUID)
 	{
 		vector size = "3 5 9";
@@ -1184,6 +1287,22 @@ modded class DayZPlayerImplement
 					
 					if(carsScript.m_Trader_LastDriverId != this.GetIdentity().GetId())
 						continue;					
+
+					// Check if Engine is running:
+					/*Car car;
+					Class.CastTo(car, nearby_objects.Get(i));
+					if (car && vehicleIsEmpty)
+					{
+						if (car.EngineIsOn())
+							return nearby_objects.Get(i);
+					}*/
+
+					//TODO: Check if Vehicle Owner is Player or Vehicle Owner is not set.
+
+					//if (m_Trader_LastSelledItemID == nearby_objects.Get(i).GetID())
+					//	continue;
+
+					//m_Trader_LastSelledItemID = nearby_objects.Get(i).GetID();
 
 					return nearby_objects.Get(i);		
 				}					
@@ -1266,38 +1385,14 @@ modded class DayZPlayerImplement
 				carScript.SynchronizeValues();
 
 				car.SetAllowDamage(false);
-
-				/*for (i = 0; i < m_Players.Count(); i++)
-				{
-					currentPlayer = PlayerBase.Cast(m_Players.Get(i));
-					
-					if ( !currentPlayer )
-						continue;
-
-					GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE, new Param2<CarScript, bool>( car, true ), true, currentPlayer.GetIdentity());
-				}*/
 			}
 		}
 	}
 
-	bool isAttached(ItemBase item) // duplicate
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// OBJECTS
+	void deleteObject(Object obj)
 	{
-		EntityAI parent = item.GetHierarchyParent();
-
-		if (!parent)
-			return false;
-
-		if (parent.IsWeapon() || parent.IsMagazine())
-			return true;
-
-		return false;
-	}
-
-	override void SetSuicide(bool state)
-	{
-		super.SetSuicide(state);
-
-		if (state && m_Trader_IsInSafezone && GetGame().IsServer())
-			SetAllowDamage(true);
+		if (obj)
+			GetGame().ObjectDelete(obj);
 	}
 }
