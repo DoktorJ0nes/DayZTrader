@@ -14,7 +14,7 @@ class ActionLockUnlockVehicle: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
-		m_MessageSuccess = "";
+		//m_MessageSuccess = "";
 	}
 
 	override void CreateConditionComponents()
@@ -94,10 +94,10 @@ class ActionUnlockVehicle: ActionLockUnlockVehicle
 		ActionLockUnlockVehicle();
 	}
 		
-	override int GetType()
-	{
-		return 3555;
-	}
+	//override int GetType()
+	//{
+	//	return 3555;
+	//}
 		
 	override string GetText()
 	{
@@ -145,10 +145,10 @@ class ActionLockVehicle: ActionLockUnlockVehicle
 		ActionLockUnlockVehicle();
 	}
 		
-	override int GetType()
-	{
-		return 3556;
-	}
+	//override int GetType()
+	//{
+	//	return 3556;
+	//}
 		
 	override string GetText()
 	{
@@ -221,10 +221,10 @@ class ActionUnlockVehicleInside: ActionLockUnlockVehicleInside
 		ActionLockUnlockVehicleInside();
 	}
 		
-	override int GetType()
-	{
-		return 3557;
-	}
+	//override int GetType()
+	//{
+	//	return 3557;
+	//}
 		
 	override string GetText()
 	{
@@ -272,10 +272,10 @@ class ActionLockVehicleInside: ActionLockUnlockVehicleInside
 		ActionLockUnlockVehicleInside();
 	}
 		
-	override int GetType()
-	{
-		return 3558;
-	}
+	//override int GetType()
+	//{
+	//	return 3558;
+	//}
 		
 	override string GetText()
 	{

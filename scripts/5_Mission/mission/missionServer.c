@@ -234,9 +234,6 @@ modded class MissionServer
 			}
 		}
 
-		array<Object> excludedObjects;
-		array<Object> collidedObjects;
-
 		m_Trader_ZombieCleanupUpdateTimer += timeslice;
 		if (m_Trader_ZombieCleanupUpdateTimer >= m_Trader_ZombieCleanupUpdateTimerMax)
 		{
@@ -247,8 +244,8 @@ modded class MissionServer
 				vector orientation = Vector(0, 0, 0);
 				int safezoneDiameter = m_Trader_TraderSafezones.Get(n) * 2;
 				vector edgeLength = Vector(safezoneDiameter, safezoneDiameter, safezoneDiameter);
-				excludedObjects = new array<Object>;
-				collidedObjects = new array<Object>;
+				array<Object> excludedObjects = new array<Object>;
+				array<Object> collidedObjects = new array<Object>;
 				
 				if (GetGame().IsBoxColliding(m_Trader_TraderPositions.Get(n), orientation, edgeLength, excludedObjects, collidedObjects))
 				{
@@ -264,7 +261,7 @@ modded class MissionServer
 		}
 
 		m_Trader_VehicleCleanupUpdateTimer += timeslice;
-		if (m_Trader_VehicleCleanupUpdateTimer >= m_Trader_VehicleCleanupUpdateTimerMax)
+		if (m_Trader_VehicleCleanupUpdateTimer >= m_Trader_VehicleCleanupUpdateTimerMax && m_Trader_VehicleCleanupUpdateTimerMax != 0)
 		{
 			m_Trader_VehicleCleanupUpdateTimer = 0;
 

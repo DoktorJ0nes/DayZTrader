@@ -79,15 +79,15 @@ modded class CarScript
             m_Trader_LastDriverId = player.GetIdentity().GetId();
 	}
 
-    override bool CanReleaseAttachment( EntityAI attachment ) // doesnt work because the vanilla Child Classes dont return/call the super.CanReleaseAttachment properly..
+    /*override bool CanReleaseAttachment( EntityAI attachment ) // doesnt work because the vanilla Child Classes dont return/call the super.CanReleaseAttachment properly..
 	{
         if(!super.CanReleaseAttachment(attachment))
             return false;
 
         return !m_Trader_Locked;
-    }
+    }*/
 
-    override bool CanReceiveItemIntoCargo(EntityAI cargo)
+    /*override bool CanReceiveItemIntoCargo(EntityAI cargo)
     {
         if(!super.CanPutInCargo(cargo))
             return false;
@@ -109,7 +109,7 @@ modded class CarScript
 			return false;
 		
 		return !m_Trader_Locked;
-	}
+	}*/
 	
 	override bool CanDisplayAttachmentSlot( string slot_name )
 	{
@@ -131,13 +131,13 @@ modded class CarScript
 	{
 		if (GetGame().IsServer())
         {
-            //if(GetInventory())
-            //{
-                // if (m_Trader_Locked)
-                //     GetInventory().LockInventory(HIDE_INV_FROM_SCRIPT);
-                // else
-                //     GetInventory().UnlockInventory(HIDE_INV_FROM_SCRIPT);
-            //}	        
+            if(GetInventory())
+            {
+                 if (m_Trader_Locked)
+                     GetInventory().LockInventory(HIDE_INV_FROM_SCRIPT);
+                 else
+                     GetInventory().UnlockInventory(HIDE_INV_FROM_SCRIPT);
+            }	        
 
 			SetSynchDirty();
         }

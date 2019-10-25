@@ -65,24 +65,14 @@ class CfgModels
 		sections[] = {"WholeObject"};
 	};
 };
-class CfgModels
-{
-	class ruble{
-		sections[]={"WholeObject"};
-	};
-
-	class keyLada{
-		sections[]={"WholeObject"};
-	};
-};
 class CfgVehicles
 {
 	class Inventory_Base;
 	class MoneyRuble1: Inventory_Base
 	{
 		scope=2;
-		displayName="1 Ruble Note";
-		descriptionShort="This Currency was used in Chernarus before the Disease. It is now only used for trading.";
+		displayName=$STR_tm_1_ruble_note;
+		descriptionShort="$STR_tm_ruble_description";
 		model="TM\Trader\ruble.p3d";
 		canBeSplit=1;
 		rotationFlags = 16;
@@ -117,31 +107,31 @@ class CfgVehicles
 	
 	class MoneyRuble5: MoneyRuble1
 	{
-		displayName="5 Ruble Note";
+		displayName=$STR_tm_5_ruble_note;
 		hiddenSelectionsTextures[]={"TM\Trader\data\ruble5_co.paa"};
 	};
 	
 	class MoneyRuble10: MoneyRuble1
 	{
-		displayName="10 Ruble Note";
+		displayName=$STR_tm_10_ruble_note;
 		hiddenSelectionsTextures[]={"TM\Trader\data\ruble10_co.paa"};
 	};
 	
 	class MoneyRuble25: MoneyRuble1
 	{
-		displayName="25 Ruble Note";
+		displayName=$STR_tm_25_ruble_note;
 		hiddenSelectionsTextures[]={"TM\Trader\data\ruble25_co.paa"};
 	};
 	
 	class MoneyRuble50: MoneyRuble1
 	{
-		displayName="50 Ruble Note";
+		displayName=$STR_tm_50_ruble_note;
 		hiddenSelectionsTextures[]={"TM\Trader\data\ruble50_co.paa"};
 	};
 	
 	class MoneyRuble100: MoneyRuble1
 	{
-		displayName="100 Ruble Note";
+		displayName=$STR_tm_100_ruble_note;
 		hiddenSelectionsTextures[]={"TM\Trader\data\ruble100_co.paa"};
 	};
 
@@ -164,25 +154,19 @@ class CfgVehicles
 		visibilityModifier = 0.95;
 		hiddenSelectionsTextures[] = {"","","","","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa"};
 	};
-
 	class VehicleKeyBase: Inventory_Base
 	{
-		scope=2;
-		//ContinuousActions[] = {3555,3556};
-		displayName="Vehicle Key";
-		descriptionShort="This is just a normal Key to lock and unlock your Vehicle.";
-		model="TM\Trader\keyLada.p3d";
+		scope = 2;
+		displayName = $STR_tm_vehicle_key;
+		descriptionShort = "$STR_tm_vehicle_key_description";
+		model = "TM\Trader\keyLada.p3d";
 		rotationFlags = 17;
-		lootCategory="Materials";
-		lootTag[]=
-		{
-			"Civilian",
-			"Work"
-		};
-		weight=4;
-		itemSize[]={1,1};
+		lootCategory = "Materials";
+		lootTag[] = {"Civilian","Work"};
+		weight = 4;
+		itemSize[] = {1,1};
 		fragility = 0.01;
-		hiddenSelections[]={"WholeObject"};
+		hiddenSelections[] = {"WholeObject"};
 		class DamageSystem
 		{
 			class GlobalHealth
@@ -195,36 +179,29 @@ class CfgVehicles
 			};
 		};
 	};
-
 	class VehicleKeyDuplicate: VehicleKeyBase
 	{
-		displayName="Vehicle Key Duplication";
-		descriptionShort="Duplicates the Vehicle Key that you are holding in your Hands.";
-		//hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaBlack_co.paa"};
+		displayName = "Duplicated Key";
+		descriptionShort = "Duplicates the Vehicle Key that you are holding in your Hands.";
 	};
-
 	class VehicleKeyRed: VehicleKeyBase
 	{
-		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaRed_co.paa"};
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaRed_co.paa"};
 	};
-
 	class VehicleKeyBlack: VehicleKeyBase
 	{
-		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaBlack_co.paa"};
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaBlack_co.paa"};
 	};
-
 	class VehicleKeyGrayCyan: VehicleKeyBase
 	{
-		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaGrayCyan_co.paa"};
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaGrayCyan_co.paa"};
 	};
-
 	class VehicleKeyYellow: VehicleKeyBase
 	{
-		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaYellow_co.paa"};
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaYellow_co.paa"};
 	};
-
 	class VehicleKeyPurple: VehicleKeyBase
 	{
-		hiddenSelectionsTextures[]={"TM\Trader\data\keyLadaPurple_co.paa"};
+		hiddenSelectionsTextures[] = {"TM\Trader\data\keyLadaPurple_co.paa"};
 	};
 };
