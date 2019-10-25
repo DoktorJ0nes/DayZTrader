@@ -117,13 +117,13 @@ modded class DayZPlayerImplement
 
 				if (itemCosts < 0)
 				{
-					TraderMessage.PlayerWhite("Sorry, but that\ncan't be bought!", this);
+					TraderMessage.PlayerWhite("#tm_cant_be_bought", this);
 					return;
 				}
 
 				if (m_Player_CurrencyAmount < itemCosts)
 				{
-					TraderMessage.PlayerWhite("Sorry, but you can't\nafford that!", this);
+					TraderMessage.PlayerWhite("#tm_cant_afford", this);
 					return;
 				}
 
@@ -197,7 +197,7 @@ modded class DayZPlayerImplement
 
 					if (canCreateItemInPlayerInventory(itemType, itemQuantity))
 					{
-						TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\nwas added to your Inventory!", this);
+						TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_added_to_inventory", this);
 						
 						if (isDuplicatingKey)
 							createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
@@ -256,13 +256,13 @@ modded class DayZPlayerImplement
 
 				if (itemSellValue < 0)
 				{
-					TraderMessage.PlayerWhite("Sorry, but that can't\nbe selled!", this);
+					TraderMessage.PlayerWhite("#tm_cant_be_sold", this);
 					return;
 				}
 
 				if (!isInPlayerInventory(itemType, itemQuantity) && !isValidVehicle)
 				{
-					TraderMessage.PlayerWhite("Sorry, but you can't\nsell that!", this);
+					TraderMessage.PlayerWhite("#tm_you_cant_sell", this);
 
 					if (itemQuantity == -2 || itemQuantity == -6)
 						TraderMessage.PlayerWhite("Place the Vehicle inside\nthe Traffic Cones!\nMake sure you was\nthe last Driver!", this);
@@ -271,9 +271,9 @@ modded class DayZPlayerImplement
 					return;
 				}
 
-				traderServerLog("sold " + getItemDisplayName(itemType) + " (" + itemType + ")");
+				traderServerLog("#tm_sold" + " " + getItemDisplayName(itemType) + " (" + itemType + ")");
 
-				TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\nwas sold!", this);
+				TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_was_sold", this);
 
 				if (isValidVehicle)
 					deleteObject(vehicleToSell);
@@ -816,9 +816,9 @@ modded class DayZPlayerImplement
 				entity = this.SpawnEntityOnGroundPos(itemType, this.GetPosition());
 				
 				if (m_Trader_IsSelling)
-					TraderMessage.PlayerWhite("Some Currencys were placed\non Ground!", this);
+					TraderMessage.PlayerWhite("#tm_some_currency_on_ground", this);
 				else
-					TraderMessage.PlayerWhite("Some " + itemDisplayNameClient + "\nwere placed on Ground!", this);
+					TraderMessage.PlayerWhite("#tm_some" + " " + itemDisplayNameClient + "\n" + "#tm_were_placed_on_ground", this);
 
 				GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
 			}
@@ -911,7 +911,7 @@ modded class DayZPlayerImplement
 					}
 					else
 					{
-						TraderMessage.PlayerWhite("Your Inventory is full!\nYour Currencys were placed\non Ground!", this);
+						TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + "#tm_your_currency_on_ground", this);
 						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
 
 						entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());						
@@ -930,7 +930,7 @@ modded class DayZPlayerImplement
 					}
 					else
 					{		
-						TraderMessage.PlayerWhite("Your Inventory is full!\nYour Currencys were placed\non Ground!", this);
+						TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + "#tm_your_currency_on_ground", this);
 						GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, this.GetIdentity());
 
 						entity = this.SpawnEntityOnGroundPos(m_Trader_CurrencyClassnames.Get(i), this.GetPosition());	
@@ -1130,13 +1130,17 @@ modded class DayZPlayerImplement
 			GetGame().ObjectDelete(obj);
 	}
 
-	bool isVehicleSpawnFree(int traderUID)
+	string isVehicleSpawnFree(int traderUID)
 	{
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
 		array<Object> nearby_objects = new array<Object>;
 
-		return !(GetGame().IsBoxColliding( m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects));
+		GetGame().IsBoxColliding( m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects);
+		if (nearby_objects.Count() > 0)
+			return nearby_objects.Get(0).GetType();
+
+		return "FREE";
 	}
 
 	Object GetVehicleToSell(int traderUID, string vehicleClassname) // duplicate

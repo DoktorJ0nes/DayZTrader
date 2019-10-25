@@ -1,4 +1,4 @@
-/*modded class PlayerBase
+modded class PlayerBase
 {
     ref ActionBase actionUnlockVehicle;
     ref ActionBase actionLockVehicle;

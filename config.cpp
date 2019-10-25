@@ -1,3 +1,12 @@
+////////////////////////////////////////////////////////////////////
+//DeRap: Trader\config.bin
+//Produced from mikero's Dos Tools Dll version 7.03
+//https://armaservices.maverick-applications.com/Products/MikerosDosTools/default
+//'now' is Thu May 16 22:05:14 2019 : 'file' last modified on Wed May 15 17:36:14 2019
+////////////////////////////////////////////////////////////////////
+
+#define _ARMA_
+
 class CfgMods
 {
 	class Trader
@@ -14,23 +23,19 @@ class CfgMods
 		version = "1.0";
 		extra = 0;
 		type = "mod";
-		
-		dependencies[] = {"Game", "World", "Mission"};
-		
+		dependencies[] = {"Game","World","Mission"};
 		class defs
-		{			
+		{
 			class gameScriptModule
 			{
 				value = "";
 				files[] = {"TM/Trader/scripts/3_Game"};
 			};
-			
 			class worldScriptModule
 			{
 				value = "";
 				files[] = {"TM/Trader/scripts/4_World"};
 			};
-			
 			class missionScriptModule
 			{
 				value = "";
@@ -43,13 +48,21 @@ class CfgPatches
 {
 	class trader
 	{
-		units[]={};
-		weapons[]={};
-		requiredVersion=0.1; 
-		requiredAddons[]=
-		{
-			"DZ_Data"
-		};
+		units[] = {"MoneyRuble1","MoneyRuble5","MoneyRuble10","MoneyRuble25","MoneyRuble50","MoneyRuble100","Land_RoadCone","Hoodie_GraffitiTiles","Hoodie_DrJ0nes","VehicleKeyBase","VehicleKeyDuplicate","VehicleKeyRed","VehicleKeyBlack","VehicleKeyGrayCyan","VehicleKeyYellow","VehicleKeyPurple"};
+		weapons[] = {};
+		requiredVersion = 0.1;
+		requiredAddons[] = {"DZ_Data"};
+	};
+};
+class CfgModels
+{
+	class ruble
+	{
+		sections[]={"WholeObject"};
+	};
+	class keyLada
+	{
+		sections[] = {"WholeObject"};
 	};
 };
 class CfgModels
@@ -73,7 +86,7 @@ class CfgVehicles
 		model="TM\Trader\ruble.p3d";
 		canBeSplit=1;
 		rotationFlags = 16;
-		lootCategory="Materials"; // Should be changed to Money?
+		lootCategory="Materials";
 		lootTag[]=
 		{
 			"Civilian",
@@ -131,14 +144,13 @@ class CfgVehicles
 		displayName="100 Ruble Note";
 		hiddenSelectionsTextures[]={"TM\Trader\data\ruble100_co.paa"};
 	};
-	
+
 	class HouseNoDestruct;
 	class Land_RoadCone: HouseNoDestruct
 	{
 		scope = 2;
 		model = "TM\Trader\Road_Cone.p3d";
 	};
-	
 	class Hoodie_ColorBase;
 	class Hoodie_GraffitiTiles: Hoodie_ColorBase
 	{
@@ -146,7 +158,6 @@ class CfgVehicles
 		visibilityModifier = 0.95;
 		hiddenSelectionsTextures[] = {"","","","","TM\Trader\data\hoodie_graffiti_co.paa","TM\Trader\data\hoodie_graffiti_co.paa","TM\Trader\data\hoodie_graffiti_co.paa"};
 	};
-	
 	class Hoodie_DrJ0nes: Hoodie_ColorBase
 	{
 		scope = 2;
