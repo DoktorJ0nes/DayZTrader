@@ -16,6 +16,29 @@ class FileReadHelper
 		
 		return string.Empty;
 	}
+
+	static string SearchForNextTermsInFile(FileHandle file_index, array<string> searchTerms, string abortTerm)
+	{
+		int char_count = 0;
+		while ( char_count != -1 )
+		{			
+			string line_content = "";
+			char_count = FGets( file_index,  line_content );
+			
+			line_content = TrimComment(line_content);
+
+			if (line_content.Contains(abortTerm) && abortTerm != "")
+					return line_content;
+
+			for (int i = 0; i < searchTerms.Count(); i++)
+			{
+				if (line_content.Contains(searchTerms.Get(i)))
+					return line_content;
+			}
+		}
+		
+		return string.Empty;
+	}
 	
 	static string TrimComment(string line)
 	{

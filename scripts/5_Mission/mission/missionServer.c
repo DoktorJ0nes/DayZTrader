@@ -447,14 +447,22 @@ modded class MissionServer
 
 
 			int attachmentCounter = 0;
-			while ( attachmentCounter <= 100 && line_content.Contains("<Object>") == false)
+			while ( attachmentCounter <= 1000 && line_content.Contains("<Object>") == false)
 			{
-				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectAttachment>", "<Object>");
+				line_content = FileReadHelper.SearchForNextTermsInFile(file_index, {"<ObjectAttachment>", "<OpenFile>"}, "<Object>");
 
 				if (line_content == string.Empty)	
 				{
 					line_content = "<FileEnd>";
 					break;
+				}
+
+				if (line_content.Contains("<OpenFile>"))
+				{
+					if (OpenNewFileForReading(line_content, file_index))
+						continue;
+					else
+						return;
 				}
 
 				if (line_content.Contains("<Object>"))
@@ -748,6 +756,23 @@ modded class MissionServer
 		TraderMessage.ServerLog("[TRADER] DONE END!");
 	}
 
+	bool OpenNewFileForReading(string line_content, out FileHandle file_index)
+	{
+		line_content.Replace("<OpenFile>", "");
+		line_content = FileReadHelper.TrimComment(line_content);
+
+		CloseFile(file_index);
+		file_index = OpenFile("$profile:Trader/" + line_content, FileMode.READ);
+
+		if ( file_index == 0 )
+		{
+			TraderMessage.ServerLog("[TRADER] CANT FIND LINKED FILE " + "$profile:Trader/" + line_content + "!");
+			return false;
+		}
+		
+		return true;
+	}
+
 	void readTraderData()
 	{		
 		// clear all data here:
@@ -822,15 +847,23 @@ modded class MissionServer
 		int traderCounter = 0;
 		
 		//line_content = "";
-		while (traderCounter <= 500 && line_content != "<FileEnd>")
+		while (traderCounter <= 5000 && line_content != "<FileEnd>")
 		{
 			TraderMessage.ServerLog("[TRADER] READING TRADER ENTRY..");
 			
 			if (traderInstanceDone == false)
-				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<Trader>", "");
+				line_content = FileReadHelper.SearchForNextTermsInFile(file_index, {"<Trader>", "<OpenFile>"}, "");
 			else
 				traderInstanceDone = false;
 			
+			if (line_content.Contains("<OpenFile>"))
+			{
+				if (OpenNewFileForReading(line_content, file_index))
+					continue;
+				else
+					return;
+			}
+
 			line_content.Replace("<Trader>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
 			
@@ -839,10 +872,18 @@ modded class MissionServer
 			int categoryCounter = 0;
 			
 			line_content = "";
-			while (categoryCounter <= 500 && line_content != "<FileEnd>")
+			while (categoryCounter <= 5000 && line_content != "<FileEnd>")
 			{
-				line_content = FileReadHelper.TrimComment(FileReadHelper.SearchForNextTermInFile(file_index, "<Category>", "<Trader>"));
+				line_content = FileReadHelper.TrimComment(FileReadHelper.SearchForNextTermsInFile(file_index, {"<Category>", "<OpenFile>"}, "<Trader>"));
 				
+				if (line_content.Contains("<OpenFile>"))
+				{
+					if (OpenNewFileForReading(line_content, file_index))
+						continue;
+					else
+						return;
+				}
+
 				if (line_content.Contains("<Trader>"))
 				{
 					traderInstanceDone = true;
@@ -873,20 +914,30 @@ modded class MissionServer
 		file_index = OpenFile(m_Trader_ConfigFilePath, FileMode.READ);
 		
 		int itemCounter = 0;
+		int itemCounterTotal = 0;
 		int char_count = 0;
 		int traderID = -1;
 		int categoryId = -1;
 		
 		line_content = "";
-		while ( itemCounter <= 5000 && char_count != -1 && line_content.Contains("<FileEnd>") == false)
+		while ( itemCounter <= 10000 && char_count != -1 && line_content.Contains("<FileEnd>") == false)
 		{
 			char_count = FGets( file_index,  line_content );
 			
 			line_content = FileReadHelper.TrimComment(line_content);
 
+			if (line_content.Contains("<OpenFile>"))
+			{
+				if (OpenNewFileForReading(line_content, file_index))
+					continue;
+				else
+					return;
+			}
+
 			if (line_content.Contains("<Trader>"))
 			{
 				traderID++;
+				itemCounter = 0;
 				
 				continue;
 			}
@@ -894,6 +945,7 @@ modded class MissionServer
 			if (line_content.Contains("<Category>"))
 			{
 				categoryId++;
+				itemCounter = 0;
 				
 				continue;
 			}
@@ -974,9 +1026,15 @@ modded class MissionServer
 		{
 			// Get Trader Marker Trader ID:
 			if (!skipLine)
-				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<TraderMarker>", "<FileEnd>");
+				line_content = FileReadHelper.SearchForNextTermsInFile(file_index, {"<TraderMarker>", "<OpenFile>"}, "<FileEnd>");
 			else
-				skipLine = false;					
+				skipLine = false;	
+
+			if (line_content.Contains("<OpenFile>"))
+			{
+				if (!OpenNewFileForReading(line_content, file_index))
+					return;
+			}				
 			
 			if (!line_content.Contains("<TraderMarker>"))
 				continue;
@@ -1123,9 +1181,15 @@ modded class MissionServer
 		{
 			// Get Vehicle Name Entrys:
 			if (!skipLine)
-				line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<VehicleParts>", "<FileEnd>");
+				line_content = FileReadHelper.SearchForNextTermsInFile(file_index, {"<VehicleParts>", "<OpenFile>"}, "<FileEnd>");
 			else
 				skipLine = false;
+
+			if (line_content.Contains("<OpenFile>"))
+			{
+				if (!OpenNewFileForReading(line_content, file_index))
+					return;
+			}	
 			
 			if (!line_content.Contains("<VehicleParts>"))
 				continue;
@@ -1151,6 +1215,14 @@ modded class MissionServer
 
 				if (line_content == "")
 					continue;
+
+				if (line_content.Contains("<OpenFile>"))
+				{
+					if (OpenNewFileForReading(line_content, file_index))
+						continue;
+					else
+						return;
+				}	
 
 				if (line_content.Contains("<VehicleParts>"))
 				{
