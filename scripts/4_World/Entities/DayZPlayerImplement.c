@@ -50,6 +50,9 @@ modded class DayZPlayerImplement
 
 	string itemDisplayNameClient;
 	bool m_Trader_IsSelling;
+
+	string m_Trader_PlayerUID;
+	ref array<string> m_Trader_AdminPlayerUIDs;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// OVERRIDES
 	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
@@ -366,6 +369,14 @@ modded class DayZPlayerImplement
 			case TRPCs.RPC_SEND_TRADER_VARIABLES_ENTRY:
 				handleSendTraderVariablesEntryRPC(sender, rpc_type, ctx);
 			break;
+
+			case TRPCs.RPC_SEND_TRADER_PLAYERUID:
+				handleSendTraderPlayerUIDRPC(sender, rpc_type, ctx);
+			break;
+
+			case TRPCs.RPC_SEND_TRADER_ADMINS_ENTRY:
+				handleSendTraderAdminsEntryRPC(sender, rpc_type, ctx);
+			break;
 		}
 	}
 
@@ -459,6 +470,8 @@ modded class DayZPlayerImplement
 		m_Trader_Vehicles = new array<string>;
 		m_Trader_VehiclesParts = new array<string>;
 		m_Trader_VehiclesPartsVehicleId = new array<int>;
+		m_Trader_PlayerUID = "";
+		m_Trader_AdminPlayerUIDs = new array<string>;
 	}
 	
 	void handleTraderModIsLoadedConfirmRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
@@ -533,7 +546,7 @@ modded class DayZPlayerImplement
 
 	void handleSendMessageSafezoneRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<float> sendMessageSafezone_rp = new Param1<float>(  0 );
+		ref Param1<float> sendMessageSafezone_rp = new Param1<float>( 0 );
 		ctx.Read( sendMessageSafezone_rp );
 		
 		showSafezoneMessage(sendMessageSafezone_rp.param1);
@@ -546,10 +559,26 @@ modded class DayZPlayerImplement
 
 	void handleSendTraderVariablesEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<float> traderVariables_rp = new Param1<float>(  0 );
+		ref Param1<float> traderVariables_rp = new Param1<float>( 0 );
 		ctx.Read( traderVariables_rp );
 		
 		m_Trader_BuySellTimer = traderVariables_rp.param1;
+	}
+
+	void handleSendTraderPlayerUIDRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param1<string> traderPlayerUID_rp = new Param1<string>( "" );
+		ctx.Read( traderPlayerUID_rp );
+		
+		m_Trader_PlayerUID = traderPlayerUID_rp.param1;
+	}
+
+	void handleSendTraderAdminsEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param1<string> traderAdmins_rp = new Param1<string>( "" );
+		ctx.Read( traderAdmins_rp );
+		
+		m_Trader_AdminPlayerUIDs.Insert(traderAdmins_rp.param1);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// LOGS & MESSAGES

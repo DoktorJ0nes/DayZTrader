@@ -118,7 +118,7 @@ class ActionUnlockVehicle: ActionLockUnlockVehicle
 		CarScript carScript;
 		if (Class.CastTo(carScript, target.GetParent()))
 		{
-			if (carScript.m_Trader_HasKey && carScript.m_Trader_Locked && playerHasVehicleKeyInHands(player, carScript.m_Trader_VehicleKeyHash) && !carDoorIsOpen(target))
+			if (carScript.m_Trader_HasKey && carScript.m_Trader_Locked && !carDoorIsOpen(target) && (playerHasVehicleKeyInHands(player, carScript.m_Trader_VehicleKeyHash) || player.Trader_IsAdmin()))
 				return true;
 		}
 
@@ -128,10 +128,14 @@ class ActionUnlockVehicle: ActionLockUnlockVehicle
 	override void OnFinishProgressServer( ActionData action_data )
 	{	
 		Print("[LockUnlockVehicle] OnFinishProgressServer");
+		PlayerBase player = action_data.m_Player;
 
 		CarScript carScript = CarScript.Cast(action_data.m_Target.GetParent());
 		if( carScript )
 		{
+			if (!playerHasVehicleKeyInHands(player, carScript.m_Trader_VehicleKeyHash) && !player.Trader_IsAdmin())
+				return;
+
 			carScript.m_Trader_Locked = false;
 			carScript.SynchronizeValues();
 		}
@@ -169,7 +173,7 @@ class ActionLockVehicle: ActionLockUnlockVehicle
 		CarScript carScript;
 		if (Class.CastTo(carScript, target.GetParent()))
 		{
-			if (carScript.m_Trader_HasKey && !carScript.m_Trader_Locked && playerHasVehicleKeyInHands(player, carScript.m_Trader_VehicleKeyHash) && !carDoorIsOpen(target))
+			if (carScript.m_Trader_HasKey && !carScript.m_Trader_Locked && !carDoorIsOpen(target) && (playerHasVehicleKeyInHands(player, carScript.m_Trader_VehicleKeyHash) || player.Trader_IsAdmin()))
 				return true;
 		}
 
@@ -179,10 +183,14 @@ class ActionLockVehicle: ActionLockUnlockVehicle
 	override void OnFinishProgressServer( ActionData action_data )
 	{	
 		Print("[LockUnlockVehicle] OnFinishProgressServer");
+		PlayerBase player = action_data.m_Player;
 
 		CarScript carScript = CarScript.Cast(action_data.m_Target.GetParent());
 		if( carScript )
 		{
+			if (!playerHasVehicleKeyInHands(player, carScript.m_Trader_VehicleKeyHash) && !player.Trader_IsAdmin())
+				return;
+
 			carScript.m_Trader_Locked = true;
 			carScript.SynchronizeValues();
 		}

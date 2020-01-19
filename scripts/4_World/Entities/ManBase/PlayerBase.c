@@ -18,4 +18,15 @@ modded class PlayerBase
         AddAction(ActionUnlockVehicleInside);
         AddAction(ActionLockVehicleInside);
 	}
+
+    bool Trader_IsAdmin()
+    {
+        for (int i = 0; i < m_Trader_AdminPlayerUIDs.Count(); i++)
+        {
+            if (m_Trader_AdminPlayerUIDs.Get(i) == m_Trader_PlayerUID)
+                return true;
+        }
+
+        return false;
+    }
 }

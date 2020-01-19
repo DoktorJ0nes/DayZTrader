@@ -4,6 +4,7 @@ modded class MissionServer
 	static const string m_Trader_ObjectsFilePath = "$profile:Trader/TraderObjects.txt";
 	static const string m_Trader_VehiclePartsFilePath = "$profile:Trader/TraderVehicleParts.txt";
 	static const string m_Trader_VariableFilePath = "$profile:Trader/TraderVariables.txt";
+	static const string m_Trader_AdminsFilePath = "$profile:Trader/TraderAdmins.txt";
 
 	float m_Trader_SafezoneTimeout = 30;
 
@@ -34,6 +35,8 @@ modded class MissionServer
 	ref array<string> m_Trader_VehiclesParts;
 	ref array<int> m_Trader_VehiclesPartsVehicleId;
 
+	ref array<string> m_Trader_AdminPlayerUIDs;
+
 	float m_Trader_BuySellTimer = 0.3;
 		
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
@@ -55,9 +58,12 @@ modded class MissionServer
 	{		
 		super.OnInit();
 
+		TraderMessage.ServerLog("[TRADER] DEBUG START");
 		SpawnTraderObjects();
 		readTraderData();
 		readTraderVariables();
+		readTraderAdmins();
+		TraderMessage.ServerLog("[TRADER] DEBUG END");
 	}
 	
 	override void OnUpdate(float timeslice)
@@ -301,8 +307,6 @@ modded class MissionServer
 	{
 		m_Trader_SpawnedTraderCharacters = new array<PlayerBase>;
 		m_Trader_SpawnedFireBarrels = new array<BarrelHoles_ColorBase>;
-		
-		TraderMessage.ServerLog("[TRADER] DEBUG START");
 		
 		FileHandle file_index = OpenFile(m_Trader_ObjectsFilePath, FileMode.READ);
 				
@@ -555,7 +559,6 @@ modded class MissionServer
 		}
 		
 		CloseFile(file_index);
-		TraderMessage.ServerLog("[TRADER] DEBUG END");
 	}
 
 	void sendTraderDataToPlayer(PlayerBase player)
@@ -647,6 +650,16 @@ modded class MissionServer
 
 		player.m_Trader_BuySellTimer = m_Trader_BuySellTimer;
 		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_VARIABLES_ENTRY, new Param1<float>(m_Trader_BuySellTimer), true, player.GetIdentity());
+
+		player.m_Trader_PlayerUID = player.GetIdentity().GetPlainId();
+		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_PLAYERUID, new Param1<string>(player.GetIdentity().GetPlainId()), true, player.GetIdentity());
+
+		player.m_Trader_AdminPlayerUIDs = new array<string>;
+		for ( i = 0; i < m_Trader_AdminPlayerUIDs.Count(); i++ )
+		{
+			player.m_Trader_AdminPlayerUIDs.Insert(m_Trader_AdminPlayerUIDs.Get(i));
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_ADMINS_ENTRY, new Param1<string>(m_Trader_AdminPlayerUIDs.Get(i)), true, player.GetIdentity());
+		}
 		
 		// confirm that all data was sended:
 		player.m_Trader_RecievedAllData = true;
@@ -756,6 +769,40 @@ modded class MissionServer
 		TraderMessage.ServerLog("[TRADER] DONE END!");
 	}
 
+	void readTraderAdmins()
+	{
+		// clear all data here:
+		m_Trader_AdminPlayerUIDs = new array<string>;	
+
+		FileHandle file_index = OpenFile(m_Trader_AdminsFilePath, FileMode.READ);
+		
+		if ( file_index == 0 )
+		{
+			TraderMessage.ServerLog("[TRADER] FOUND NO TRADERADMINS FILE!");
+			return;
+		}
+
+		int adminsCounter = 0;
+		
+		string line_content = "";
+		while (adminsCounter <= 500 && !line_content.Contains("<FileEnd>"))
+		{
+			line_content = "";
+			int char_count = FGets( file_index,  line_content );
+			line_content = FileReadHelper.TrimComment(line_content);
+
+			if (line_content.Contains("<FileEnd>") || line_content.Length() < 16)
+				continue;
+
+			TraderMessage.ServerLog("[TRADER] READING ADMIN PLAYER UID ENTRY..");
+			m_Trader_AdminPlayerUIDs.Insert(line_content);
+
+			adminsCounter++;
+		}
+
+		CloseFile(file_index);
+	}
+
 	bool OpenNewFileForReading(string line_content, out FileHandle file_index)
 	{
 		line_content.Replace("<OpenFile>", "");
@@ -797,8 +844,6 @@ modded class MissionServer
 		m_Trader_Vehicles = new array<string>;
 		m_Trader_VehiclesParts = new array<string>;
 		m_Trader_VehiclesPartsVehicleId = new array<int>;		
-
-		TraderMessage.ServerLog("[TRADER] DEBUG START");
 		
 		FileHandle file_index = OpenFile(m_Trader_ConfigFilePath, FileMode.READ);
 		
@@ -1249,7 +1294,6 @@ modded class MissionServer
 		
 		//------------------------------------------------------------------------------------
 
-		TraderMessage.ServerLog("[TRADER] DONE READING!");
 		m_Trader_ReadAllTraderData = true;
 	}
 
