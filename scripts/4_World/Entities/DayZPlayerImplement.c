@@ -805,7 +805,7 @@ modded class DayZPlayerImplement
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
-			if (itemType == itemPlayerClassname && item.CanBeCombined(item, this) && !item.IsFullQuantity() && getItemAmount(item) + 1 <= GetItemMaxQuantity(item.GetType()))
+			if (itemType == itemPlayerClassname && item.CanBeCombined(this) && !item.IsFullQuantity() && getItemAmount(item) + 1 <= GetItemMaxQuantity(item.GetType()))
 			{
 				amount -= GetItemMaxQuantity(item.GetType()) - getItemAmount(item);
 				mergableItems.Insert(item);

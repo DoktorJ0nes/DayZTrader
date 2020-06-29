@@ -8,5 +8,6 @@ modded class ActionConstructor
         actions.Insert(ActionLockVehicle);
         actions.Insert(ActionUnlockVehicleInside);
         actions.Insert(ActionLockVehicleInside);
+        actions.Insert(ActionTrade);
     }
 }

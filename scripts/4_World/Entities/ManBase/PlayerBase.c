@@ -1,5 +1,8 @@
 modded class PlayerBase
 {
+    bool m_Trader_IsTrader = false;
+    ref TraderMenu m_TraderMenu;
+
     override void Init()
     {
         DayzPlayerItemBehaviorCfg toolsOneHanded = new DayzPlayerItemBehaviorCfg;
@@ -7,6 +10,8 @@ modded class PlayerBase
 
         GetDayZPlayerType().AddItemInHandsProfileIK("VehicleKeyBase", "dz/anims/workspaces/player/player_main/props/player_main_1h_keys.asi", toolsOneHanded, "dz/anims/anm/player/ik/gear/handcuff_keys.anm");
         super.Init();
+
+        RegisterNetSyncVariableBool("m_Trader_IsTrader");
     }
 
     override void SetActions()
@@ -17,6 +22,7 @@ modded class PlayerBase
         AddAction(ActionLockVehicle);
         AddAction(ActionUnlockVehicleInside);
         AddAction(ActionLockVehicleInside);
+        AddAction(ActionTrade);
 	}
 
     bool Trader_IsAdmin()

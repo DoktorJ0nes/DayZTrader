@@ -65,6 +65,14 @@ modded class MissionServer
 		readTraderAdmins();
 		TraderMessage.ServerLog("[TRADER] DEBUG END");
 	}
+
+	override void HandleBody(PlayerBase player)
+    {
+		if (player.IsUnconscious() || player.IsRestrained())
+            player.SetAllowDamage(true);
+
+        super.HandleBody(player);
+    }
 	
 	override void OnUpdate(float timeslice)
 	{
@@ -142,7 +150,7 @@ modded class MissionServer
 					
 					TraderMessage.DeleteSafezoneMessages(player);
 					TraderMessage.PlayerRed("#tm_entered_safezone", player);
-					TraderMessage.PlayerWhite("#tm_press_to_open_menu", player);
+					//TraderMessage.PlayerWhite("#tm_press_to_open_menu", player);
 
 					if(player.IsRestrained())
 					{
@@ -412,6 +420,7 @@ modded class MissionServer
 
 				m_Trader_SpawnedTraderCharacters.Insert(man);
 				man.SetAllowDamage(false);
+				man.m_Trader_IsTrader = true;
 			}
 
 			// Get Object Orientation -------------------------------------------------------------------------------
