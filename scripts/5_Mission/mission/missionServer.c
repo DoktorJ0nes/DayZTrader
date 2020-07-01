@@ -36,6 +36,7 @@ modded class MissionServer
 	ref array<int> m_Trader_VehiclesPartsVehicleId;
 
 	ref array<string> m_Trader_AdminPlayerUIDs;
+	ref array<string> m_Trader_NPCDummyClasses;
 
 	float m_Trader_BuySellTimer = 0.3;
 		
@@ -315,6 +316,7 @@ modded class MissionServer
 	{
 		m_Trader_SpawnedTraderCharacters = new array<PlayerBase>;
 		m_Trader_SpawnedFireBarrels = new array<BarrelHoles_ColorBase>;
+		m_Trader_NPCDummyClasses = new array<string>;
 		
 		FileHandle file_index = OpenFile(m_Trader_ObjectsFilePath, FileMode.READ);
 				
@@ -499,7 +501,15 @@ modded class MissionServer
 					TraderMessage.ServerLog("[TRADER] '" + line_content + "' WAS ATTACHED");
 				}
 				else
-					TraderMessage.ServerLog("[TRADER] OBJECT TO ATTACH WAS INVALID!");
+				{
+					if (line_content == "NPC_DUMMY")
+					{
+						m_Trader_NPCDummyClasses.Insert(obj.GetType());
+						TraderMessage.ServerLog("[TRADER] NPC DUMMY WAS REGISTERED!");
+					}
+					else
+						TraderMessage.ServerLog("[TRADER] OBJECT TO ATTACH WAS INVALID!");
+				}
 
 				attachmentCounter++;
 			}
@@ -607,6 +617,13 @@ modded class MissionServer
 			Param2<string, int> crp3 = new Param2<string, int>( m_Trader_Categorys.Get(i), m_Trader_CategorysTraderKey.Get(i) );
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_CATEGORY_ENTRY, crp3, true, player.GetIdentity());
 			//TraderMessage.ServerLog("[TRADER] TRADERCATEGORY: " + m_Trader_Categorys.Get(i) + ", " + m_Trader_CategorysTraderKey.Get(i));
+		}
+
+		for ( i = 0; i < m_Trader_NPCDummyClasses.Count(); i++ )
+		{
+			Param<string> crp6 = new Param1<string>( m_Trader_NPCDummyClasses.Get(i) );
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_NPCDUMMY_ENTRY, crp6, true, player.GetIdentity());
+			//TraderMessage.ServerLog("[TRADER] TRADERNPCDUMMY: " + m_Trader_NPCDummyClasses.Get(i));
 		}
 		
 		player.m_Trader_ItemsClassnames = new array<string>;

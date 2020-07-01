@@ -9,7 +9,7 @@ class ActionTrade: ActionInteractBase
 
     override void CreateConditionComponents()  
 	{
-		m_ConditionTarget = new CCTMan(10);
+		m_ConditionTarget = new CCTObject(10);//CCTMan(10);
 		m_ConditionItem = new CCINone;
 	}
 
@@ -25,8 +25,17 @@ class ActionTrade: ActionInteractBase
 
 
         PlayerBase ntarget = PlayerBase.Cast(target.GetObject());
-		if (!ntarget.m_Trader_IsTrader)
-            return false;
+		bool isTraderNPCCharacter = ntarget.m_Trader_IsTrader;
+
+		bool isTraderNPCObject = false;
+		for ( int i = 0; i < player.m_Trader_NPCDummyClasses.Count(); i++ )
+		{
+			if (target.GetObject().GetType() == player.m_Trader_NPCDummyClasses.Get(i))
+				isTraderNPCObject = true;
+		}
+
+		if (!isTraderNPCCharacter && !isTraderNPCObject)
+			return false;
 
 
 		vector playerPosition = player.GetPosition();

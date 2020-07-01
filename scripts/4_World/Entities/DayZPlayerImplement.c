@@ -46,6 +46,8 @@ modded class DayZPlayerImplement
 	ref array<string> m_Trader_VehiclesParts;
 	ref array<int> m_Trader_VehiclesPartsVehicleId;
 
+	ref array<string> m_Trader_NPCDummyClasses;
+
 	float m_Trader_BuySellTimer = 0.3;
 
 	string itemDisplayNameClient;
@@ -313,6 +315,10 @@ modded class DayZPlayerImplement
 			case TRPCs.RPC_SEND_TRADER_CATEGORY_ENTRY:
 				handleSendTraderCategoryEntryRPC(sender, rpc_type, ctx);
 			break;
+
+			case TRPCs.RPC_SEND_TRADER_NPCDUMMY_ENTRY:
+				handleSendTraderNPCDummyEntryRPC(sender, rpc_type, ctx);
+			break;
 			
 			case TRPCs.RPC_SEND_TRADER_ITEM_ENTRY:
 				handleSendTraderItemEntryRPC(sender, rpc_type, ctx);
@@ -413,6 +419,14 @@ modded class DayZPlayerImplement
 		m_Trader_Categorys.Insert(category_rp.param1);
 		m_Trader_CategorysTraderKey.Insert(category_rp.param2);
 	}
+
+	void handleSendTraderNPCDummyEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		ref Param1<string> npcDummy_rp = new Param1<string>( "" );
+		ctx.Read( npcDummy_rp );					
+		
+		m_Trader_NPCDummyClasses.Insert(npcDummy_rp.param1);
+	}
 	
 	void handleSendTraderItemEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
@@ -472,6 +486,7 @@ modded class DayZPlayerImplement
 		m_Trader_VehiclesPartsVehicleId = new array<int>;
 		m_Trader_PlayerUID = "";
 		m_Trader_AdminPlayerUIDs = new array<string>;
+		m_Trader_NPCDummyClasses = new array<string>;
 	}
 	
 	void handleTraderModIsLoadedConfirmRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
