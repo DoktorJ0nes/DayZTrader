@@ -185,6 +185,12 @@ class TraderMenu extends UIScriptedMenu
 		
 		if ( w == m_BtnBuy )
 		{
+			if(!previewItem)
+			{
+				TraderMessage.PlayerWhite("Item dosent exist!\nWrong Classname?", m_Player);
+				return true;
+			}
+
 			if (m_UiBuyTimer > 0)
 			{
 				TraderMessage.PlayerWhite("#tm_not_that_fast", m_Player);
@@ -199,6 +205,12 @@ class TraderMenu extends UIScriptedMenu
 		
 		if ( w == m_BtnSell )
 		{
+			if(!previewItem)
+			{
+				TraderMessage.PlayerWhite("Item dosent exist!\nWrong Classname?", m_Player);
+				return true;
+			}
+			
 			if (m_UiSellTimer > 0)
 			{
 				TraderMessage.PlayerWhite("#tm_not_that_fast", m_Player);
