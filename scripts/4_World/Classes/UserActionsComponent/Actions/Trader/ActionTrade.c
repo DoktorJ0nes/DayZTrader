@@ -25,6 +25,10 @@ class ActionTrade: ActionInteractBase
 
 
         PlayerBase ntarget = PlayerBase.Cast(target.GetObject());
+
+		if (!ntarget)
+			return false;
+
 		bool isTraderNPCCharacter = ntarget.m_Trader_IsTrader;
 
 		bool isTraderNPCObject = false;
