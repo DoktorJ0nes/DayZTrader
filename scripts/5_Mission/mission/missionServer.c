@@ -912,6 +912,8 @@ modded class MissionServer
 
 			m_Trader_CurrencyClassnames.Insert(currencyClassname);
 			m_Trader_CurrencyValues.Insert(currencyValue.ToInt());
+
+			currencyCounter++;
 		}
 
 		bool traderInstanceDone = true;
