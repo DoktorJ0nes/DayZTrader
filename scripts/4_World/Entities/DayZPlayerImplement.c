@@ -800,16 +800,17 @@ modded class DayZPlayerImplement
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		this.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 
-		itemType.ToLower();
+		ItemBase itemToCombine = ItemBase.Cast(GetGame().CreateObject(itemType, "0 0 0"));
 
-		if (GetItemMaxQuantity(itemType) <= amount || amount == 0)
-			return mergableItems;
+		if (!itemToCombine)
+			return new array<ItemBase>;
+
+		SetItemAmount(itemToCombine, amount);
 
 		ItemBase item;		
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			string itemPlayerClassname = "";
 
 			if (!item)
 				continue;
@@ -817,15 +818,18 @@ modded class DayZPlayerImplement
 			if (item.IsRuined())
 				continue;
 
-			itemPlayerClassname = item.GetType();
-			itemPlayerClassname.ToLower();
+			if (itemToCombine.GetType() != item.GetType())
+				continue;
 
-			if (itemType == itemPlayerClassname && item.CanBeCombined(this) && !item.IsFullQuantity() && getItemAmount(item) + 1 <= GetItemMaxQuantity(item.GetType()))
+			if (item.CanBeCombined(itemToCombine) && getItemAmount(item) < GetItemMaxQuantity(item.GetType()))
 			{
 				amount -= GetItemMaxQuantity(item.GetType()) - getItemAmount(item);
+				SetItemAmount(itemToCombine, amount);
 				mergableItems.Insert(item);
 			}
 		}
+
+		GetGame().ObjectDelete(itemToCombine);
 
 		if (absolute && amount > 0)
 			return new array<ItemBase>;
