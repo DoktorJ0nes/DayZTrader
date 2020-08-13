@@ -843,9 +843,17 @@ modded class DayZPlayerImplement
 		if (mergeableItems.Count() > 0)
 			return true;
 
-		InventoryLocation il = new InventoryLocation;		
-		if (this.GetInventory().FindFirstFreeLocationForNewEntity(itemType, FindInventoryLocationType.ANY, il))
+		EntityAI item = EntityAI.Cast(GetGame().CreateObject(itemType, "0 0 0"));
+		if (!item)
+			return false;
+
+		SetItemAmount(item, amount);
+		if(this.GetInventory().CanAddEntityToInventory(item))
+		{
+			GetGame().ObjectDelete(item);
 			return true;
+		}
+		GetGame().ObjectDelete(item);
 
 		EntityAI entityInHands = this.GetHumanInventory().GetEntityInHands();
 		if (!entityInHands)
