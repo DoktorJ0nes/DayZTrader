@@ -14,6 +14,8 @@ modded class PlayerBase
         RegisterNetSyncVariableBool("m_Trader_IsTrader");
     }
 
+#ifdef DAYZ_1_09
+#ifndef DAYZ_1_10
     override void SetActions()
 	{
 		super.SetActions();
@@ -24,6 +26,20 @@ modded class PlayerBase
         AddAction(ActionLockVehicleInside);
         AddAction(ActionTrade);
 	}
+#endif
+#endif
+#ifdef DAYZ_1_10
+    override void SetActions(out TInputActionMap InputActionMap)
+	{
+		super.SetActions(InputActionMap);
+
+		AddAction(ActionUnlockVehicle, InputActionMap);
+        AddAction(ActionLockVehicle, InputActionMap);
+        AddAction(ActionUnlockVehicleInside, InputActionMap);
+        AddAction(ActionLockVehicleInside, InputActionMap);
+        AddAction(ActionTrade, InputActionMap);
+	}
+#endif
 
     bool Trader_IsAdmin()
     {
