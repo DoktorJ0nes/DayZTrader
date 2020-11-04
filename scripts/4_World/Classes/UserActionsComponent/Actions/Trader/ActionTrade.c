@@ -87,7 +87,7 @@ class ActionTrade: ActionInteractBase
     bool getCanOpenTraderMenu(vector position, int traderUID)
 	{		
 		PlayerBase player = GetGame().GetPlayer();
-		bool playerIsInSafezoneRange = getIsInSafezoneRange(position)
+		bool playerIsInSafezoneRange = getIsInSafezoneRange(position);
 		
 		if (traderUID == -1 && playerIsInSafezoneRange)
 		{

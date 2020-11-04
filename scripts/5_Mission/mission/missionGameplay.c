@@ -61,6 +61,10 @@ modded class MissionGameplay
 		if ( key == KeyCode.KC_ESCAPE )
 		{	
 			PlayerBase player = GetGame().GetPlayer();
+
+			if (!player)
+				return;
+
 			if (player.m_TraderMenu)
 				player.m_TraderMenu.m_active = false;
 		}
