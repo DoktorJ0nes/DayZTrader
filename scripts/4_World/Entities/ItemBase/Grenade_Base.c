@@ -18,9 +18,17 @@ modded class Grenade_Base extends InventoryItemSuper
         if (!player)
             return false;
 
+        if (!this)
+            return false;
+
         for (int k = 0; k < player.m_Trader_TraderPositions.Count(); k++)
         {
-            if (vector.Distance(this.GetPosition(), player.m_Trader_TraderPositions.Get(k)) <= player.m_Trader_TraderSafezones.Get(k))
+            vector grenadePos = this.GetPosition();
+            vector safezonePos = player.m_Trader_TraderPositions.Get(k);
+            float distanceToSafezone = vector.Distance(grenadePos, safezonePos);
+            float distanceToSafezoneMax = player.m_Trader_TraderSafezones.Get(k);
+
+            if (distanceToSafezone <= distanceToSafezoneMax)
                 return true;
         }
 
@@ -58,8 +66,3 @@ modded class Grenade_Base extends InventoryItemSuper
         return null;
     }
 }
-
-/*modded class ActionUnpin extends ActionSingleUseBase
-{
-
-}*/

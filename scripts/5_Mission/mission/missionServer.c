@@ -153,17 +153,33 @@ modded class MissionServer
 					TraderMessage.PlayerRed("#tm_entered_safezone", player);
 					//TraderMessage.PlayerWhite("#tm_press_to_open_menu", player);
 
+					EntityAI entity_in_hands = player.GetHumanInventory().GetEntityInHands();
 					if(player.IsRestrained())
 					{
 						player.SetRestrained(false);
 
-						//EntityAI item_in_hands = action_data.m_MainItem;
-						EntityAI item_in_hands = player.GetHumanInventory().GetEntityInHands();
-						if(item_in_hands)
+						if(entity_in_hands)
 						{
-							MiscGameplayFunctions.TransformRestrainItem(item_in_hands, null, null, player);
+							MiscGameplayFunctions.TransformRestrainItem(entity_in_hands, null, null, player);
 						}
 					}
+
+					ItemBase item_in_hands = ItemBase.Cast(entity_in_hands);
+					if (item_in_hands)
+					{
+						if (item_in_hands.IsInherited(SmokeGrenadeBase))
+						{
+							SmokeGrenadeBase smoke_in_hands = SmokeGrenadeBase.Cast(item_in_hands);
+							if (smoke_in_hands)
+							{
+								if (smoke_in_hands.GetCompEM().IsWorking())
+								{
+									smoke_in_hands.GetCompEM().SwitchOff();
+								}
+							}
+						}
+					}
+
 					player.SetAllowDamage(false);
 				}
 
@@ -645,11 +661,13 @@ modded class MissionServer
 		player.m_Trader_TraderPositions = new array<vector>;
 		player.m_Trader_TraderVehicleSpawns = new array<vector>;
 		player.m_Trader_TraderVehicleSpawnsOrientation = new array<vector>;
+		player.m_Trader_TraderSafezones = new array<int>;
 		for ( i = 0; i < m_Trader_TraderPositions.Count(); i++ )
 		{
 			player.m_Trader_TraderPositions.Insert(m_Trader_TraderPositions.Get(i));
 			player.m_Trader_TraderVehicleSpawns.Insert(m_Trader_TraderVehicleSpawns.Get(i));
 			player.m_Trader_TraderVehicleSpawnsOrientation.Insert(m_Trader_TraderVehicleSpawnsOrientation.Get(i));
+			player.m_Trader_TraderSafezones.Insert(m_Trader_TraderSafezones.Get(i));
 
 			Param5<int, vector, int, vector, vector> crp5 = new Param5<int, vector, int, vector, vector>( m_Trader_TraderIDs.Get(i), m_Trader_TraderPositions.Get(i), m_Trader_TraderSafezones.Get(i), m_Trader_TraderVehicleSpawns.Get(i), m_Trader_TraderVehicleSpawnsOrientation.Get(i) );
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_MARKER_ENTRY, crp5, true, player.GetIdentity());
