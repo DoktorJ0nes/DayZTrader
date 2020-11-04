@@ -1,26 +1,14 @@
-#define Trader_ShowServerLogs
-
 class TraderMessage
 {
 	static void ServerLog(string str)
 	{
-#ifdef Trader_ShowServerLogs
+#ifdef TRADER_SHOW_SERVER_LOGS
         Print(str);
 #endif
     }
 
-    //static void PlayerWhite(string message, PlayerBase player = NULL)
     static void PlayerWhite(string message, PlayerBase player, float time = 20)
     {
-        /*if (player)
-        {
-            GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_MESSAGE_WHITE, new Param1<string>( message ), false, player.GetIdentity());
-        }
-        else
-        {
-            GetGame().ChatPlayer(32, message);
-        }*/
-
         if (!player)
             return;
 
@@ -34,18 +22,8 @@ class TraderMessage
         }
     }
 
-    //static void PlayerRed(string message, PlayerBase player = NULL)
     static void PlayerRed(string message, PlayerBase player, float time = 20)
     {
-        /*if (player)
-        {
-            GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_MESSAGE_RED, new Param1<string>( message ), false, player.GetIdentity());
-        }
-        else
-        {
-            GetGame().Chat( message, "colorStatusChannel" );
-        }*/
-
         if (!player)
             return;
 

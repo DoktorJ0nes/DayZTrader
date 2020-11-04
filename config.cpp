@@ -29,17 +29,17 @@ class CfgMods
 			class gameScriptModule
 			{
 				value = "";
-				files[] = {"TM/Trader/scripts/3_Game"};
+				files[] = {"TM/Trader/scripts/defines", "TM/Trader/scripts/3_Game"};
 			};
 			class worldScriptModule
 			{
 				value = "";
-				files[] = {"TM/Trader/scripts/4_World"};
+				files[] = {"TM/Trader/scripts/defines", "TM/Trader/scripts/4_World"};
 			};
 			class missionScriptModule
 			{
 				value = "";
-				files[] = {"TM/Trader/scripts/5_Mission"};
+				files[] = {"TM/Trader/scripts/defines", "TM/Trader/scripts/5_Mission"};
 			};
 		};
 	};
