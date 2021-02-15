@@ -48,7 +48,7 @@ class CfgPatches
 {
 	class trader
 	{
-		units[] = {"MoneyRuble1","MoneyRuble5","MoneyRuble10","MoneyRuble25","MoneyRuble50","MoneyRuble100","Land_RoadCone","Hoodie_GraffitiTiles","Hoodie_DrJ0nes","VehicleKeyBase","VehicleKeyDuplicate","VehicleKeyRed","VehicleKeyBlack","VehicleKeyGrayCyan","VehicleKeyYellow","VehicleKeyPurple"};
+		units[] = {"MoneyRuble1","MoneyRuble5","MoneyRuble10","MoneyRuble25","MoneyRuble50","MoneyRuble100","Land_RoadCone","Hoodie_GraffitiTiles","Hoodie_DrJ0nes","VehicleKeyBase","VehicleKeyDuplicate","VehicleKeyLost","VehicleKeyRed","VehicleKeyBlack","VehicleKeyGrayCyan","VehicleKeyYellow","VehicleKeyPurple"};
 		weapons[] = {};
 		requiredVersion = 0.1;
 		requiredAddons[] = {"DZ_Data"};
@@ -183,6 +183,12 @@ class CfgVehicles
 	{
 		displayName = "Duplicated Key";
 		descriptionShort = "Duplicates the Vehicle Key that you are holding in your Hands.";
+	};
+	class VehicleKeyLost: VehicleKeyBase
+	{
+		displayName = "Lost Key";
+		//descriptionShort = "Lost Key Replacement for the Vehicle in the Spawn Area, if you last drove it.";
+		descriptionShort = "Creates a Key for a Vehicle in case you lost it. Works also for Vehicles that never had a Key before.";
 	};
 	class VehicleKeyRed: VehicleKeyBase
 	{

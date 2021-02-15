@@ -164,6 +164,51 @@ modded class DayZPlayerImplement
 			itemQuantity = 1;
 		}
 
+		bool isLostKey = false;
+		if (itemQuantity == -8) // is Lost Key
+		{
+			array<Transport> foundVehicles = GetVehicleToGetKeyFor(traderUID);
+
+			if (foundVehicles.Count() < 1)
+			{
+				TraderMessage.PlayerWhite("There is no Vehicle\nin the Spawn Area!\nMake sure you was the last Driver!", this);
+				return;
+			}
+
+			if (foundVehicles.Count() > 1)
+			{
+				TraderMessage.PlayerWhite("Multiple Vehicles found\nin the Spawn Area!", this);
+				return;
+			}
+
+			CarScript carScript;
+			Class.CastTo(carScript, foundVehicles.Get(0));
+
+			vehicleKeyHash = carScript.m_Trader_VehicleKeyHash
+
+			if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
+			{
+				TraderMessage.PlayerWhite(getItemDisplayName("VehicleKey") + "\n " + "#tm_added_to_inventory", this);
+				vehicleKeyHash = createVehicleKeyInPlayerInventory(vehicleKeyHash);
+			}
+			else
+			{
+				TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + getItemDisplayName("VehicleKey") + "\n" + "#tm_was_placed_on_ground", this);
+				vehicleKeyHash = spawnVehicleKeyOnGround(vehicleKeyHash);
+				GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(false), true, this.GetIdentity());
+			}
+
+			deductPlayerCurrency(itemCosts);
+			
+			carScript.m_Trader_HasKey = true;
+			carScript.m_Trader_VehicleKeyHash = vehicleKeyHash;
+			carScript.SynchronizeValues();
+
+			isLostKey = true;
+			itemType = "VehicleKeyLost";
+			itemQuantity = 1;
+		}
+
 		traderServerLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 
 		if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
@@ -203,7 +248,7 @@ modded class DayZPlayerImplement
 
 			GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, this.GetIdentity());
 		}
-		else // Is not a Vehicle
+		else if (itemType != "VehicleKeyLost") // Is not a Vehicle
 		{		
 			deductPlayerCurrency(itemCosts);
 
@@ -1300,6 +1345,39 @@ modded class DayZPlayerImplement
 			return nearby_objects.Get(0).GetType();
 
 		return "FREE";
+	}
+
+	array<Transport> GetVehicleToGetKeyFor(int traderUID)
+	{
+		vector size = "3 5 9";
+		array<Object> excluded_objects = new array<Object>;
+		array<Object> nearby_objects = new array<Object>;
+
+		array<Transport> found_vehicles = new array<Transport>;
+		Transport transport;
+
+		if (GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects))
+		{
+			for (int i = 0; i < nearby_objects.Count(); i++)
+			{
+				transport = NULL;
+				Class.CastTo(transport, nearby_objects.Get(i));
+				if (transport)
+				{
+					// Check if Player was last Driver:
+					CarScript carsScript = CarScript.Cast(transport);
+					if(!carsScript)
+						continue;
+					
+					if(carsScript.m_Trader_LastDriverId != this.GetIdentity().GetId())
+						continue;	
+
+					found_vehicles.Insert(transport);
+				}
+			}
+		}
+
+		return found_vehicles;
 	}
 
 	Object GetVehicleToSell(int traderUID, string vehicleClassname) // duplicate

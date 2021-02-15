@@ -1063,23 +1063,26 @@ modded class MissionServer
 				qntStr = GetItemMaxQuantity(itemStr).ToString();
 			}
 
-			if (qntStr.Contains("VNK") || qntStr.Contains("vnk"))
+			if (qntStr == "VNK" || qntStr == "vnk")
 				qntStr = "-6";
 
-			if (qntStr.Contains("V") || qntStr.Contains("v"))
+			if (qntStr == "V" || qntStr == "v")
 				qntStr = "-2";
 
-			if (qntStr.Contains("M") || qntStr.Contains("m"))
+			if (qntStr == "M" || qntStr == "m")
 				qntStr = "-3";
 
-			if (qntStr.Contains("W") || qntStr.Contains("w"))
+			if (qntStr == "W" || qntStr == "w")
 				qntStr = "-4";
 
-			if (qntStr.Contains("S") || qntStr.Contains("s"))
+			if (qntStr == "S" || qntStr == "s")
 				qntStr = "-5";
 
-			if (qntStr.Contains("K") || qntStr.Contains("k"))
+			if (qntStr == "K" || qntStr == "k")
 				qntStr = "-7";
+
+			if (qntStr == "KL" || qntStr == "kl")
+				qntStr = "-8";
 			
 			string buyStr = strs.Get(2);
 			buyStr = FileReadHelper.TrimSpaces(buyStr);
