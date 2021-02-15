@@ -22,6 +22,12 @@ class ActionTrade: ActionInteractBase
     {
         if ( GetGame().IsServer() )
             return true;
+
+		if ( player.m_Trader_RecievedAllData == false )
+        {            
+            player.MessageStatus("[Trader] MISSING TRADER DATA FROM SERVER!");                
+            return false;
+        }
         
         bool isTraderNPCCharacter = false;
 
@@ -41,12 +47,6 @@ class ActionTrade: ActionInteractBase
             return false;
 
         vector playerPosition = player.GetPosition();
-
-        if ( player.m_Trader_RecievedAllData == false )
-        {            
-            player.MessageStatus("[Trader] MISSING TRADER DATA FROM SERVER!");                
-            return false;
-        }
 
         // only call these after we made sure the client has all trader data loaded!
         int traderUID = getNearbyTraderUID(playerPosition);
