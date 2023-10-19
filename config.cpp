@@ -1,12 +1,3 @@
-////////////////////////////////////////////////////////////////////
-//DeRap: Trader\config.bin
-//Produced from mikero's Dos Tools Dll version 7.03
-//https://armaservices.maverick-applications.com/Products/MikerosDosTools/default
-//'now' is Thu May 16 22:05:14 2019 : 'file' last modified on Wed May 15 17:36:14 2019
-////////////////////////////////////////////////////////////////////
-
-#define _ARMA_
-
 class CfgMods
 {
 	class Trader

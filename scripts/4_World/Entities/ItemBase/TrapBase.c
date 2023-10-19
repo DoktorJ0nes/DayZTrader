@@ -8,7 +8,6 @@ modded class TrapBase
                return;
         }
 
-
         super.StartActivate(player);
 	}
 }

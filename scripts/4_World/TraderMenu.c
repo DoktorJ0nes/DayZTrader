@@ -10,7 +10,7 @@ class TraderMenu extends UIScriptedMenu
 	TextWidget m_TraderName;
 	XComboBoxWidget m_XComboboxCategorys;
 	ItemPreviewWidget m_ItemPreviewWidget;
-	protected EntityAI previewItem;
+	protected EntityAI m_PreviewItem;
 	MultilineTextWidget m_ItemDescription;
 	TextWidget m_ItemWeight;
 	float m_UiUpdateTimer = 0;
@@ -35,6 +35,8 @@ class TraderMenu extends UIScriptedMenu
 	
 	bool updateListbox = false;
 	
+	PlayerBase m_Player;
+	
 	ref array<string> m_Categorys; // unnoetig ????
 	ref array<int> m_CategorysTraderKey;
 	ref array<int> m_CategorysKey;
@@ -48,6 +50,15 @@ class TraderMenu extends UIScriptedMenu
 	
 	ref TStringArray m_FileContent;
 
+
+	PlayerBase GetThisPlayer()
+	{
+		if (!m_Player)
+			m_Player = PlayerBase.Cast(GetGame().GetPlayer());
+
+		return m_Player;
+	}
+	
 	void TraderMenu()
 	{		
 		m_Player_CurrencyAmount = 0;
@@ -57,13 +68,10 @@ class TraderMenu extends UIScriptedMenu
 	
 	void ~TraderMenu()
 	{
-		PlayerBase player = g_Game.GetPlayer();
-		player.GetInputController().SetDisabled(false);
+		GetThisPlayer().GetInputController().SetDisabled(false);
 
-		if ( previewItem ) 
-		{
-			GetGame().ObjectDelete( previewItem );
-		}
+		if ( m_PreviewItem ) 
+			GetGame().ObjectDelete( m_PreviewItem );
 	}
 
     override Widget Init()
@@ -130,7 +138,7 @@ class TraderMenu extends UIScriptedMenu
 				updateItemPreview(itemType);
 			}
 
-			PlayerBase player = g_Game.GetPlayer();
+			PlayerBase player = GetThisPlayer();
 			float playerDistanceToTrader = vector.Distance(player.GetPosition(), player.m_Trader_TraderPositions.Get(m_TraderUID));
 			if (playerDistanceToTrader > 1.7)
 				GetGame().GetUIManager().Back();
@@ -165,9 +173,9 @@ class TraderMenu extends UIScriptedMenu
 
 		GetGame().GetInput().ResetGameFocus();
 
-		if ( previewItem ) 
+		if ( m_PreviewItem ) 
 		{
-			GetGame().ObjectDelete( previewItem );
+			GetGame().ObjectDelete( m_PreviewItem );
 		}
 
 		Close();
@@ -177,7 +185,7 @@ class TraderMenu extends UIScriptedMenu
 	{
 		super.OnClick(w, x, y, button);
 
-		PlayerBase m_Player = g_Game.GetPlayer();
+		PlayerBase player = GetThisPlayer();
 		
 		local int row_index = m_ListboxItems.GetSelectedRow();
 		string itemType = m_ListboxItemsClassnames.Get(row_index);
@@ -185,27 +193,27 @@ class TraderMenu extends UIScriptedMenu
 		
 		if ( w == m_BtnBuy )
 		{
-			if(!previewItem)
+			if(!m_PreviewItem)
 			{
-				TraderMessage.PlayerWhite("Item dosent exist!\nWrong Classname?", m_Player);
+				TraderMessage.PlayerWhite("Item dosent exist!\nWrong Classname?", player);
 				return true;
 			}
 
 			if (m_UiBuyTimer > 0)
 			{
-				TraderMessage.PlayerWhite("#tm_not_that_fast", m_Player);
+				TraderMessage.PlayerWhite("#tm_not_that_fast", player);
 				return true;
 			}
 			m_UiBuyTimer = m_buySellTime;
 
-			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_BUY, new Param3<int, int, string>( m_TraderUID, m_ItemIDs.Get(row_index), getItemDisplayName(m_ListboxItemsClassnames.Get(row_index))), true);
+			GetGame().RPCSingleParam(player, TRPCs.RPC_BUY, new Param3<int, int, string>( m_TraderUID, m_ItemIDs.Get(row_index), getItemDisplayName(m_ListboxItemsClassnames.Get(row_index))), true);
 			
 			return true;
 		}
 		
 		if ( w == m_BtnSell )
 		{
-			if(!previewItem)
+			if(!m_PreviewItem)
 			{
 				TraderMessage.PlayerWhite("Item dosent exist!\nWrong Classname?", m_Player);
 				return true;
@@ -311,7 +319,7 @@ class TraderMenu extends UIScriptedMenu
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(1, 1, 1, 1) );
 			}
 
-			EntityAI entityInHands = g_Game.GetPlayer().GetHumanInventory().GetEntityInHands();
+			EntityAI entityInHands = GetThisPlayer().GetHumanInventory().GetEntityInHands();
 			if (entityInHands)
 			{
 				if (IsAttached(entityInHands, itemClassname))
@@ -340,12 +348,12 @@ class TraderMenu extends UIScriptedMenu
 				}
 			}
 
-			if ( previewItem )
-				GetGame().ObjectDelete( previewItem );
+			if ( m_PreviewItem )
+				GetGame().ObjectDelete( m_PreviewItem );
 
-			previewItem = GetGame().CreateObject( itemType, "0 0 0", true, false, true );
+			m_PreviewItem = EntityAI.Cast(GetGame().CreateObject( itemType, "0 0 0", true, false, true ));
 
-			m_ItemPreviewWidget.SetItem( previewItem );
+			m_ItemPreviewWidget.SetItem( m_PreviewItem );
 			m_ItemPreviewWidget.SetModelPosition( Vector(0,0,0.5) );
 
 			float itemx, itemy;		
@@ -357,7 +365,7 @@ class TraderMenu extends UIScriptedMenu
 			m_ItemPreviewWidget.SetPos( -0.225, -0.225 );
 
 			// update Item Description:
-			InventoryItem iItem = InventoryItem.Cast( previewItem );
+			InventoryItem iItem = InventoryItem.Cast( m_PreviewItem );
 
 			if (iItem)
 			{
@@ -373,7 +381,7 @@ class TraderMenu extends UIScriptedMenu
 
 	string GetItemWeightText()
 	{
-		ItemBase item_IB = ItemBase.Cast( previewItem );
+		ItemBase item_IB = ItemBase.Cast( m_PreviewItem );
 
 		int weight = item_IB.GetSingleInventoryItemWeight();
 		//string weightStr = "";
@@ -401,7 +409,7 @@ class TraderMenu extends UIScriptedMenu
 	
 	void updatePlayerCurrencyAmount()
 	{
-		PlayerBase m_Player = g_Game.GetPlayer();
+		//PlayerBase m_Player = GetThisPlayer();
 
 		m_Player_CurrencyAmount = 0;
 		m_Player_CurrencyAmount = getPlayerCurrencyAmount();
@@ -410,12 +418,12 @@ class TraderMenu extends UIScriptedMenu
 	
 	int getPlayerCurrencyAmount() // duplicate
 	{
-		PlayerBase m_Player = g_Game.GetPlayer();
+		PlayerBase player = GetThisPlayer();
 		
 		int currencyAmount = 0;
 		
 		array<EntityAI> itemsArray = new array<EntityAI>;
-		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+		player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 
 		ItemBase item;
 		
@@ -426,11 +434,11 @@ class TraderMenu extends UIScriptedMenu
 			if (!item)
 				continue;
 
-			for (int j = 0; j < m_Player.m_Trader_CurrencyClassnames.Count(); j++)
+			for (int j = 0; j < player.m_Trader_CurrencyClassnames.Count(); j++)
 			{
-				if(item.GetType() == m_Player.m_Trader_CurrencyClassnames.Get(j))
+				if(item.GetType() == player.m_Trader_CurrencyClassnames.Get(j))
 				{
-					currencyAmount += getItemAmount(item) * m_Player.m_Trader_CurrencyValues.Get(j);
+					currencyAmount += getItemAmount(item) * player.m_Trader_CurrencyValues.Get(j);
 				}
 			}
 		}
@@ -440,7 +448,7 @@ class TraderMenu extends UIScriptedMenu
 	
 	bool isInPlayerInventory(string itemClassname, int amount) // duplicate
 	{
-		PlayerBase m_Player = g_Game.GetPlayer();
+		PlayerBase player = GetThisPlayer();
 		itemClassname.ToLower();
 		
 		bool isMagazine = false;
@@ -456,7 +464,7 @@ class TraderMenu extends UIScriptedMenu
 			isSteak = true;
 
 		array<EntityAI> itemsArray = new array<EntityAI>;		
-		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+		player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
 		//TraderMessage.PlayerWhite("--------------");
 
@@ -635,7 +643,7 @@ class TraderMenu extends UIScriptedMenu
 		if (!parent)
 			return false;
 
-		PlayerBase m_Player = g_Game.GetPlayer();
+//		PlayerBase player = GetThisPlayer();
 
 		if (parent.IsWeapon() || parent.IsMagazine())
 			return true;
@@ -746,7 +754,7 @@ class TraderMenu extends UIScriptedMenu
 
 
 		// Check with Ghostentity
-		/*EntityAI entity = g_Game.GetPlayer().SpawnEntityOnGroundPos(attachmentClassname, vector.Zero); 
+		/*EntityAI entity = GetThisPlayer().SpawnEntityOnGroundPos(attachmentClassname, vector.Zero); 
 		TraderMessage.PlayerWhite("DEBUG: Placed " + entity.GetDisplayName());
 
 		if ( parentEntity.GetInventory() && parentEntity.GetInventory().CanAddAttachment( entity ) )
@@ -996,24 +1004,24 @@ class TraderMenu extends UIScriptedMenu
 	
 	bool LoadFileValues()
 	{
-		PlayerBase m_Player = g_Game.GetPlayer();
+		PlayerBase player = GetThisPlayer();
 		
-		m_TraderName.SetText(m_Player.m_Trader_TraderNames.Get(m_TraderID));
-		m_Saldo.SetText(m_Player.m_Trader_CurrencyName + ": ");
+		m_TraderName.SetText(player.m_Trader_TraderNames.Get(m_TraderID));
+		m_Saldo.SetText(player.m_Trader_CurrencyName + ": ");
 
 		m_XComboboxCategorys.ClearAll();
 		m_Categorys = new array<string>;
 		m_CategorysTraderKey = new array<int>;
 		m_CategorysKey = new array<int>;
 		
-		for ( int i = 0; i < m_Player.m_Trader_Categorys.Count(); i++ )
+		for ( int i = 0; i < player.m_Trader_Categorys.Count(); i++ )
 		{
-			if (m_TraderID != m_Player.m_Trader_CategorysTraderKey.Get(i))
+			if (m_TraderID != player.m_Trader_CategorysTraderKey.Get(i))
 				continue;
 			
-			m_XComboboxCategorys.AddItem(m_Player.m_Trader_Categorys.Get(i));
-			m_Categorys.Insert(m_Player.m_Trader_Categorys.Get(i));
-			m_CategorysTraderKey.Insert(m_Player.m_Trader_CategorysTraderKey.Get(i));
+			m_XComboboxCategorys.AddItem(player.m_Trader_Categorys.Get(i));
+			m_Categorys.Insert(player.m_Trader_Categorys.Get(i));
+			m_CategorysTraderKey.Insert(player.m_Trader_CategorysTraderKey.Get(i));
 			m_CategorysKey.Insert(i);
 		}
 		
@@ -1022,7 +1030,7 @@ class TraderMenu extends UIScriptedMenu
 	
 	bool LoadItemsFromFile()
 	{
-		PlayerBase m_Player = g_Game.GetPlayer();
+		PlayerBase player = GetThisPlayer();
 		
 		m_ListboxItemsClassnames = new array<string>;
 		m_ListboxItemsQuantity = new array<int>;
@@ -1030,14 +1038,14 @@ class TraderMenu extends UIScriptedMenu
 		m_ListboxItemsSellValue = new array<int>;
 		m_ItemIDs = new array<int>;
 			
-		for ( int i = 0; i < m_Player.m_Trader_ItemsClassnames.Count(); i++ )
+		for ( int i = 0; i < player.m_Trader_ItemsClassnames.Count(); i++ )
 		{			
-			if ( m_Player.m_Trader_ItemsCategoryId.Get(i) == m_CategorysKey.Get(m_CategorysCurrentIndex) )
+			if ( player.m_Trader_ItemsCategoryId.Get(i) == m_CategorysKey.Get(m_CategorysCurrentIndex) )
 			{
-				m_ListboxItemsClassnames.Insert(m_Player.m_Trader_ItemsClassnames.Get(i));
-				m_ListboxItemsQuantity.Insert(m_Player.m_Trader_ItemsQuantity.Get(i));
-				m_ListboxItemsBuyValue.Insert(m_Player.m_Trader_ItemsBuyValue.Get(i));
-				m_ListboxItemsSellValue.Insert(m_Player.m_Trader_ItemsSellValue.Get(i));
+				m_ListboxItemsClassnames.Insert(player.m_Trader_ItemsClassnames.Get(i));
+				m_ListboxItemsQuantity.Insert(player.m_Trader_ItemsQuantity.Get(i));
+				m_ListboxItemsBuyValue.Insert(player.m_Trader_ItemsBuyValue.Get(i));
+				m_ListboxItemsSellValue.Insert(player.m_Trader_ItemsSellValue.Get(i));
 				m_ItemIDs.Insert(i);
 			}
 		}

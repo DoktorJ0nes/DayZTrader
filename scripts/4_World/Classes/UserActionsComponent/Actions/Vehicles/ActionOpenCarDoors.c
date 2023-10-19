@@ -1,9 +1,4 @@
-#ifdef DAYZ_1_10
-modded class ActionOpenCarDoors
-#endif
-#ifndef DAYZ_1_10
 modded class ActionCarDoors: ActionInteractBase
-#endif
 {
     override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
@@ -20,7 +15,6 @@ modded class ActionCarDoors: ActionInteractBase
 	}
 }
 
-#ifndef DAYZ_1_10
 modded class ActionCarDoorsOutside: ActionInteractBase
 {
     override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -37,4 +31,3 @@ modded class ActionCarDoorsOutside: ActionInteractBase
 		return super.ActionCondition(player, target, item);
 	}
 }
-#endif
