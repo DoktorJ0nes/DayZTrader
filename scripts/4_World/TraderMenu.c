@@ -57,6 +57,7 @@ class TraderMenu extends UIScriptedMenu
 	ref array<int> m_ItemIDs;
 	
 	ref TStringArray m_FileContent;
+	private bool                m_SellablesOnly = false;
 	private int                 m_PreviewWidgetRotationX;
 	private int                 m_PreviewWidgetRotationY;
 	private vector              m_PreviewWidgetOrientation;	
@@ -65,6 +66,7 @@ class TraderMenu extends UIScriptedMenu
     private string              m_SearchFilter = "";
     private string              m_OldSearchFilter = "";
     private EditBoxWidget		m_SearchBox; 
+    private CheckBoxWidget		m_SellablesCheckbox; 
 	ref array<ref TraderItem> m_FilteredListOfTraderItems;
 	ref array<ref TraderItem> m_ListOfCategoryTraderItems;
 	ref array<ref TraderItem> m_ListOfTraderItems;
@@ -106,6 +108,8 @@ class TraderMenu extends UIScriptedMenu
 		m_ItemWeight = TextWidget.Cast(layoutRoot.FindAnyWidget("ItemWeight") );
 		m_ItemQuantity = TextWidget.Cast(layoutRoot.FindAnyWidget("ItemQuantity"));
 		m_SearchBox    = EditBoxWidget.Cast( layoutRoot.FindAnyWidget( "SearchBox" ) );
+		m_SellablesCheckbox = CheckBoxWidget.Cast(layoutRoot.FindAnyWidget( "SellablesCheckBox" ) );
+		m_SellablesCheckbox.SetChecked(false);
         return layoutRoot;
     }
 
@@ -215,7 +219,14 @@ class TraderMenu extends UIScriptedMenu
     }
 
 	override bool OnClick( Widget w, int x, int y, int button )
-	{				
+	{			
+		if ( w == m_SellablesCheckbox )
+		{
+			m_SellablesCheckbox.SetChecked( !m_SellablesOnly );
+			m_SellablesOnly = !m_SellablesOnly;
+			SearchForItems();
+		}	
+
 		if ( w == m_BtnCancel )
 		{
 			Close();
@@ -700,6 +711,9 @@ class TraderMenu extends UIScriptedMenu
 		if (!parent)
 			return false;
 
+		if (item.GetInventory().IsAttachment() || item.GetNumberOfItems() > 0)
+			return true;
+
 		if (parent.IsWeapon() || parent.IsMagazine())
 			return true;
 
@@ -815,6 +829,21 @@ class TraderMenu extends UIScriptedMenu
 				}
 			}
 		}
+		else if(m_SellablesOnly)
+		{
+			countFilter = 0;
+			foreach(TraderItem sellableTraderItem : m_ListOfTraderItems)
+			{                
+				if(!ShouldShowInSellablesList(sellableTraderItem))
+						continue;
+				displayName = getItemDisplayName(sellableTraderItem.ClassName);
+				m_FilteredListOfTraderItems.Insert(sellableTraderItem);
+				m_ListboxItems.AddItem( displayName, NULL, 0 );	
+				m_ListboxItems.SetItem( countFilter, "" + sellableTraderItem.BuyValue, NULL, 1 );
+				m_ListboxItems.SetItem( countFilter, "" + sellableTraderItem.SellValue, NULL, 2 );
+				countFilter++;
+			}
+		}
 		else
 		{
 			countFilter = 0;
@@ -836,6 +865,20 @@ class TraderMenu extends UIScriptedMenu
             m_ListboxItems.SelectRow(0);
         }
         
+	}
+
+	bool ShouldShowInSellablesList(TraderItem catTraderItem)
+	{
+		if(!m_SellablesCheckbox.IsChecked())
+			return true;			
+		string itemClassname = catTraderItem.ClassName;
+		int itemQuantity = catTraderItem.Quantity;
+		if (catTraderItem.SellValue < 0)
+			return false;
+		else if (isInPlayerInventory(itemClassname, itemQuantity) || (itemQuantity == -2 && GetVehicleToSell(itemClassname)))
+			return true;
+
+		return false;
 	}
 
     string GetEntityAITooltip(EntityAI item)

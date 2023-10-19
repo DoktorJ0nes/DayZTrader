@@ -138,7 +138,7 @@ modded class DayZPlayerImplement
 			currentAmount = 1;
 		}
 
-		if (itemHasSpawnedOrStacked > 0)
+		if (itemHasSpawnedOrStacked > 0 && !itemType.Contains("Ruble"))
 			TraderMessage.PlayerWhite("#tm_some" + " " + itemDisplayNameClient + "\n" + "#tm_added_to_inventory", PlayerBase.Cast(this));
 
 		//any leftover or new stacks
@@ -368,6 +368,51 @@ modded class DayZPlayerImplement
 			itemType = vehicleKeyinHands.GetType();
 			itemQuantity = 1;
 		}
+		
+		bool isLostKey = false;
+		if (itemQuantity == -8) // is Lost Key
+		{
+			array<Transport> foundVehicles = GetVehicleToGetKeyFor(traderUID);
+
+			if (foundVehicles.Count() < 1)
+			{
+				TraderMessage.PlayerWhite("There is no Vehicle\nin the Spawn Area!\nMake sure you was the last Driver!", this);
+				return;
+			}
+
+			if (foundVehicles.Count() > 1)
+			{
+				TraderMessage.PlayerWhite("Multiple Vehicles found\nin the Spawn Area!", this);
+				return;
+			}
+
+			CarScript carScript;
+			Class.CastTo(carScript, foundVehicles.Get(0));
+
+			vehicleKeyHash = carScript.m_Trader_VehicleKeyHash
+
+			if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
+			{
+				TraderMessage.PlayerWhite(getItemDisplayName("VehicleKey") + "\n " + "#tm_added_to_inventory", this);
+				vehicleKeyHash = createVehicleKeyInPlayerInventory(vehicleKeyHash);
+			}
+			else
+			{
+				TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + getItemDisplayName("VehicleKey") + "\n" + "#tm_was_placed_on_ground", this);
+				vehicleKeyHash = spawnVehicleKeyOnGround(vehicleKeyHash);
+				GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(false), true, this.GetIdentity());
+			}
+
+			deductPlayerCurrency(itemCosts);
+			
+			carScript.m_Trader_HasKey = true;
+			carScript.m_Trader_VehicleKeyHash = vehicleKeyHash;
+			carScript.SynchronizeValues();
+
+			isLostKey = true;
+			itemType = "VehicleKeyLost";
+			itemQuantity = 1;
+		}
 
 		traderServerLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 
@@ -392,7 +437,7 @@ modded class DayZPlayerImplement
 
 			GetGame().RPCSingleParam(PlayerBase.Cast(this), TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(false), true, GetIdentity());
 		}
-		else // Is not a Vehicle
+		else if (itemType != "VehicleKeyLost")// Is not a Vehicle
 		{
 			deductPlayerCurrency(itemCosts);
 			if (isDuplicatingKey)
@@ -1184,6 +1229,7 @@ modded class DayZPlayerImplement
 				if (itemAmount == amount || isMagazine || isWeapon || isSteak)
 				{
 					deleteItem(item);
+					//DeleteItemAndOfferRewardsForAllAttachments(item);
 					
 					UpdateInventoryMenu(); // RPC-Call needed?
 					return true;
@@ -1226,6 +1272,7 @@ modded class DayZPlayerImplement
 				if (itemAmount == amount || isMagazine || isWeapon || isSteak)
 				{
 					deleteItem(item);
+					//DeleteItemAndOfferRewardsForAllAttachments(item);
 					
 					UpdateInventoryMenu(); // RPC-Call needed?
 					return true;
@@ -1244,6 +1291,28 @@ modded class DayZPlayerImplement
 		return false;
 	}
 
+	//We need something like this but better
+	//removed for now
+	void DeleteItemAndOfferRewardsForAllAttachments(ItemBase item)
+	{
+		int totalSellValue = 0;
+		for ( int i = 0; i < item.GetInventory().AttachmentCount(); i++ )
+		{
+			EntityAI attachment = item.GetInventory().GetAttachmentFromIndex ( i );
+			int itemID = m_Trader_ItemsClassnames.Find(attachment.GetType());
+			if ( itemID != -1 )
+			{
+				int itemQuantity = m_Trader_ItemsQuantity.Get(itemID);
+				int itemSellValue = m_Trader_ItemsSellValue.Get(itemID);
+				if (itemSellValue < 0)
+					continue;
+				totalSellValue += itemSellValue;
+			}
+		}
+		increasePlayerCurrency(totalSellValue);
+		item.Delete();
+	}
+
 	void deleteItem(ItemBase item)
 	{
 		if (item)
@@ -1259,6 +1328,9 @@ modded class DayZPlayerImplement
 
 		if (!parent)
 			return false;
+
+		if (item.GetInventory().IsAttachment() || item.GetNumberOfItems() > 0)
+			return true;
 
 		if (parent.IsWeapon() || parent.IsMagazine())
 			return true;
