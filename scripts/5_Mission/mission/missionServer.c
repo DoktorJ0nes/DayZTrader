@@ -90,27 +90,7 @@ modded class MissionServer
 				PlayerBase player = PlayerBase.Cast(m_Players.Get(j));
 				
 				if ( !player )
-					continue;
-				
-				if ( !player.m_Trader_WelcomeMessageHandled && player.IsAlive() )
-				{				
-					if (player.m_Trader_WelcomeMessageTimer > 0)
-						player.m_Trader_WelcomeMessageTimer -= m_Trader_StatUpdateTimeMax;
-					else
-					{
-						if ( !player.m_Trader_TraderModIsLoaded )
-						{
-							Param1<string> msgRp0 = new Param1<string>( "This Server uses Dr_J0nes Trader Mod." );
-							GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
-							
-							msgRp0.param1 = "Please download and install it!";
-							GetGame().RPCSingleParam(player, ERPCs.RPC_USER_ACTION_MESSAGE, msgRp0, true, player.GetIdentity());
-						}
-						
-						player.m_Trader_WelcomeMessageHandled = true;
-					}
-				}
-
+					continue;	
 				if (!player.IsAlive())
 					continue;
 				
@@ -708,6 +688,7 @@ modded class MissionServer
 		// confirm that all data was sended:
 		player.m_Trader_RecievedAllData = true;
 		
+		TraderMessage.ServerLog("[TRADER] SENT DATA TO PLAYER");
 		Param1<bool> crpConf = new Param1<bool>( true );
 		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION, crpConf, true, player.GetIdentity());
 		//TraderMessage.ServerLog("[TRADER] DEBUG END");
@@ -1047,7 +1028,7 @@ modded class MissionServer
 			if (line_content.Contains("<Currency"))
 				continue;
 
-			TraderMessage.ServerLog("[TRADER] READING ITEM ENTRY..");
+			//TraderMessage.ServerLog("[TRADER] READING ITEM ENTRY..");
 		
 			TStringArray strs = new TStringArray;
 			line_content.Split( ",", strs );
