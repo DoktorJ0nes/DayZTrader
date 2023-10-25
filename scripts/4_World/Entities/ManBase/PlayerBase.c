@@ -1,14 +1,103 @@
 modded class PlayerBase
 {
+    protected bool m_IsInSafeZone = false;
+
     bool m_Trader_IsTrader = false;
+
+	protected int m_SafeZoneCount = 0;
+	protected int m_SafeZoneCountdown = 0;
+
     ref TraderMenu m_TraderMenu;
+	
+	void PlayerBase()
+	{
+		RegisterNetSyncVariableBool("m_IsInSafeZone");
+	}
+
+	bool IsInSafeZone()
+	{
+		return m_IsInSafeZone;
+	}
+
+	void SetSafeZoneCountdown(int value)
+	{
+		m_SafeZoneCountdown = value;
+	}
+
+	void AddSafeZoneTrigger()
+	{
+		if (!GetGame().IsServer())
+			return;
+
+		m_SafeZoneCount++;
+		//Print("Adding to count: " + m_SafeZoneCount + ", in safezone: " + m_IsInSafeZone);
+		
+		if (!m_IsInSafeZone && m_SafeZoneCount > 0)
+		{
+			SendToGameLabsTrader(this, "", "", "has entered a safezone");
+
+			TraderMessage.DeleteSafezoneMessages(this);
+			TraderMessage.PlayerRed("#tm_entered_safezone", this);
+
+			SetAllowDamage(false);
+			SetInSafeZone(true);
+		}
+	}
+
+	void RemoveSafeZoneTrigger()
+	{
+		if (!GetGame().IsServer())
+			return;
+
+		if (m_SafeZoneCount > 0)
+		{
+			m_SafeZoneCount--;
+			//Print("Removing from count: " + m_SafeZoneCount + ", in safezone: " + m_IsInSafeZone);
+		}
+		
+		if (m_IsInSafeZone && m_SafeZoneCount == 0)
+		{
+			TraderMessage.Safezone(this, m_SafeZoneCountdown);
+			GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(OnExitSafeZoneCountdownComplete, m_SafeZoneCountdown * 1000, false);
+		}
+	}
+
+	protected void OnExitSafeZoneCountdownComplete()
+	{
+		TraderMessage.DeleteSafezoneMessages(this);
+		TraderMessage.PlayerRed("#tm_left_safezone", this);
+
+		SendToGameLabsTrader(this, "", "", "has left a safezone");
+		
+		bool godModeVPP, godModeCOT;
+		EnScript.GetClassVar(this, "hasGodmode", 0, godModeVPP);
+		EnScript.GetClassVar(this, "m_COT_GodMode", 0, godModeCOT);
+
+		if (!godModeVPP && !godModeCOT)
+			SetAllowDamage(true);
+
+		SetInSafeZone(false);
+	}
+
+	void SetInSafeZone(bool state)
+	{
+		m_IsInSafeZone = state;
+		SetSynchDirty();
+	}
+	
+	bool Trader_IsAdmin()
+    {
+        for (int i = 0; i < m_Trader_AdminPlayerUIDs.Count(); i++)
+        {
+            if (m_Trader_AdminPlayerUIDs.Get(i) == m_Trader_PlayerUID)
+                return true;
+        }
+
+        return false;
+    }
 
     override void Init()
     {
-        DayzPlayerItemBehaviorCfg toolsOneHanded = new DayzPlayerItemBehaviorCfg;
-        toolsOneHanded.SetToolsOneHanded();   
-
-        GetDayZPlayerType().AddItemInHandsProfileIK("VehicleKeyBase", "dz/anims/workspaces/player/player_main/props/player_main_1h_keys.asi", toolsOneHanded, "dz/anims/anm/player/ik/gear/handcuff_keys.anm");
         super.Init();
 
         RegisterNetSyncVariableBool("m_Trader_IsTrader");
@@ -24,15 +113,4 @@ modded class PlayerBase
         AddAction(ActionLockVehicleInside, InputActionMap);
         AddAction(ActionTrade, InputActionMap);
 	}
-
-    bool Trader_IsAdmin()
-    {
-        for (int i = 0; i < m_Trader_AdminPlayerUIDs.Count(); i++)
-        {
-            if (m_Trader_AdminPlayerUIDs.Get(i) == m_Trader_PlayerUID)
-                return true;
-        }
-
-        return false;
-    }
 }

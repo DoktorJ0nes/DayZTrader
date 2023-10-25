@@ -50,7 +50,7 @@ modded class MissionGameplay
 
 		if ( key == KeyCode.KC_ESCAPE )
 		{	
-			ref TraderMenu traderMenu = TraderMenu.Cast(GetGame().GetUIManager().GetMenu());
+			TraderMenu traderMenu = TraderMenu.Cast(GetGame().GetUIManager().GetMenu());
 			if(traderMenu)
 		  		traderMenu.Close();
 		}

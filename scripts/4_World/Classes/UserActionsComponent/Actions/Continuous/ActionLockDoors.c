@@ -2,7 +2,7 @@ modded class ActionLockDoors
 {
     override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-        if (player.m_Trader_IsInSafezone)
+        if (player.IsInSafeZone())
             return false;
 
 		return super.ActionCondition(player, target, item);

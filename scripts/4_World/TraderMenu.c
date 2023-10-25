@@ -119,9 +119,9 @@ class TraderMenu extends UIScriptedMenu
 		m_CategorysTraderKey = new array<int>;
 		m_CategorysKey = new array<int>;
         m_ListboxItemsClassnames = new array<string>;		
-        m_FilteredListOfTraderItems = new ref array<ref TraderItem>;
-        m_ListOfCategoryTraderItems = new ref array<ref TraderItem>;
-        m_ListOfTraderItems = new ref array<ref TraderItem>;
+        m_FilteredListOfTraderItems = new array<ref TraderItem>;
+        m_ListOfCategoryTraderItems = new array<ref TraderItem>;
+        m_ListOfTraderItems = new array<ref TraderItem>;
 		m_ListboxItemsQuantity = new array<int>;
 		m_ListboxItemsBuyValue = new array<int>;
 		m_ListboxItemsSellValue = new array<int>;

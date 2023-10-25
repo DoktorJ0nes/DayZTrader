@@ -78,7 +78,6 @@ modded class MissionServer
 	override void OnUpdate(float timeslice)
 	{
 		super.OnUpdate(timeslice);
-		
 
 		m_Trader_StatUpdateTime += timeslice;
 		if (m_Trader_StatUpdateTime >= m_Trader_StatUpdateTimeMax)
@@ -99,98 +98,6 @@ modded class MissionServer
 
 				if (!player.m_Trader_RecievedAllData)
 					sendTraderDataToPlayer(player);
-				
-				bool isInSafezone = false;
-				
-				for (int k = 0; k < m_Trader_TraderPositions.Count(); k++)
-				{
-					if (vector.Distance(player.GetPosition(), m_Trader_TraderPositions.Get(k)) <= m_Trader_TraderSafezones.Get(k))
-						isInSafezone = true;
-				}
-
-				if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout == m_Trader_SafezoneTimeout)
-				{
-					SetPlayerVehicleIsInSafezone( player, false );
-
-					TraderMessage.Safezone(player, m_Trader_SafezoneTimeout);
-				}
-
-				if (!isInSafezone && player.m_Trader_IsInSafezoneTimeout > 0)
-				{
-					player.m_Trader_IsInSafezoneTimeout -= m_Trader_StatUpdateTimeMax;
-				}
-
-				if (player.m_Trader_IsInSafezone == false && isInSafezone == true)
-				{
-					player.m_Trader_IsInSafezone = true;
-					player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
-					GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( true ), true, player.GetIdentity());
-					player.m_Trader_InfluenzaEnteredSafeZone = player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA);
-					player.GetInputController().OverrideRaise(true, false);
-					SetPlayerVehicleIsInSafezone( player, true );
-					
-					TraderMessage.DeleteSafezoneMessages(player);
-					TraderMessage.PlayerRed("#tm_entered_safezone", player);
-					//TraderMessage.PlayerWhite("#tm_press_to_open_menu", player);
-
-					EntityAI entity_in_hands = player.GetHumanInventory().GetEntityInHands();
-					if(player.IsRestrained())
-					{
-						player.SetRestrained(false);
-
-						if(entity_in_hands)
-						{
-							MiscGameplayFunctions.TransformRestrainItem(entity_in_hands, null, null, player);
-						}
-					}
-
-					ItemBase item_in_hands = ItemBase.Cast(entity_in_hands);
-					if (item_in_hands)
-					{
-						if (item_in_hands.IsInherited(SmokeGrenadeBase))
-						{
-							SmokeGrenadeBase smoke_in_hands = SmokeGrenadeBase.Cast(item_in_hands);
-							if (smoke_in_hands)
-							{
-								if (smoke_in_hands.GetCompEM().IsWorking())
-								{
-									smoke_in_hands.GetCompEM().SwitchOff();
-								}
-							}
-						}
-					}
-
-					player.SetAllowDamage(false);
-				}
-
-				if (isInSafezone && player.m_Trader_IsInSafezoneTimeout < m_Trader_SafezoneTimeout)
-				{
-					player.m_Trader_IsInSafezoneTimeout = m_Trader_SafezoneTimeout;
-
-					TraderMessage.DeleteSafezoneMessages(player);
-					TraderMessage.PlayerWhite("#tm_welcome_back", player);
-				}
-				
-				if (player.m_Trader_IsInSafezone == true && isInSafezone == false && player.m_Trader_IsInSafezoneTimeout <= 0)
-				{
-					player.m_Trader_IsInSafezone = false;
-					GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE, new Param1<bool>( false ), true, player.GetIdentity());
-					player.GetInputController().OverrideRaise(false, false);
-					//SetPlayerVehicleIsInSafezone( player, false );
-					
-					TraderMessage.DeleteSafezoneMessages(player);
-					TraderMessage.PlayerRed("#tm_left_safezone", player);
-
-					player.SetAllowDamage(true);
-				}
-				
-				if (isInSafezone)
-				{
-					if ( player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA) < player.m_Trader_InfluenzaEnteredSafeZone) // allow influenza healing
-						player.m_Trader_InfluenzaEnteredSafeZone = player.m_AgentPool.GetSingleAgentCount(eAgents.INFLUENZA);
-
-					player.m_AgentPool.SetAgentCount(eAgents.INFLUENZA, player.m_Trader_InfluenzaEnteredSafeZone);
-				}
 			}
 			
 			for ( int i = 0; i < m_Trader_SpawnedTraderCharacters.Count(); i++ )
@@ -685,6 +592,9 @@ modded class MissionServer
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_ADMINS_ENTRY, new Param1<string>(m_Trader_AdminPlayerUIDs.Get(i)), true, player.GetIdentity());
 		}
 		
+		// This is stupid - MDC
+		player.SetSafeZoneCountdown(m_Trader_SafezoneTimeout);
+		
 		// confirm that all data was sended:
 		player.m_Trader_RecievedAllData = true;
 		
@@ -1160,6 +1070,22 @@ modded class MissionServer
 			
 			m_Trader_TraderSafezones.Insert(line_content.ToInt());
 
+			/*	
+				Why the fuck is this like this? - MDC 
+				
+				We create a trigger for the safezone of the trader.
+			*/
+
+			SafeZoneTrigger newTrigger; // Should be stored in an array later
+			if (Class.CastTo(newTrigger, GetGame().CreateObjectEx("SafeZoneTrigger", markerPosition, ECE_NONE)))
+			{
+				vector triggerPosition = markerPosition;
+				int triggerRadius = line_content.ToInt();
+				triggerPosition[1] = triggerPosition[1] - 50; // Sane default values
+
+				newTrigger.SetCollisionCylinder( triggerRadius, 100 );
+			}
+			
 			// Get Trader Marker Vehicle Spawnpoint:					
 			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<VehicleSpawn>", "<TraderMarker>");
 

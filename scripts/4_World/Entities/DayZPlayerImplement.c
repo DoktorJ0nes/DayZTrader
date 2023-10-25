@@ -202,7 +202,7 @@ modded class DayZPlayerImplement
 
 	int createVehicleKeyInPlayerInventory(int hash = 0, string classname = "")
 	{
-		ref array<string> vehicleKeyClasses ={ "VehicleKeyRed", "VehicleKeyBlack", "VehicleKeyGrayCyan", "VehicleKeyYellow", "VehicleKeyPurple" };
+		array<string> vehicleKeyClasses ={ "VehicleKeyRed", "VehicleKeyBlack", "VehicleKeyGrayCyan", "VehicleKeyYellow", "VehicleKeyPurple" };
 
 		if (classname == "")
 			classname = vehicleKeyClasses.Get(vehicleKeyClasses.GetRandomIndex());
@@ -555,10 +555,6 @@ modded class DayZPlayerImplement
 				handleTraderModIsLoadedConfirmRPC(sender, rpc_type, ctx);
 			break;
 
-			case TRPCs.RPC_SEND_TRADER_IS_IN_SAFEZONE:
-				handleSendTraderIsInSafezoneRPC(sender, rpc_type, ctx);
-			break;
-
 			case TRPCs.RPC_SYNC_OBJECT_ORIENTATION:
 				handleSyncObjectOrientationRPC(sender, rpc_type, ctx);
 			break;
@@ -603,7 +599,7 @@ modded class DayZPlayerImplement
 
 	void handleSendTraderCurrencyNameEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<string> currencyName_rp = new Param1<string>( "" );
+		Param1<string> currencyName_rp = new Param1<string>( "" );
 		ctx.Read( currencyName_rp );
 		
 		m_Trader_CurrencyName = currencyName_rp.param1;
@@ -611,7 +607,7 @@ modded class DayZPlayerImplement
 
 	void handleSendTraderCurrencyEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param2<string, int> currency_rp = new Param2<string, int>( "", -1 );
+		Param2<string, int> currency_rp = new Param2<string, int>( "", -1 );
 		ctx.Read( currency_rp );
 		
 		m_Trader_CurrencyClassnames.Insert(currency_rp.param1);
@@ -620,7 +616,7 @@ modded class DayZPlayerImplement
 	
 	void handleSendTraderNameEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<string> tradername_rp = new Param1<string>( "" );
+		Param1<string> tradername_rp = new Param1<string>( "" );
 		ctx.Read( tradername_rp );
 		
 		m_Trader_TraderNames.Insert(tradername_rp.param1);
@@ -628,7 +624,7 @@ modded class DayZPlayerImplement
 	
 	void handleSendTraderCategoryEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param2<string, int> category_rp = new Param2<string, int>( "", 0 );
+		Param2<string, int> category_rp = new Param2<string, int>( "", 0 );
 		ctx.Read( category_rp );					
 		
 		m_Trader_Categorys.Insert(category_rp.param1);
@@ -637,7 +633,7 @@ modded class DayZPlayerImplement
 
 	void handleSendTraderNPCDummyEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<string> npcDummy_rp = new Param1<string>( "" );
+		Param1<string> npcDummy_rp = new Param1<string>( "" );
 		ctx.Read( npcDummy_rp );					
 		
 		m_Trader_NPCDummyClasses.Insert(npcDummy_rp.param1);
@@ -658,7 +654,7 @@ modded class DayZPlayerImplement
 	
 	void handleSendTraderMarkerEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param5<int, vector, int, vector, vector> markerEntry = new Param5<int, vector, int, vector, vector>( 0, "0 0 0", 0, "0 0 0", "0 0 0" );
+		Param5<int, vector, int, vector, vector> markerEntry = new Param5<int, vector, int, vector, vector>( 0, "0 0 0", 0, "0 0 0", "0 0 0" );
 		ctx.Read( markerEntry );					
 		
 		m_Trader_TraderIDs.Insert(markerEntry.param1);
@@ -670,7 +666,7 @@ modded class DayZPlayerImplement
 	
 	void handleSendTraderDataConfirmationRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<bool> conf_rp = new Param1<bool>( false );
+		Param1<bool> conf_rp = new Param1<bool>( false );
 		ctx.Read( conf_rp );
 		
 		m_Trader_RecievedAllData = conf_rp.param1;
@@ -711,31 +707,9 @@ modded class DayZPlayerImplement
 		m_Trader_TraderModIsLoadedHandled = true;
 	}
 
-	void handleSendTraderIsInSafezoneRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
-	{
-		ref Param1<bool> safezone_rp = new Param1<bool>( false );
-		ctx.Read( safezone_rp );
-		
-		m_Trader_IsInSafezone = safezone_rp.param1;
-
-		PlayerBase player = PlayerBase.Cast(PlayerBase.Cast(this));
-		if(IsRestrained())
-		{
-			player.SetRestrained(false);
-
-			EntityAI item_in_hands = GetHumanInventory().GetEntityInHands();
-			if(item_in_hands)
-			{
-				MiscGameplayFunctions.TransformRestrainItem(item_in_hands, null, null, player);
-			}
-		}
-
-		player.GetInputController().OverrideRaise(m_Trader_IsInSafezone, false);
-	}
-
 	void handleSyncObjectOrientationRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param2<Object, vector> syncObject_rp = new Param2<Object, vector>( NULL, "0 0 0" );
+		Param2<Object, vector> syncObject_rp = new Param2<Object, vector>( NULL, "0 0 0" );
 		ctx.Read( syncObject_rp );
 		
 		Object objectToSync = syncObject_rp.param1;
@@ -746,7 +720,7 @@ modded class DayZPlayerImplement
 
 	/*void handleSyncCarscriptIsInSafezoneRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param2<CarScript, bool> synccarsscript_rp = new Param2<CarScript, bool>( NULL, false );
+		Param2<CarScript, bool> synccarsscript_rp = new Param2<CarScript, bool>( NULL, false );
 		ctx.Read( synccarsscript_rp );
 		
 		CarScript carToSync = synccarsscript_rp.param1;
@@ -761,7 +735,7 @@ modded class DayZPlayerImplement
 
 	void handleSendMessageWhiteRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param2<string, float> sendMessageWhite_rp = new Param2<string, float>( "", 0 );
+		Param2<string, float> sendMessageWhite_rp = new Param2<string, float>( "", 0 );
 		ctx.Read( sendMessageWhite_rp );
 		
 		showTraderMessage(sendMessageWhite_rp.param1, sendMessageWhite_rp.param2);
@@ -769,7 +743,7 @@ modded class DayZPlayerImplement
 
 	void handleSendMessageRedRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param2<string, float> sendMessageRed_rp = new Param2<string, float>( "", 0 );
+		Param2<string, float> sendMessageRed_rp = new Param2<string, float>( "", 0 );
 		ctx.Read( sendMessageRed_rp );
 		
 		showTraderMessage(sendMessageRed_rp.param1, sendMessageRed_rp.param2, 0xFFFA6B6B);
@@ -777,7 +751,7 @@ modded class DayZPlayerImplement
 
 	void handleSendMessageSafezoneRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<float> sendMessageSafezone_rp = new Param1<float>( 0 );
+		Param1<float> sendMessageSafezone_rp = new Param1<float>( 0 );
 		ctx.Read( sendMessageSafezone_rp );
 		
 		showSafezoneMessage(sendMessageSafezone_rp.param1);
@@ -790,7 +764,7 @@ modded class DayZPlayerImplement
 
 	void handleSendTraderVariablesEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<float> traderVariables_rp = new Param1<float>( 0 );
+		Param1<float> traderVariables_rp = new Param1<float>( 0 );
 		ctx.Read( traderVariables_rp );
 		
 		m_Trader_BuySellTimer = traderVariables_rp.param1;
@@ -798,7 +772,7 @@ modded class DayZPlayerImplement
 
 	void handleSendTraderPlayerUIDRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<string> traderPlayerUID_rp = new Param1<string>( "" );
+		Param1<string> traderPlayerUID_rp = new Param1<string>( "" );
 		ctx.Read( traderPlayerUID_rp );
 		
 		m_Trader_PlayerUID = traderPlayerUID_rp.param1;
@@ -806,7 +780,7 @@ modded class DayZPlayerImplement
 
 	void handleSendTraderAdminsEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		ref Param1<string> traderAdmins_rp = new Param1<string>( "" );
+		Param1<string> traderAdmins_rp = new Param1<string>( "" );
 		ctx.Read( traderAdmins_rp );
 		
 		m_Trader_AdminPlayerUIDs.Insert(traderAdmins_rp.param1);
@@ -821,7 +795,7 @@ modded class DayZPlayerImplement
 	void showTraderMessage(string message, float time, int color = 0)
 	{
 		if (!m_Trader_TraderNotifications)
-			m_Trader_TraderNotifications = new ref TraderNotifications();
+			m_Trader_TraderNotifications = new TraderNotifications();
 
 		m_Trader_TraderNotifications.ShowMessage(message, time, color);
 	}
@@ -829,7 +803,7 @@ modded class DayZPlayerImplement
 	void showSafezoneMessage(float time)
 	{
 		if (!m_Trader_TraderNotifications)
-			m_Trader_TraderNotifications = new ref TraderNotifications();
+			m_Trader_TraderNotifications = new TraderNotifications();
 
 		m_Trader_TraderNotifications.ShowSafezoneMessage(time);
 	}
@@ -1080,7 +1054,7 @@ modded class DayZPlayerImplement
 
 	int spawnVehicleKeyOnGround(int hash = 0, string classname = "")
 	{
-		ref array<string> vehicleKeyClasses = {"VehicleKeyRed", "VehicleKeyBlack", "VehicleKeyGrayCyan", "VehicleKeyYellow", "VehicleKeyPurple"};
+		array<string> vehicleKeyClasses = {"VehicleKeyRed", "VehicleKeyBlack", "VehicleKeyGrayCyan", "VehicleKeyYellow", "VehicleKeyPurple"};
 
 		if (classname == "")
 			classname = vehicleKeyClasses.Get(vehicleKeyClasses.GetRandomIndex());
@@ -1562,7 +1536,7 @@ modded class DayZPlayerImplement
 		vector objectDirection = m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID);
 
 		// Get all Players to synchronize Things:
-		ref array<Man> m_Players = new array<Man>;
+		array<Man> m_Players = new array<Man>;
 		GetGame().GetWorld().GetPlayerList(m_Players);
 		PlayerBase currentPlayer;
 

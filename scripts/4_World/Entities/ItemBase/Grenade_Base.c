@@ -39,7 +39,7 @@ modded class Grenade_Base extends InventoryItemSuper
     {
         if( GetGame().IsServer() )
         {
-            ref array<Man> m_Players = new array<Man>;
+            array<Man> m_Players = new array<Man>;
 		    GetGame().GetWorld().GetPlayerList(m_Players);
 
             for (int j = 0; j < m_Players.Count(); j++)
