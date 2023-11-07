@@ -1469,12 +1469,17 @@ modded class DayZPlayerImplement
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
 		array<Object> nearby_objects = new array<Object>;
-
-		if (GetGame().IsBoxColliding( m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects))
+		vector position = m_Trader_TraderVehicleSpawns.Get(traderUID);
+		vector orientation = m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID);
+		bool Colliding = GetGame().IsBoxColliding( position, orientation, size, excluded_objects, nearby_objects);
+		if (Colliding)
 		{
 			for (int i = 0; i < nearby_objects.Count(); i++)
 			{
-				if (nearby_objects.Get(i).GetType() == vehicleClassname)
+				string nearby = nearby_objects.Get(i).GetType();
+				nearby.ToLower();
+				vehicleClassname.ToLower();
+				if (nearby == vehicleClassname)
 				{
 					// Check if there is any Player in the Vehicle:
 					bool vehicleIsEmpty = true;
@@ -1505,22 +1510,6 @@ modded class DayZPlayerImplement
 					
 					if(carsScript.m_Trader_LastDriverId != GetIdentity().GetId())
 						continue;					
-
-					// Check if Engine is running:
-					/*Car car;
-					Class.CastTo(car, nearby_objects.Get(i));
-					if (car && vehicleIsEmpty)
-					{
-						if (car.EngineIsOn())
-							return nearby_objects.Get(i);
-					}*/
-
-					//TODO: Check if Vehicle Owner is Player or Vehicle Owner is not set.
-
-					//if (m_Trader_LastSelledItemID == nearby_objects.Get(i).GetID())
-					//	continue;
-
-					//m_Trader_LastSelledItemID = nearby_objects.Get(i).GetID();
 
 					return nearby_objects.Get(i);		
 				}					
