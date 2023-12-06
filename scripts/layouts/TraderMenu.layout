@@ -60,7 +60,7 @@ FrameWidgetClass TraderMenu {
     }
    }
   }
-  XComboBoxWidgetClass xcombobox_categorys {
+  XComboBoxWidgetClass xcombobox_Categories {
    position 5 55
    size 600 40
    halign left_ref

@@ -1,6 +1,6 @@
 class ActionTrade: ActionInteractBase
 {
-	int m_traderUID =  -1;
+	int m_TraderID =  -1;
 	PlayerBase m_Player;
 	void ActionTrade()
 	{
@@ -29,24 +29,15 @@ class ActionTrade: ActionInteractBase
 		if(!target || !target.GetObject() || !player)
 			return false;		
 
-		bool isTraderNPCObject = false;
-		if(player.m_Trader_NPCDummyClasses)
-		{	
-			for ( int i = 0; i < player.m_Trader_NPCDummyClasses.Count(); i++ )
-			{
-				if (target.GetObject().GetType() == player.m_Trader_NPCDummyClasses.Get(i))
-					isTraderNPCObject = true;
-			}
-		}
 		PlayerBase ntarget = PlayerBase.Cast(target.GetObject());
 		bool isTraderNPCCharacter = false;
 		if(ntarget)
-			isTraderNPCCharacter = ntarget.m_Trader_IsTrader;
-					
-		if (!isTraderNPCCharacter && !isTraderNPCObject)
-			return false;
+		{
+			if (!ntarget.m_Trader_IsTrader)
+				return false;
+		}				
 
-        return CanOpenTrader(player);
+        return CanOpenTrader(player, ntarget);
 	}
     
     override void OnStartClient(ActionData action_data)
@@ -58,91 +49,33 @@ class ActionTrade: ActionInteractBase
 		}
     }
 
-    bool CanOpenTrader(PlayerBase player)
+    bool CanOpenTrader(PlayerBase player, PlayerBase NPC)
 	{
 		m_Player = player;
 		vector playerPosition = player.GetPosition();
-		if (player.m_Trader_RecievedAllData == false)
-		{						
-			return false;
-		}
-
-		m_traderUID = getNearbyTraderUID(playerPosition);
-		bool canOpenTraderMenu = getCanOpenTraderMenu(playerPosition);
-		if (canOpenTraderMenu)
-		{			
-			if(player.m_Trader_TraderNames)
-			{
-				string traderName = player.m_Trader_TraderNames.Get(m_traderUID);
-				m_Text = "Trade [" + traderName + "]";
-			}
-			return true;
-		}
-		return false;
-	}
-
-    bool getCanOpenTraderMenu(vector position)
-	{		
-		bool playerIsInSafezoneRange = getIsInSafezoneRange(position);
-		
-		if (m_traderUID == -1 && playerIsInSafezoneRange)
+		m_TraderID = NPC.m_Trader_TraderID;
+		if(m_TraderID == -1)
 		{
 			return false;
+		}		
+		PluginTraderData traderDataPlugin = PluginTraderData.Cast(GetPlugin(PluginTraderData));
+        if(traderDataPlugin)
+        {
+			string traderName = traderDataPlugin.GetTraderByID(m_TraderID).DisplayName;
+			m_Text = "Trade [" + traderName + "]";
 		}
-
-		if (!playerIsInSafezoneRange)
-			return false;	
-
+		else
+		{
+			m_Text = "Trade";
+		}
 		return true;
 	}
-
-    int getNearbyTraderUID(vector position)
-	{
-		for ( int traderUID = 0; traderUID < m_Player.m_Trader_TraderPositions.Count(); traderUID++ )
-		{
-			if (getIsTraderNearby(position, traderUID))
-				return traderUID;
-		}
-
-		return -1;
-	}
-
-    bool getIsInSafezoneRange(vector position)
-	{
-		for ( int traderUID = 0; traderUID < m_Player.m_Trader_TraderPositions.Count(); traderUID++ )
-		{
-			if (getDistanceToTrader(position, traderUID) <= m_Player.m_Trader_TraderSafezones.Get(traderUID) || getIsTraderNearby(position, traderUID))
-				return true;
-		}
-
-		return false;
-	}
-
-    int getTraderID()
-	{
-		return m_Player.m_Trader_TraderIDs.Get(m_traderUID);
-	}
-
-    float getDistanceToTrader(vector position, int traderUID)
-	{
-		return vector.Distance(position, m_Player.m_Trader_TraderPositions.Get(traderUID));
-	}
-
-    bool getIsTraderNearby(vector position, int traderUID)
-	{
-		return getDistanceToTrader(position, traderUID) <= 1.7;
-	}
-
 	void initializeTraderMenu()
 	{
 		if (GetGame().GetUIManager().GetMenu() == NULL) 
 		{                
 			m_Player.m_TraderMenu = TraderMenu.Cast(GetGame().GetUIManager().EnterScriptedMenu(TRADERMENU_UI, null));
-			m_Player.m_TraderMenu.m_TraderID = getTraderID();
-			m_Player.m_TraderMenu.m_TraderUID = m_traderUID;
-			m_Player.m_TraderMenu.m_TraderVehicleSpawn = m_Player.m_Trader_TraderVehicleSpawns.Get(m_traderUID);
-			m_Player.m_TraderMenu.m_TraderVehicleSpawnOrientation = m_Player.m_Trader_TraderVehicleSpawnsOrientation.Get(m_traderUID);
-			m_Player.m_TraderMenu.m_buySellTime = m_Player.m_Trader_BuySellTimer;
+			m_Player.m_TraderMenu.m_TraderID = m_TraderID;
 			m_Player.m_TraderMenu.InitTraderValues();
 		}
 	}

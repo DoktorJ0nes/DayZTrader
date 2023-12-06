@@ -2,7 +2,7 @@ modded class ActionRestrainTarget
 {
     override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-        if (player.IsInSafeZone())
+        if (player && player.IsInSafeZone())
             return false;
 
         PlayerBase targetPlayer = PlayerBase.Cast(target.GetObject());

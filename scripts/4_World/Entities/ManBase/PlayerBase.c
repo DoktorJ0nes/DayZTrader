@@ -1,27 +1,22 @@
 modded class PlayerBase
 {
     protected bool m_IsInSafeZone = false;
-
     bool m_Trader_IsTrader = false;
-
+    int m_Trader_TraderID = -1;
 	protected int m_SafeZoneCount = 0;
-	protected int m_SafeZoneCountdown = 0;
 
     ref TraderMenu m_TraderMenu;
 	
 	void PlayerBase()
 	{
 		RegisterNetSyncVariableBool("m_IsInSafeZone");
+        RegisterNetSyncVariableBool("m_Trader_IsTrader");
+        RegisterNetSyncVariableInt("m_Trader_TraderID");
 	}
 
 	bool IsInSafeZone()
 	{
 		return m_IsInSafeZone;
-	}
-
-	void SetSafeZoneCountdown(int value)
-	{
-		m_SafeZoneCountdown = value;
 	}
 
 	void AddSafeZoneTrigger()
@@ -31,20 +26,21 @@ modded class PlayerBase
 
 		m_SafeZoneCount++;
 		//Print("Adding to count: " + m_SafeZoneCount + ", in safezone: " + m_IsInSafeZone);
-		
-		if (!m_IsInSafeZone && m_SafeZoneCount > 0)
+		if(m_SafeZoneCount > 0)
 		{
 			SendToGameLabsTrader(this, "", "", "has entered a safezone");
 
 			TraderMessage.DeleteSafezoneMessages(this);
 			TraderMessage.PlayerRed("#tm_entered_safezone", this);
-
-			SetAllowDamage(false);
-			SetInSafeZone(true);
+			if (!m_IsInSafeZone)
+			{
+				SetAllowDamage(false);
+				SetInSafeZone(true);
+			}			
 		}
 	}
 
-	void RemoveSafeZoneTrigger()
+	void RemoveSafeZoneTrigger(int exitTimer)
 	{
 		if (!GetGame().IsServer())
 			return;
@@ -57,8 +53,15 @@ modded class PlayerBase
 		
 		if (m_IsInSafeZone && m_SafeZoneCount == 0)
 		{
-			TraderMessage.Safezone(this, m_SafeZoneCountdown);
-			GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(OnExitSafeZoneCountdownComplete, m_SafeZoneCountdown * 1000, false);
+			TraderMessage.SafezoneExit(this, exitTimer);
+			if(exitTimer > 0)
+			{
+				GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(OnExitSafeZoneCountdownComplete, exitTimer * 1000, false);
+			}
+			else
+			{
+				OnExitSafeZoneCountdownComplete();
+			}
 		}
 	}
 
@@ -87,21 +90,67 @@ modded class PlayerBase
 	
 	bool Trader_IsAdmin()
     {
-        for (int i = 0; i < m_Trader_AdminPlayerUIDs.Count(); i++)
-        {
-            if (m_Trader_AdminPlayerUIDs.Get(i) == m_Trader_PlayerUID)
-                return true;
-        }
+        // for (int i = 0; i < m_Trader_AdminPlayerUIDs.Count(); i++)
+        // {
+        //     if (m_Trader_AdminPlayerUIDs.Get(i) == m_Trader_PlayerUID)
+        //         return true;
+        // }
 
         return false;
     }
 
-    override void Init()
-    {
-        super.Init();
+	void SetPlayerAsTrader(int traderID)
+	{
+		m_Trader_IsTrader = true;
+		m_Trader_TraderID = traderID;
+		SetAllowDamage(false);
+		SetSynchDirty();
+	}
 
-        RegisterNetSyncVariableBool("m_Trader_IsTrader");
-    }
+	override bool CanBeTargetedByAI( EntityAI ai )
+	{
+		if(m_Trader_IsTrader)
+		{
+			return false;
+		}
+		return super.CanBeTargetedByAI(ai);
+	}
+	
+	override bool CanBeRestrained()
+	{
+		if(m_Trader_IsTrader)
+		{
+			return false;
+		}
+		return super.CanBeRestrained();
+	}
+
+	override bool IsInventoryVisible()
+	{
+		if(m_Trader_IsTrader)
+		{
+			return false;
+		}
+		return super.IsInventoryVisible();
+	}
+
+	override bool CanDisplayCargo()
+	{
+		if(m_Trader_IsTrader)
+		{
+			return false;
+		}
+		return super.CanDisplayCargo();
+	}
+	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		super.OnRPC(sender, rpc_type, ctx);
+		PluginTraderData traderData = PluginTraderData.Cast(GetPlugin(PluginTraderData));
+        if(traderData)
+        {
+			traderData.OnRPC(sender, rpc_type, ctx);
+		}
+	};
 
     override void SetActions(out TInputActionMap InputActionMap)
 	{

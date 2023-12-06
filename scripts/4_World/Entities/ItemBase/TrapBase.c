@@ -2,13 +2,11 @@ modded class TrapBase
 {
     override void StartActivate( PlayerBase player )
 	{
-        if (player)
+        if (player && player.IsInSafeZone())
         {
-            if (player.m_Trader_IsInSafezone)
-               return;
+            return;
         }
-
 
         super.StartActivate(player);
 	}
-}
+};
