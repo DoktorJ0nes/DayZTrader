@@ -35,11 +35,13 @@ class TR_Trader_Item
     int ID;
     bool IsPreset;
     string ClassName;
+    string DisplayName;
+    string Description;
     int Quantity;
     TR_Item_Type Type;
     int BuyPrice;
     int SellPrice;
-    ref array<TraderObjectAttachment> Attachments;
+    ref array<ref TraderObjectAttachment> Attachments;
 
     bool Load(int inID, string item)
     {
@@ -54,10 +56,19 @@ class TR_Trader_Item
             return false;
         }
         ClassName = strs.Get(0);
-        if(ClassName.Contains("TRP"))
+        PluginTraderData traderDataPlugin = PluginTraderData.Cast(GetPlugin(PluginTraderData));
+        if(traderDataPlugin)
         {
-            //it's a preset so get attachemnts?
-            //then set classname
+            TR_Preset preset = traderDataPlugin.GetPresetByName(ClassName);
+            if(preset)
+            {
+                TM_Print("Found preset: " + preset.PresetName);
+                ClassName = preset.ClassName;
+                Attachments = preset.Attachments;
+                DisplayName = preset.DisplayName;
+                Description = preset.Description;
+                IsPreset = true;
+            }
         }
         Object itemObj = GetGame().CreateObjectEx(ClassName, "0 0 0", ECE_PLACE_ON_SURFACE);
         if(!itemObj)
@@ -65,17 +76,14 @@ class TR_Trader_Item
             TM_Print("Could not identify item: " + ClassName);
             return false;
         }
-        //if(itemObj.IsKindOf("Magazine_Base"))
         if(itemObj.IsMagazine())
         {
             Type = TR_Item_Type.Magazine;
         }
-        //if(itemObj.IsKindOf("Ammunition_Base"))
         if(itemObj.IsAmmoPile())
         {
             Type = TR_Item_Type.Ammo;
         }
-        //if(itemObj.IsKindOf("Pistol_Base") || itemObj.IsKindOf("Rifle_Base") || itemObj.IsKindOf("Launcher_Base"))
         if(itemObj.IsWeapon())
         {
             Type = TR_Item_Type.Weapon;

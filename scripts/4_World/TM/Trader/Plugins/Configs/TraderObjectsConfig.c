@@ -1,26 +1,94 @@
 class TraderObjectAttachment
 {
     string ClassName;
-    ref array<TraderObjectAttachment> Attachments;    
+    int Quantity;
+    bool MaxQuantity;
+    TR_Item_Type Type;
+    ref array<ref TraderObjectAttachment> Attachments;
+    
+    void IdentifyType()
+    {
+        Object itemObj = GetGame().CreateObjectEx(ClassName, "0 0 0", ECE_PLACE_ON_SURFACE);
+        if(!itemObj)
+        {
+            TM_Print("Could not identify item attachment: " + ClassName);
+            return;
+        }
+        if(itemObj.IsMagazine())
+        {
+            Type = TR_Item_Type.Magazine;
+        }
+        if(itemObj.IsAmmoPile())
+        {
+            Type = TR_Item_Type.Ammo;
+        }
+        if(itemObj.IsWeapon())
+        {
+            Type = TR_Item_Type.Weapon;
+        }
+        if(itemObj.IsKindOf("CarScript"))
+        {
+            Type = TR_Item_Type.Vehicle;
+        }
+        if(itemObj.IsKindOf("Edible_Base"))
+        {
+            Type = TR_Item_Type.Food;
+        }
+        if(itemObj.IsKindOf("Bottle_Base"))
+        {
+            Type = TR_Item_Type.Bottle;
+        }
+        
+        int Quantity = TraderLibrary.GetItemMaxQuantityForObject(itemObj);  
+        if(Quantity > 0 && Type == TR_Item_Type.Regular)
+        {
+            Type = TR_Item_Type.QuantItem;
+        }
+        itemObj.Delete();
+    }
 
-    EntityAI SpawnAttachment(EntityAI target)
+    EntityAI SpawnAttachment(EntityAI target, PlayerBase player = null)
     {
         if(!target)
         {
             //error?
             return null;
         }
-        EntityAI attachment = EntityAI.Cast(target.GetInventory().CreateAttachment(ClassName));
+        IdentifyType();
+        EntityAI attachment;
+        if(Type == TR_Item_Type.Magazine)
+        {
+            Weapon_Base wpn = Weapon_Base.Cast(target);
+            if(wpn)
+            {
+                attachment = EntityAI.Cast(wpn.TRSpawnAttachedMagazine(ClassName, MaxQuantity));
+            }
+        }
+        else
+        {
+            attachment = EntityAI.Cast(target.GetInventory().CreateAttachment(ClassName));
+        }
+        if(!attachment)
+        {
+            attachment = EntityAI.Cast(target.GetInventory().CreateInInventory(ClassName));
+        }
+        // if(attachment)
+        // {
+        //     if(MaxQuantity)
+        //     {
+        //         attachment.SetQuantity(attachment.GetQuantityMax());
+        //     }
+        //     else if(Quantity > 0)
+        //     {
+        //         attachment.SetQuantity(Quantity);
+        //     }
+        // }
         if(attachment && Attachments && Attachments.Count() > 0)
         {
             foreach(TraderObjectAttachment attSecond : Attachments)
             {
                 attSecond.SpawnAttachment(attachment);
             }
-        }
-        if(!attachment)
-        {
-            attachment = EntityAI.Cast(target.GetInventory().CreateInInventory(ClassName));
         }
         return attachment;
     }

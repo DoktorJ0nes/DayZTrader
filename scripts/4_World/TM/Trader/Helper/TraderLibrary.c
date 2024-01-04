@@ -71,7 +71,7 @@ class TraderLibrary
         "gunwall_metal_kit_mung"
     };
 
-	static int GetPlayerCurrencyAmount(int traderID, PlayerBase player)
+	static int GetPlayerCurrencyAmount(TD_Trader trader, PlayerBase player)
 	{		
 		int currencyAmount = 0;
 		
@@ -82,7 +82,6 @@ class TraderLibrary
         PluginTraderData traderDataPlugin = PluginTraderData.Cast(GetPlugin(PluginTraderData));
         if(traderDataPlugin)
         {
-            TD_Trader trader = traderDataPlugin.GetTraderByID(traderUID);
             TR_Trader_Currency currency = traderDataPlugin.GetCurrencyByName(trader.Currency);
             if(currency)
             {
@@ -133,26 +132,16 @@ class TraderLibrary
 		return itemAmount;
 	}
     
-	static bool IsInPlayerInventory(PlayerBase player, string itemClassname, int amount)
+	static bool IsInPlayerInventory(PlayerBase player, TR_Trader_Item trItem, int amount)
 	{
+		string itemClassname = trItem.ClassName;
 		itemClassname.ToLower();
-		
-		bool isMagazine = false;
-		if (amount == -3)
-			isMagazine = true;
-
-		bool isWeapon = false;
-		if (amount == -4)
-			isWeapon = true;
-
-		bool isSteak = false;
-		if (amount == -5)
-			isSteak = true;
 
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 
 		ItemBase item;		
+		int totalAmount = 0;
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
@@ -170,12 +159,34 @@ class TraderLibrary
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
-			if(itemPlayerClassname == itemClassname && ((GetItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (GetItemAmount(item) >= TraderLibrary.GetMaxQuantityForClassName(itemPlayerClassname) * 0.5)))) // && m_Trader_LastSelledItemID != item.GetID())
+			if(itemPlayerClassname == itemClassname)
 			{
-				return true;
+				switch (trItem.Type)
+				{
+					case TR_Item_Type.Food:
+						if(GetItemAmount(item) >= TraderLibrary.GetMaxQuantityForClassName(itemPlayerClassname) * 0.75)
+						{
+							return true;
+						}
+						break;
+					case TR_Item_Type.QuantItem: case TR_Item_Type.Ammo:
+						int itemAmount = GetItemAmount(item);
+						if(itemAmount >= amount)
+						{
+							return true;
+						}
+						totalAmount += itemAmount;
+						if(totalAmount >= amount)
+						{
+							return true;
+						}
+						break;
+					default:	
+						return true;
+						break;
+				}			
 			}
 		}
-		
 		return false;
 	}
 
@@ -374,38 +385,354 @@ class TraderLibrary
 
 		return false;
 	}
-	
-    static bool SetItemAmount(ItemBase item, int amount)
+
+	static void CreateItemInPlayerInventory(PlayerBase player, TR_Trader_Item trItem, int amount)
+	{
+		string itemLower = trItem.ClassName;
+		string itemType = trItem.ClassName;
+		itemLower.ToLower();
+		
+		if (amount > 0)
+		{
+			EntityAI newItem = EntityAI.Cast(GetGame().CreateObjectEx(itemType, player.GetPosition(), ECE_PLACE_ON_SURFACE));
+			if (!newItem)
+			{
+				Error("[Trader] Failed to spawn entity "+itemType+" , make sure the classname exists and item can be spawned");
+				return;
+			}
+			if (newItem)
+			{
+				if(trItem && trItem.IsPreset)
+				{
+					foreach(TraderObjectAttachment att : trItem.Attachments)
+					{
+						att.SpawnAttachment(newItem, player);
+					}
+				}
+				if(player.ServerTakeEntityToInventory(FindInventoryLocationType.CARGO | FindInventoryLocationType.ATTACHMENT, newItem))
+				{
+					TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_added_to_inventory", player);
+				}
+				else
+				{
+					TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_was_placed_on_ground", player);
+				}
+
+				switch (trItem.Type)
+				{
+					case TR_Item_Type.Magazine: 
+						Magazine newMagItem = Magazine.Cast(newItem);
+						if(newMagItem)					
+						{	
+							newMagItem.ServerSetAmmoCount(amount);
+						}
+						break;
+					case TR_Item_Type.Ammo: 
+						Ammunition_Base newammoItem = Ammunition_Base.Cast(newItem);
+						if(newammoItem)					
+						{	
+							newammoItem.SetQuantityTR(amount);
+						}
+						break;
+					case TR_Item_Type.QuantItem: 
+						ItemBase newItemBase;
+						if (Class.CastTo(newItemBase, newItem))
+						{
+							newItemBase.SetQuantityTR(amount);
+						}
+						break;
+					case TR_Item_Type.Bottle: 
+						// Bottle_Base bottle = Bottle_Base.Cast(newItem);
+						// if(bottle)
+						// {
+						// 	bottle.SetQuantity(0);
+						// }
+						break;
+					default:
+						break;
+				}			
+			}			
+		}
+	}
+
+	static void CreateCurrencyItemInPlayerInventory(PlayerBase player, string classname, int amount)
+	{
+		array<EntityAI> itemsArray = new array<EntityAI>;
+		player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+		string itemLower = classname;
+		string itemType = classname;
+		itemLower.ToLower();
+		
+		int currentAmount = amount;
+		ItemBase item;
+		if (currentAmount > 0)
+		{
+			//stack first
+			for (int i = 0; i < itemsArray.Count(); i++)
+			{
+				if (currentAmount <= 0)
+				{
+					return;
+				}
+				Class.CastTo(item, itemsArray.Get(i));
+				string itemPlayerClassname = "";
+				if (item)
+				{
+					if (item.IsRuined())
+						continue;
+
+					itemPlayerClassname = item.GetType();
+					itemPlayerClassname.ToLower();
+					if (itemLower == itemPlayerClassname && !item.IsFullQuantity() && !item.IsMagazine())
+					{
+						currentAmount = item.AddQuantityTR(currentAmount);
+					}
+				}
+			}
+
+			EntityAI newItem = EntityAI.Cast(GetGame().CreateObjectEx(itemType, player.GetPosition(), ECE_PLACE_ON_SURFACE));
+			if (!newItem)
+			{
+				Error("[Trader] Failed to spawn entity "+itemType+" , make sure the classname exists and item can be spawned");
+				return;
+			}
+			if (newItem)
+			{		
+				Class.CastTo(item, newItem);
+				item.SetQuantityTR(currentAmount);
+				if(!player.ServerTakeEntityToInventory(FindInventoryLocationType.CARGO | FindInventoryLocationType.ATTACHMENT, newItem))
+				{
+					TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_was_placed_on_ground", player);
+				}			
+			}			
+		}
+	}
+
+	static bool RemoveFromPlayerInventory(PlayerBase player, TR_Trader_Item trItem, int amount)
+	{
+		string itemClassname = trItem.ClassName;
+		itemClassname.ToLower();
+		
+
+		string itemPlayerClassname = "";
+		int currentAmount = amount;
+		ItemBase item = ItemBase.Cast(player.GetHumanInventory().GetEntityInHands());
+		if (item)
+		{
+			itemPlayerClassname = item.GetType();
+			itemPlayerClassname.ToLower();
+
+			if(!TraderLibrary.IsItemAttached(item) && !item.IsRuined() && itemPlayerClassname == itemClassname)
+			{
+				//TODO: check if its okay to just delet item from hands				
+				if(TraderLibrary.RemoveItem(item, trItem, currentAmount))
+				{
+					return true;
+				}
+			}
+		}
+
+
+		array<EntityAI> itemsArray = new array<EntityAI>;
+		player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+
+		for (int i = 0; i < itemsArray.Count(); i++)
+		{
+			Class.CastTo(item, itemsArray.Get(i));
+			itemPlayerClassname = "";
+
+			if (!item)
+				continue;
+
+			if (item.IsRuined())
+				continue;
+
+			if (TraderLibrary.IsItemAttached(item))
+				continue;
+
+			itemPlayerClassname = item.GetType();
+			itemPlayerClassname.ToLower();
+
+			if(itemPlayerClassname == itemClassname)
+			{
+				if(TraderLibrary.RemoveItem(item, trItem, currentAmount))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	static bool RemoveItem(ItemBase item, TR_Trader_Item trItem, out int amount)
+	{
+		int itemAmount = TraderLibrary.GetItemAmount(item);
+		switch (trItem.Type)
+		{
+			case TR_Item_Type.QuantItem:
+				if(itemAmount == amount)
+				{
+					GetGame().ObjectDelete(item);
+					return true;
+				}
+				else if(itemAmount > amount)
+				{
+					item.SetQuantityTR(itemAmount - amount);
+					return true;
+				}
+				else if(itemAmount < amount)
+				{					
+					GetGame().ObjectDelete(item);
+					amount = amount - itemAmount;
+					return false;
+				}
+				return false;
+				break;
+			case TR_Item_Type.Ammo:
+				Ammunition_Base newammoItem = Ammunition_Base.Cast(item);
+				if(itemAmount == amount)
+				{
+					GetGame().ObjectDelete(item);
+					return true;
+				}
+				else if(newammoItem)					
+				{	
+					if(itemAmount > amount)
+					{
+						newammoItem.SetQuantityTR(itemAmount - amount);
+						return true;
+					}
+					else if(itemAmount < amount)
+					{					
+						GetGame().ObjectDelete(newammoItem);
+						amount = amount - itemAmount;
+						return false;
+					}
+				}
+				return false;
+				break;
+			default:
+				GetGame().ObjectDelete(item);
+				return true;
+				break;
+		}	
+		return false;
+	}
+
+	static void IncreasePlayerCurrency(PlayerBase player, TD_Trader trader, int currencyAmount)
+	{
+		if (currencyAmount == 0)
+			return;
+
+		EntityAI entity;
+		ItemBase item;
+ 		PluginTraderData traderDataPlugin = PluginTraderData.Cast(GetPlugin(PluginTraderData));
+        if(traderDataPlugin)
+        {
+            TR_Trader_Currency currency = traderDataPlugin.GetCurrencyByName(trader.Currency);
+            if(currency)
+            {
+				for (int i = currency.CurrencyNotes.Count() - 1; i < currency.CurrencyNotes.Count(); i--)
+				{
+					string className = currency.CurrencyNotes.Get(i).ClassName;
+					int itemMaxAmount = TraderLibrary.GetMaxQuantityForClassName(className);
+					while (currencyAmount / currency.CurrencyNotes.Get(i).Value > 0)
+					{
+						if (currencyAmount > itemMaxAmount * currency.CurrencyNotes.Get(i).Value)
+						{
+							TraderLibrary.CreateCurrencyItemInPlayerInventory(player, className, itemMaxAmount);
+							currencyAmount -= itemMaxAmount * currency.CurrencyNotes.Get(i).Value;
+						}
+						else
+						{
+							TraderLibrary.CreateCurrencyItemInPlayerInventory(player, className, currencyAmount / currency.CurrencyNotes.Get(i).Value);
+							currencyAmount -= (currencyAmount / currency.CurrencyNotes.Get(i).Value * currency.CurrencyNotes.Get(i).Value);
+						}
+
+						if (currencyAmount == 0)
+							return;
+					}
+				}
+			}
+		}
+	}
+
+	static void DeductPlayerCurrency(PlayerBase player, TD_Trader trader, int currencyAmount)
+	{		
+		if (currencyAmount == 0)
+			return;
+
+		array<EntityAI> itemsArray = new array<EntityAI>;
+		ItemBase item;
+		player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+		PluginTraderData traderDataPlugin = PluginTraderData.Cast(GetPlugin(PluginTraderData));
+        if(traderDataPlugin)
+        {
+            TR_Trader_Currency currency = traderDataPlugin.GetCurrencyByName(trader.Currency);
+            if(currency)
+            {
+				for (int i = 0; i < currency.CurrencyNotes.Count(); i++)
+				{
+					for (int j = 0; j < itemsArray.Count(); j++)
+					{
+						Class.CastTo(item, itemsArray.Get(j));
+						
+						if (!item)
+							continue;
+						string itemType = item.GetType();
+                        itemType.ToLower();
+                        string crlower = currency.CurrencyNotes.Get(i).ClassName;
+                        crlower.ToLower();
+						if(itemType == crlower)
+						{
+							int itemAmount = TraderLibrary.GetItemAmount(item);
+							if(itemAmount * currency.CurrencyNotes.Get(i).Value > currencyAmount)
+							{
+								if (currencyAmount >= currency.CurrencyNotes.Get(i).Value)
+								{
+									item.SetQuantityTR(itemAmount - (currencyAmount / currency.CurrencyNotes.Get(i).Value));								
+									currencyAmount -= (currencyAmount / currency.CurrencyNotes.Get(i).Value) * currency.CurrencyNotes.Get(i).Value;
+								}
+
+								if (currencyAmount < currency.CurrencyNotes.Get(i).Value)
+								{
+									TraderLibrary.ExchangeCurrency(player, trader, item, currencyAmount, currency.CurrencyNotes.Get(i).Value);
+									return;
+								}
+							}
+							else
+							{
+								GetGame().ObjectDelete(itemsArray.Get(j));							
+								currencyAmount -= itemAmount * currency.CurrencyNotes.Get(i).Value;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	static void ExchangeCurrency(PlayerBase player, TD_Trader trader, ItemBase item, int currencyAmount, int currencyValue)
 	{
 		if (!item)
-			return false;
+			return;
 
-		if (amount == -1)
-			amount = TraderLibrary.GetMaxQuantityForClassName(item.GetType());
+		if (currencyAmount == 0)
+			return;
 
-		if (amount == -3)
-			amount = 0;
+		//TraderMessage.PlayerWhite("EXCHANGE " + item.GetType() + " [" + currencyValue + "] " + currencyAmount, PlayerBase.Cast(this));
 
-		if (amount == -4)
-			amount = 0;
+		int itemAmount = TraderLibrary.GetItemAmount(item);
 
-		if (amount == -5)
-			amount = Math.RandomIntInclusive(TraderLibrary.GetMaxQuantityForClassName(item.GetType()) * 0.5, TraderLibrary.GetMaxQuantityForClassName(item.GetType()));
-
-		Magazine mgzn = Magazine.Cast(item);
-				
-		if( item.IsMagazine() )
+		if (itemAmount <= 1)
 		{
-			if (!mgzn)
-				return false;
-
-			mgzn.ServerSetAmmoCount(amount);
+			item.Delete();
 		}
 		else
 		{
-			item.SetQuantity(amount);
+			item.SetQuantityTR(itemAmount - 1);
 		}
 
-		return true;
+		TraderLibrary.IncreasePlayerCurrency(player, trader, currencyValue - currencyAmount);
 	}
 }

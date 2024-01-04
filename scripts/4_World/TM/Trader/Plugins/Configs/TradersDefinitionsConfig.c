@@ -32,7 +32,7 @@ class TraderDefinitionsConfig : Managed
         defaultTrader.Orientation = "-46.066719 0 0";
         defaultTrader.IsNPC = true;
         defaultTrader.Categories = {"1","2","3"};
-        defaultTrader.Currency = "1";
+        defaultTrader.Currency = "Rubles";
 		Traders = new array<ref TD_Trader>;
 		Traders.Insert(defaultTrader);
 		Save();

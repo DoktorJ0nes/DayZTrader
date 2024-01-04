@@ -18,7 +18,7 @@ class CfgMods
 		hidePicture = 1;
 		name = "";
 		credits = "";
-		author = "Dr_J0nes";
+		author = "Dr_J0nes, Helkhiana, MDC";
 		authorID = "0";
 		version = "1.0";
 		extra = 0;

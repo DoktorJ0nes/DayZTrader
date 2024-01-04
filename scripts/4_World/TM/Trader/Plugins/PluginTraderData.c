@@ -1,6 +1,7 @@
 class PluginTraderData : PluginBase
 {
 	ref TraderDefinitionsConfig TraderDefinitionsData;
+    ref TraderPresetsFiles TraderPresets;
     ref TraderCategoryFiles TraderCategories;
     ref TraderCurrencies m_TraderCurrencies;
 
@@ -20,10 +21,17 @@ class PluginTraderData : PluginBase
 
     void LoadServerConfigs()
     {
+        LoadPresets();
         LoadCategories();
         LoadTraderDefinitionsData();
         LoadTraderCurrencies();
         DoConfigSanityCheck();
+    }
+
+    void LoadPresets()
+    {
+        TraderPresets = new TraderPresetsFiles;
+        TraderPresets.Load();
     }
 
     void LoadTraderDefinitionsData()
@@ -122,6 +130,15 @@ class PluginTraderData : PluginBase
         if(m_TraderCurrencies)
         {
             return m_TraderCurrencies.GetCurrencyByName(name);
+        }
+        return null;
+    }
+    
+    TR_Preset GetPresetByName(string name)
+    {
+        if(TraderPresets)
+        {
+            return TraderPresets.GetPresetByName(name);
         }
         return null;
     }

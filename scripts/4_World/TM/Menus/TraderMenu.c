@@ -138,9 +138,7 @@ class TraderMenu extends UIScriptedMenu
 					m_UiUpdateTimer = 0;
 					return;
 				}
-
-				string itemType = ListOfItemsFiltered.Get(row_index).ClassName;
-				updateItemPreview(itemType);
+				updateItemPreview(ListOfItemsFiltered.Get(row_index));
 			}
 
 			float playerDistanceToTrader = vector.Distance(m_Player.GetPosition(), trader.Position);
@@ -237,8 +235,8 @@ class TraderMenu extends UIScriptedMenu
 				return true;
 			}
 			m_UiBuyTimer = m_buySellTime;
-
-			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_BUY, new Param3<int, int, string>( m_TraderID, ListOfItemsFiltered.Get(row_index).ID, TraderLibrary.GetItemDisplayName(itemType)), true);
+			Param2<int, TR_Trader_Item> buyParams = new Param2<int, TR_Trader_Item>(m_TraderID, ListOfItemsFiltered.Get(row_index));
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_BUY, buyParams, true);
 			
 			return true;
 		}
@@ -251,8 +249,8 @@ class TraderMenu extends UIScriptedMenu
 				return true;
 			}
 			m_UiSellTimer = m_buySellTime;
-
-			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SELL, new Param3<int, int, string>( m_TraderID, ListOfItemsFiltered.Get(row_index).ID, TraderLibrary.GetItemDisplayName(itemType)), true);
+			Param2<int, TR_Trader_Item> sellParams = new Param2<int, TR_Trader_Item>(m_TraderID, ListOfItemsFiltered.Get(row_index));
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SELL, sellParams, true);
 			
 			return true;
 		}
@@ -303,12 +301,13 @@ class TraderMenu extends UIScriptedMenu
 			
 			string itemClassname = ListOfItemsFiltered.Get(i).ClassName;
 			int itemQuantity = ListOfItemsFiltered.Get(i).Quantity;
+			TR_Item_Type itemTRType = ListOfItemsFiltered.Get(i).Type;
 			
 			if (ListOfItemsFiltered.Get(i).SellPrice < 0)
 			{
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(0, 1, 1, 1) );
 			}
-			else if (TraderLibrary.IsInPlayerInventory(m_Player, itemClassname, itemQuantity) || ((itemQuantity == -6 || itemQuantity == -2) && TraderLibrary.GetVehicleToSell(m_Player, m_TraderID, itemClassname)))
+			else if (TraderLibrary.IsInPlayerInventory(m_Player, ListOfItemsFiltered.Get(i), itemQuantity) || (itemTRType ==  TR_Item_Type.Vehicle && TraderLibrary.GetVehicleToSell(m_Player, m_TraderID, itemClassname)))
 			{
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(1, 0, 1, 0) );
 			}
@@ -330,7 +329,7 @@ class TraderMenu extends UIScriptedMenu
 		}
 	}
 
-	void updateItemPreview(string itemType)
+	void updateItemPreview(TR_Trader_Item item)
 	{
 		if ( !m_ItemPreviewWidget )
 			{
@@ -349,29 +348,52 @@ class TraderMenu extends UIScriptedMenu
 			if ( previewItem )
 				GetGame().ObjectDelete( previewItem );
 
-			string lower = itemType;
+			string lower = item.ClassName;
 			int leng = -1;
-			string itemName = itemType;
+			string itemName = item.ClassName;
             lower.ToLower();
-			if(TraderLibrary.KitIgnoreArray.Find(itemType) == -1 && lower.Contains("kit_"))
+			if(TraderLibrary.KitIgnoreArray.Find(itemName) == -1 && lower.Contains("kit_"))
             {
-                itemName = itemType.Substring(4,itemType.Length());  
+                itemName = itemName.Substring(4,itemName.Length());  
             }
-            else if(TraderLibrary.KitIgnoreArray.Find(itemType) == -1 && lower.Contains("_kit"))
+            else if(TraderLibrary.KitIgnoreArray.Find(itemName) == -1 && lower.Contains("_kit"))
             {
-                leng = itemType.Length() - 4;
-                itemName = itemType.Substring(0,leng);
+                leng = itemName.Length() - 4;
+                itemName = itemName.Substring(0,leng);
 				if(lower.Contains("md_camonetshelter"))
 					itemName = "Land_" + itemName;
             }
-			else if(TraderLibrary.KitIgnoreArray.Find(itemType) == -1 && lower.Contains("kit"))
+			else if(TraderLibrary.KitIgnoreArray.Find(itemName) == -1 && lower.Contains("kit"))
             {
-                leng = itemType.Length() - 3;      
-                itemName = itemType.Substring(0,leng);  
+                leng = itemName.Length() - 3;      
+                itemName = itemName.Substring(0,leng);  
             }
-			previewItem = EntityAI.Cast(GetGame().CreateObject( itemName, "0 0 0", true, false, true ));
+			previewItem = EntityAI.Cast(GetGame().CreateObjectEx(itemName, "0 0 0", ECE_EQUIP | ECE_LOCAL | ECE_PLACE_ON_SURFACE));
 			//TODO: check if car or it has attachments defined?
 			//add the attachments for the preview
+			if(item.IsPreset)
+			{
+				foreach(TraderObjectAttachment att : item.Attachments)
+				{
+					att.SpawnAttachment(previewItem);
+				}
+				if(item.Type == TR_Item_Type.Weapon)
+				{
+					Weapon_Base wpnprv = Weapon_Base.Cast(previewItem);
+					if(wpnprv)
+					{
+						wpnprv.ForceSyncSelectionState();
+					}
+				}
+				if(item.Type == TR_Item_Type.Vehicle)
+				{
+					CarScript vehprv = CarScript.Cast(previewItem);
+					if(vehprv)
+					{
+						vehprv.Synchronize();
+					}
+				}
+			}
 			m_ItemPreviewWidget.SetItem( previewItem );
             
 			m_ItemPreviewWidget.SetModelPosition( Vector(1.0,1.0,0.5) );
@@ -401,13 +423,17 @@ class TraderMenu extends UIScriptedMenu
 				}
 				m_ItemWeight.SetText(GetItemWeightText());
 				m_ItemQuantity.SetText(itemQuant);
-                if(TraderLibrary.KitIgnoreArray.Find(itemType) == -1 && lower.Contains("kit") && previewItemKit)
+				if(item.IsPreset && item.Description.Length() > 0)
+				{
+					m_ItemDescription.SetText(item.Description);
+				}
+				else if(TraderLibrary.KitIgnoreArray.Find(itemName) == -1 && lower.Contains("kit") && previewItemKit)
                 {
 				    m_ItemDescription.SetText(string.Format("This item is a kit. %1",TraderLibrary.TrimUntPrefix(GetEntityAITooltip(previewItemKit))));
                 }
                 else
                 {
-				    m_ItemDescription.SetText(TraderLibrary.TrimUntPrefix(GetEntityAITooltip(previewItem)));
+					m_ItemDescription.SetText(TraderLibrary.TrimUntPrefix(GetEntityAITooltip(previewItem)));
                 }
 			}
 			else
@@ -449,7 +475,7 @@ class TraderMenu extends UIScriptedMenu
 	void updatePlayerCurrencyAmount()
 	{
 		m_Player_CurrencyAmount = 0;
-		m_Player_CurrencyAmount = TraderLibrary.GetPlayerCurrencyAmount(m_TraderID, m_Player);
+		m_Player_CurrencyAmount = TraderLibrary.GetPlayerCurrencyAmount(trader, m_Player);
 		m_CurrencyAmountText.SetText(" " + m_Player_CurrencyAmount);
 	}
 
@@ -544,6 +570,10 @@ class TraderMenu extends UIScriptedMenu
 			foreach(TR_Trader_Item catTraderItem : ListOfItemsFiltered)
 			{ 
 				displayName = TraderLibrary.GetItemDisplayName(catTraderItem.ClassName);
+                if(catTraderItem.DisplayName.Length() > 0)
+                {
+					displayName = catTraderItem.DisplayName;
+                }
 				m_ListboxItems.AddItem( displayName, NULL, 0 );	
 				m_ListboxItems.SetItem( countFilter, "" + catTraderItem.BuyPrice, NULL, 1 );
 				m_ListboxItems.SetItem( countFilter, "" + catTraderItem.SellPrice, NULL, 2 );
@@ -566,7 +596,7 @@ class TraderMenu extends UIScriptedMenu
 		int itemQuantity = catTraderItem.Quantity;
 		if (catTraderItem.SellPrice < 0)
 			return false;
-		else if (TraderLibrary.IsInPlayerInventory(m_Player, itemClassname, itemQuantity) || (catTraderItem.Type == TR_Item_Type.Vehicle && TraderLibrary.GetVehicleToSell(m_Player, m_TraderID, itemClassname)))
+		else if (TraderLibrary.IsInPlayerInventory(m_Player, catTraderItem, itemQuantity) || (catTraderItem.Type == TR_Item_Type.Vehicle && TraderLibrary.GetVehicleToSell(m_Player, m_TraderID, itemClassname)))
 			return true;
 
 		return false;
