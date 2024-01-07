@@ -15,9 +15,10 @@ class TraderPreset
 	protected float version;
     ref array<ref TR_Preset> Presets;
 
-    void SetConfigPath(string fileName)
+    string SetConfigPath(string fileName)
     {
         m_ConfigName = TraderProfileFolder + "/TraderPresets/" + fileName + ".json";
+        return m_ConfigName;
     }
 
     void Default()
@@ -67,8 +68,11 @@ class TraderPresetsFiles : Managed
     {
 		version = 1.0;        
         TraderPreset config = new TraderPreset;
-        config.SetConfigPath("DefaultTraderPresets");
-        config.Default();
+        string defaultConfig = config.SetConfigPath("DefaultTraderPresets");
+        if (!FileExist(defaultConfig))
+        { 
+            config.Default();
+        }
         TraderPresetsFilesToLoad = new array<string>;
         TraderPresetsFilesToLoad.Insert("DefaultTraderPresets");
 		Save();

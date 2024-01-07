@@ -219,12 +219,13 @@ class TraderMenu extends UIScriptedMenu
 		if(!ListOfItemsFiltered.Get(row_index))
 			return false;
 
+		TR_Trader_Item item = ListOfItemsFiltered.Get(row_index);
 		string itemType = ListOfItemsFiltered.Get(row_index).ClassName;
 		int itemQuantity = ListOfItemsFiltered.Get(row_index).Quantity;
 		
 		if ( w == m_BtnBuy )
 		{
-            if(!previewItem)                
+            if(!previewItem || item.Type == TR_Item_Type.Unknown)                
 			{
 				TraderMessage.PlayerWhite("You cannot buy this item. Item doesn't exist.", m_Player);
 				return true;
@@ -243,6 +244,11 @@ class TraderMenu extends UIScriptedMenu
 		
 		if ( w == m_BtnSell )
 		{
+            if(!previewItem || item.Type == TR_Item_Type.Unknown)                
+			{
+				TraderMessage.PlayerWhite("You cannot sell this item. Item doesn't exist.", m_Player);
+				return true;
+			}
 			if (m_UiSellTimer > 0)
 			{
 				TraderMessage.PlayerWhite("#tm_not_that_fast", m_Player);
@@ -575,8 +581,16 @@ class TraderMenu extends UIScriptedMenu
 					displayName = catTraderItem.DisplayName;
                 }
 				m_ListboxItems.AddItem( displayName, NULL, 0 );	
-				m_ListboxItems.SetItem( countFilter, "" + catTraderItem.BuyPrice, NULL, 1 );
-				m_ListboxItems.SetItem( countFilter, "" + catTraderItem.SellPrice, NULL, 2 );
+				if(catTraderItem.Type == TR_Item_Type.Unknown)                
+				{
+					m_ListboxItems.SetItem( countFilter, "", NULL, 1 );
+					m_ListboxItems.SetItem( countFilter, "", NULL, 2 );
+				}
+				else
+				{
+					m_ListboxItems.SetItem( countFilter, "" + catTraderItem.BuyPrice, NULL, 1 );
+					m_ListboxItems.SetItem( countFilter, "" + catTraderItem.SellPrice, NULL, 2 );
+				}
 				countFilter++;
 			}
 		}

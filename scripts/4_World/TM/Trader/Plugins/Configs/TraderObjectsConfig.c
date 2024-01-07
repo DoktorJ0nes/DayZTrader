@@ -1,8 +1,8 @@
 class TraderObjectAttachment
 {
     string ClassName;
-    int Quantity;
-    bool MaxQuantity;
+    int Quantity = 1;
+    bool MaxQuantity = false;
     TR_Item_Type Type;
     ref array<ref TraderObjectAttachment> Attachments;
     
@@ -101,7 +101,7 @@ class TraderObject
 	vector Orientation;
     bool IsPersistentItem;
 	bool IsNPC;
-    ref array<TraderObjectAttachment> Attachments;
+    ref array<ref TraderObjectAttachment> Attachments;
 };
 
 class TraderObjectsConfig : Managed
@@ -112,23 +112,24 @@ class TraderObjectsConfig : Managed
     private static const string m_FireBarrelName = "BarrelHoles_"; 
 
 	protected float version;
-	ref array<TraderObject> traderObjects;
+	ref array<ref TraderObject> traderObjects;
     
-    void SetConfigPath(string fileName)
+    string SetConfigPath(string fileName)
     {
         m_ConfigName = TraderProfileFolder + "/TraderObjects/" + fileName + ".json";
+        return m_ConfigName;
     }
 
 	void Default()
     {
 		version = 1.0;
         //Example NPC with clothing
-		TraderObject exampleNPC = new TraderObject;
+		ref TraderObject exampleNPC = new TraderObject;
 		exampleNPC.ClassName = "SurvivorF_Irena";
 		exampleNPC.Position = "3703.35 402.0 5986.36";
 		exampleNPC.Orientation = "0 0 0";
 		exampleNPC.IsNPC = true;
-		exampleNPC.Attachments = new array<TraderObjectAttachment>;
+		exampleNPC.Attachments = new array<ref TraderObjectAttachment>;
         TraderObjectAttachment att1 = new TraderObjectAttachment;
         att1.ClassName = "BandageDressing";
         exampleNPC.Attachments.Insert(att1);
@@ -140,20 +141,20 @@ class TraderObjectsConfig : Managed
         exampleNPC.Attachments.Insert(att3);
 
         //Example FireBarrel
-        TraderObject exampleFireBarrel = new TraderObject;
+        ref TraderObject exampleFireBarrel = new TraderObject;
 		exampleFireBarrel.ClassName = "BarrelHoles_Green";
 		exampleFireBarrel.Position = "3705.35 402.0 5986.36";
 		exampleFireBarrel.Orientation = "0 0 0";
 		exampleFireBarrel.IsNPC = false;
 
         //Example MapObject
-        TraderObject exampleMapObject = new TraderObject;
+        ref TraderObject exampleMapObject = new TraderObject;
 		exampleMapObject.ClassName = "Land_RoadCone";
 		exampleMapObject.Position = "3701.35 402.0 5987.36";
 		exampleMapObject.Orientation = "0 0 0";
 		exampleMapObject.IsNPC = false;
 
-		traderObjects = new array<TraderObject>;
+		traderObjects = new array<ref TraderObject>;
 		traderObjects.Insert(exampleNPC);
 		traderObjects.Insert(exampleFireBarrel);
 		traderObjects.Insert(exampleMapObject);
@@ -264,7 +265,7 @@ class TraderObjectsConfig : Managed
 			TM_Print("TraderObject: " + traderObj.ClassName + " spawned at " + traderObj.Position);
             return newtraderObj;
 		}
-        TM_Print("TraderObject: " + traderObj.ClassName + "could NOT be spawned at " + traderObj.Position + ". Please check class name is correct.");
+        TM_Print("TraderObject: " + traderObj.ClassName + " could NOT be spawned at " + traderObj.Position + ". Please check class name is correct.");
         return null;
 	}
 
@@ -285,8 +286,11 @@ class TraderObjectFiles : Managed
     {
 		version = 1.0;        
         TraderObjectsConfig config = new TraderObjectsConfig;
-        config.SetConfigPath("DefaultTraderObjects");
-        config.Default();
+        string defaultConfig = config.SetConfigPath("DefaultTraderObjects");
+        if (!FileExist(defaultConfig))
+        { 
+            config.Default();
+        }
         TraderObjectFilesToLoad = new array<string>;
         TraderObjectFilesToLoad.Insert("DefaultTraderObjects");
 		Save();

@@ -74,7 +74,8 @@ class TR_Trader_Item
         if(!itemObj)
         {
             TM_Print("Could not identify item: " + ClassName);
-            return false;
+            Type = TR_Item_Type.Unknown;
+            return true;
         }
         if(itemObj.IsMagazine())
         {

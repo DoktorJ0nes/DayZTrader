@@ -10,7 +10,7 @@ class TD_Trader
 	vector VehicleOrientation;
 	bool IsNPC;
     ref array<string> Categories;
-    ref array<TraderObjectAttachment> Attachments;
+    ref array<ref TraderObjectAttachment> Attachments;
 };
 
 class TraderDefinitionsConfig : Managed

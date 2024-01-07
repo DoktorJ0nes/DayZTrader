@@ -7,6 +7,7 @@ class TR_Currency
 class TR_Trader_Currency
 {	
 	string CurrencyName;
+	//string CurrencyPrefix;
     ref array<ref TR_Currency> CurrencyNotes;
 };
 

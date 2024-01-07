@@ -51,7 +51,7 @@ class CfgPatches
 		units[] = {"MoneyRuble1","MoneyRuble5","MoneyRuble10","MoneyRuble25","MoneyRuble50","MoneyRuble100","Land_RoadCone","Hoodie_GraffitiTiles","Hoodie_DrJ0nes","VehicleKeyBase","VehicleKeyDuplicate","VehicleKeyLost","VehicleKeyRed","VehicleKeyBlack","VehicleKeyGrayCyan","VehicleKeyYellow","VehicleKeyPurple"};
 		weapons[] = {};
 		requiredVersion = 0.1;
-		requiredAddons[] = {"DZ_Data"};
+		requiredAddons[] = {"DZ_Data", "TraderConfigConverter"};
 	};
 };
 class CfgModels
