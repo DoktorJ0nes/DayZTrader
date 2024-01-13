@@ -5,7 +5,6 @@ modded class PlayerBase
     bool m_Trader_IsTrader = false;
 
 	protected int m_SafeZoneCount = 0;
-	protected int m_SafeZoneCountdown = 0;
 
     ref TraderMenu m_TraderMenu;
 	
@@ -17,11 +16,6 @@ modded class PlayerBase
 	bool IsInSafeZone()
 	{
 		return m_IsInSafeZone;
-	}
-
-	void SetSafeZoneCountdown(int value)
-	{
-		m_SafeZoneCountdown = value;
 	}
 
 	void AddSafeZoneTrigger()
@@ -44,7 +38,7 @@ modded class PlayerBase
 		}
 	}
 
-	void RemoveSafeZoneTrigger()
+	void RemoveSafeZoneTrigger(int exitTimer)
 	{
 		if (!GetGame().IsServer())
 			return;
@@ -57,8 +51,15 @@ modded class PlayerBase
 		
 		if (m_IsInSafeZone && m_SafeZoneCount == 0)
 		{
-			TraderMessage.Safezone(this, m_SafeZoneCountdown);
-			GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(OnExitSafeZoneCountdownComplete, m_SafeZoneCountdown * 1000, false);
+			TraderMessage.Safezone(this, exitTimer);			
+			if(exitTimer > 0)
+			{
+				GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(OnExitSafeZoneCountdownComplete, exitTimer * 1000, false);
+			}
+			else
+			{
+				OnExitSafeZoneCountdownComplete();
+			}
 		}
 	}
 
