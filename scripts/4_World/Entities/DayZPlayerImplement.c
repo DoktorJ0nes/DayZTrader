@@ -414,7 +414,7 @@ modded class DayZPlayerImplement
 			itemQuantity = 1;
 		}
 
-		traderServerLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
+		traderTradesLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 
 		if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
 		{
@@ -498,7 +498,7 @@ modded class DayZPlayerImplement
 			return;
 		}
 
-		traderServerLog("#tm_sold" + " " + getItemDisplayName(itemType) + " (" + itemType + ")");
+		traderTradesLog("sold" + " " + getItemDisplayName(itemType) + " (" + itemType + ")");
 
 		TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_was_sold", PlayerBase.Cast(this));
 
@@ -790,6 +790,11 @@ modded class DayZPlayerImplement
 	void traderServerLog(string message)
 	{
 		TraderMessage.ServerLog("[TRADER] Player: (" + GetIdentity().GetName() + ") " + GetIdentity().GetId() + " " + message);
+	}
+
+	void traderTradesLog(string message)
+	{
+		TraderMessage.TradesLog("[TRADER] Player: (" + GetIdentity().GetName() + ") " + GetIdentity().GetId() + " " + message);
 	}
 
 	void showTraderMessage(string message, float time, int color = 0)

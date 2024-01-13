@@ -7,6 +7,8 @@ modded class MissionServer
 	static const string m_Trader_AdminsFilePath = "$profile:Trader/TraderAdmins.txt";
 
 	float m_Trader_SafezoneTimeout = 30;
+	bool m_Trader_SafezoneRemoveAnimals = false;
+	bool m_Trader_SafezoneRemoveInfected = false;
 
 	bool m_Trader_ReadAllTraderData = false;
 
@@ -41,31 +43,28 @@ modded class MissionServer
 	float m_Trader_BuySellTimer = 0.3;
 		
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
-	ref array<BarrelHoles_ColorBase> m_Trader_SpawnedFireBarrels;
 
 	float m_Trader_StatUpdateTimeMax = 1;
 	float m_Trader_StatUpdateTime = m_Trader_StatUpdateTimeMax;
-
-	float m_Trader_SpawnedFireBarrelsUpdateTimerMax = 5;
-	float m_Trader_SpawnedFireBarrelsUpdateTimer = 0;
-
-	float m_Trader_ZombieCleanupUpdateTimerMax = 30;
-	float m_Trader_ZombieCleanupUpdateTimer = 0;
 
 	float m_Trader_VehicleCleanupUpdateTimerMax = 15 * 60;
 	float m_Trader_VehicleCleanupUpdateTimer = m_Trader_VehicleCleanupUpdateTimerMax;
 	
 	override void OnInit()
 	{		
-		super.OnInit();
-
-		TraderMessage.ServerLog("[TRADER] DEBUG START");
-		SpawnTraderObjects();
-		readTraderData();
-		readTraderVariables();
-		readTraderAdmins();
-		TraderMessage.ServerLog("[TRADER] DEBUG END");
+		super.OnInit(); 		
+		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(this.LoadServerConfigs, 1000, false);
 	}
+
+    void LoadServerConfigs()
+    {
+		TraderMessage.ServerLog("[TRADER] LOADING TRADER CONFIG");
+		SpawnTraderObjects();
+		readTraderVariables();
+		readTraderData();
+		readTraderAdmins();
+		TraderMessage.ServerLog("[TRADER] FINISHED LOADING TRADER CONFIG");
+    }
 
 	override void HandleBody(PlayerBase player)
     {
@@ -78,117 +77,17 @@ modded class MissionServer
 	override void OnUpdate(float timeslice)
 	{
 		super.OnUpdate(timeslice);
-
-		m_Trader_StatUpdateTime += timeslice;
-		if (m_Trader_StatUpdateTime >= m_Trader_StatUpdateTimeMax)
-		{
-			m_Trader_StatUpdateTime = 0;
-
-			for (int j = 0; j < m_Players.Count(); j++)
-			{
-				PlayerBase player = PlayerBase.Cast(m_Players.Get(j));
-				
-				if ( !player )
-					continue;	
-				if (!player.IsAlive())
-					continue;
-				
-				if (!m_Trader_ReadAllTraderData)
-					continue;
-
-				if (!player.m_Trader_RecievedAllData)
-					sendTraderDataToPlayer(player);
-			}
-			
-			for ( int i = 0; i < m_Trader_SpawnedTraderCharacters.Count(); i++ )
-			{
-				m_Trader_SpawnedTraderCharacters.Get(i).m_AgentPool.SetAgentCount(eAgents.INFLUENZA, 0);
-			}
-		}
-
-		m_Trader_SpawnedFireBarrelsUpdateTimer += timeslice;
-		if (m_Trader_SpawnedFireBarrelsUpdateTimer >= m_Trader_SpawnedFireBarrelsUpdateTimerMax)
-		{
-			m_Trader_SpawnedFireBarrelsUpdateTimer = 0;
-
-			for (int m = 0; m < m_Trader_SpawnedFireBarrels.Count(); m++)
-			{
-				BarrelHoles_ColorBase ntarget = m_Trader_SpawnedFireBarrels.Get(m);
-
-				if (!ntarget.IsBurning() && !ntarget.IsWet())
-				{
-					ItemBase kindling;
-					kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Rag"));
-					if (kindling)
-						kindling.SetQuantityMax();
-
-					//kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("BandageDressing"));
-					//if (kindling)
-					//	kindling.SetQuantityMax();
-
-					kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Bark_Oak"));
-					if (kindling)
-						kindling.SetQuantityMax();
-
-					kindling = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Bark_Birch"));
-					if (kindling)
-						kindling.SetQuantityMax();
-
-					ItemBase fuel;
-					fuel = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("Firewood"));
-					if (fuel)
-						fuel.SetQuantityMax();
-
-					fuel = ItemBase.Cast(ntarget.GetInventory().CreateAttachment("WoodenStick"));
-					//if (fuel)
-					//	fuel.SetQuantityMax();
-
-					EntityAI fire_source_dummy;
-					ntarget.OnIgnitedThis(fire_source_dummy);
-				}
-
-				if (ntarget.IsWet())
-					ntarget.SetWet(ntarget.GetWetMin());
-			}
-		}
-
-		m_Trader_ZombieCleanupUpdateTimer += timeslice;
-		if (m_Trader_ZombieCleanupUpdateTimer >= m_Trader_ZombieCleanupUpdateTimerMax)
-		{
-			m_Trader_ZombieCleanupUpdateTimer = 0;
-
-			for (int n = 0; n < m_Trader_TraderPositions.Count(); n++)
-			{
-				vector orientation = Vector(0, 0, 0);
-				int safezoneDiameter = m_Trader_TraderSafezones.Get(n) * 2;
-				vector edgeLength = Vector(safezoneDiameter, safezoneDiameter, safezoneDiameter);
-				array<Object> excludedObjects = new array<Object>;
-				array<Object> collidedObjects = new array<Object>;
-				
-				if (GetGame().IsBoxColliding(m_Trader_TraderPositions.Get(n), orientation, edgeLength, excludedObjects, collidedObjects))
-				{
-					for (int o = 0; o < collidedObjects.Count(); o++)
-					{
-						string objectClass = collidedObjects.Get(o).GetType();
-
-						if (objectClass.Contains("ZmbF_") || objectClass.Contains("ZmbM_"))
-							GetGame().ObjectDelete(collidedObjects.Get(o));	
-					}
-				}
-			}
-		}
-
 		m_Trader_VehicleCleanupUpdateTimer += timeslice;
-		if (m_Trader_VehicleCleanupUpdateTimer >= m_Trader_VehicleCleanupUpdateTimerMax && m_Trader_VehicleCleanupUpdateTimerMax != 0)
+		if (m_Trader_VehicleCleanupUpdateTimer >= m_Trader_VehicleCleanupUpdateTimerMax && m_Trader_VehicleCleanupUpdateTimerMax != 0 && m_Trader_TraderVehicleSpawns)
 		{
 			m_Trader_VehicleCleanupUpdateTimer = 0;
 
 			for (int p = 0; p < m_Trader_TraderVehicleSpawns.Count(); p++)
 			{
 				vector size = "3 5 9";
-				excludedObjects = new array<Object>;
-				collidedObjects = new array<Object>;
-
+				array<Object> excludedObjects = new array<Object>;
+				array<Object> collidedObjects = new array<Object>;
+				//is this working?
 				if (GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(p), m_Trader_TraderVehicleSpawnsOrientation.Get(p), size, excludedObjects, collidedObjects))
 				{
 					for (int q = 0; q < collidedObjects.Count(); q++)
@@ -217,10 +116,9 @@ modded class MissionServer
 	
 	void SpawnTraderObjects()
 	{
-		m_Trader_SpawnedTraderCharacters = new array<PlayerBase>;
-		m_Trader_SpawnedFireBarrels = new array<BarrelHoles_ColorBase>;
 		m_Trader_NPCDummyClasses = new array<string>;
 		
+		TraderMessage.ServerLog("[TRADER] READING TRADER OBJECTS FILE");
 		FileHandle file_index = OpenFile(m_Trader_ObjectsFilePath, FileMode.READ);
 				
 		if ( file_index == 0 )
@@ -248,9 +146,9 @@ modded class MissionServer
 			line_content = FileReadHelper.TrimComment(line_content);
 			line_content = FileReadHelper.TrimSpaces(line_content);
 			
-			TraderMessage.ServerLog("[TRADER] READING OBJECT TYPE ENTRY..");
 			
 			string traderObjectType = line_content;
+			TraderMessage.ServerLog("[TRADER] OBJECT TYPE ENTRY " + line_content);
 			
 			// Get Object Position --------------------------------------------------------------------------------
 			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectPosition>", "<FileEnd>");
@@ -258,7 +156,7 @@ modded class MissionServer
 			line_content.Replace("<ObjectPosition>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
 			
-			TraderMessage.ServerLog("[TRADER] READING OBJECT POSITION ENTRY..");
+			//TraderMessage.ServerLog("[TRADER] READING OBJECT POSITION ENTRY..");
 			
 			TStringArray strso = new TStringArray;
 			line_content.Split( ",", strso );
@@ -277,64 +175,14 @@ modded class MissionServer
 			objectPosition[1] = traderObjectPosY.ToFloat();
 			objectPosition[2] = traderObjectPosZ.ToFloat();
 
-			// HANDLE TRADER FIRE BARREL BEGIN
-			string persistantObjectType = "BarrelHoles_";
-			bool isPersistant = traderObjectType.Contains(persistantObjectType);
-			if (isPersistant)
-			{
-				vector persistanceCheck_size = "1 1 1";
-				array<Object> persistanceCheck_excluded_objects = new array<Object>;
-				array<Object> persistanceCheck_nearby_objects = new array<Object>;
-
-				GetGame().IsBoxColliding( objectPosition, vector.Zero, persistanceCheck_size, persistanceCheck_excluded_objects, persistanceCheck_nearby_objects);
-
-				for (int pc = 0; pc < persistanceCheck_nearby_objects.Count(); pc++)
-				{
-					if (persistanceCheck_nearby_objects.Get(pc).GetType() == traderObjectType)
-						GetGame().ObjectDelete(persistanceCheck_nearby_objects.Get(pc));
-				}
-			}
-			// HANDLE TRADER FIRE BARREL END
-
-			Object obj = GetGame().CreateObject( traderObjectType, objectPosition, false, false, true );
-			obj.SetPosition(objectPosition); // prevent automatic on ground placing
-			TraderMessage.ServerLog("[TRADER] SPAWNED OBJECT '" + traderObjectType + "' AT '" + objectPosition + "'");
-			
-			// HANDLE TRADER FIRE BARREL BEGIN
-			if (isPersistant)
-			{
-				BarrelHoles_ColorBase ntarget = BarrelHoles_ColorBase.Cast( obj );
-				if( ntarget )
-				{
-					ntarget.Trader_IsInSafezone = true;
-
-					ntarget.Open();
-					TraderMessage.ServerLog("[TRADER] OPENED BARREL");
-
-					m_Trader_SpawnedFireBarrels.Insert(ntarget);
-				}
-			}
-			// HANDLE TRADER FIRE BARREL END
-
-			bool isTrader = false;
-			PlayerBase man;
-			if (Class.CastTo(man, obj))
-			{
-				TraderMessage.ServerLog("[TRADER] Object was a Man..");
-				isTrader = true;
-
-				m_Trader_SpawnedTraderCharacters.Insert(man);
-				man.SetAllowDamage(false);
-				man.m_Trader_IsTrader = true;
-			}
-
+			TraderMessage.ServerLog("[TRADER] OBJECT POSITION = '" + objectPosition + "'");
 			// Get Object Orientation -------------------------------------------------------------------------------
 			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectOrientation>", "<FileEnd>");
 			
 			line_content.Replace("<ObjectOrientation>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
 			
-			TraderMessage.ServerLog("[TRADER] READING OBJECT ORIENTATION ENTRY..");
+			//TraderMessage.ServerLog("[TRADER] READING OBJECT ORIENTATION ENTRY..");
 
 			TStringArray strsod = new TStringArray;
 			line_content.Split( ",", strsod );
@@ -352,17 +200,78 @@ modded class MissionServer
 			objectOrientation[0] = traderObjectOriX.ToFloat();
 			objectOrientation[1] = traderObjectOriY.ToFloat();
 			objectOrientation[2] = traderObjectOriZ.ToFloat();
-			
-			obj.SetOrientation(objectOrientation);
 
-			TraderMessage.ServerLog("[TRADER] OBJECT ORIENTATION = '" + obj.GetOrientation() + "'");
+			TraderMessage.ServerLog("[TRADER] OBJECT ORIENTATION = '" + objectOrientation + "'");
 
+			// HANDLE TRADER PERSISTENT ITEMS BEGIN
+			array<Object> persistanceCheck_nearby_objects = new array<Object>;
+			GetGame().GetObjectsAtPosition(objectPosition, 2, persistanceCheck_nearby_objects, null);
+			bool foundItem = false;
+			//TraderMessage.ServerLog("TraderObject: persistanceCheck_nearby_objects " + persistanceCheck_nearby_objects.Count().ToString() + " was found at " + objectPosition);
+			for (int i = 0; i < persistanceCheck_nearby_objects.Count(); i++)
+			{
+				Object objectNearby = persistanceCheck_nearby_objects.Get(i);
+				//TraderMessage.ServerLog("TraderObject: " + objectNearby.GetType() + " was found at " + objectPosition);
+				if(objectNearby && objectNearby.IsKindOf(traderObjectType))
+				{                        
+					foundItem = true;
+					TraderMessage.ServerLog("TraderObject: " + traderObjectType + " was found already at " + objectPosition + ". Persistent item won't be spawned again.");
+					
+					BarrelHoles_ColorBase barrel = BarrelHoles_ColorBase.Cast(objectNearby);
+					if (barrel)
+					{
+						barrel.IsTraderFireBarrel = true;
+						if(!barrel.IsIgnited())
+						{
+							barrel.StartFire(true);
+						}
+						break;
+					}
+				}
+			}
+			Object newtraderObj;
+			bool isTrader = false;	
+			PlayerBase man;
+			if(!foundItem)
+			{
+				newtraderObj = GetGame().CreateObjectEx(traderObjectType, objectPosition, ECE_PLACE_ON_SURFACE);
+				if (newtraderObj)
+				{			
+					newtraderObj.SetPosition(objectPosition);
+					newtraderObj.SetOrientation(objectOrientation);
+					TraderMessage.ServerLog("TraderObject: " + traderObjectType + " spawned at " + objectPosition);
 
-
-
-
-
-
+					BarrelHoles_ColorBase spawnedBarrel = BarrelHoles_ColorBase.Cast(newtraderObj);
+					if( spawnedBarrel )
+					{				
+						spawnedBarrel.IsTraderFireBarrel = true;  
+						spawnedBarrel.Open();                    
+						ItemBase firewood = ItemBase.Cast(spawnedBarrel.GetInventory().CreateAttachment("FireWood"));
+						if(firewood)
+						{
+							firewood.SetQuantity(firewood.GetQuantityMax())
+						}
+						spawnedBarrel.GetInventory().CreateAttachment("Paper");
+						if(!spawnedBarrel.IsIgnited())
+						{
+							spawnedBarrel.StartFire(true);
+						}
+						spawnedBarrel.Close();   
+						spawnedBarrel.SoundSynchRemoteReset();                 
+					}				
+					if (Class.CastTo(man, newtraderObj))
+					{
+						TraderMessage.ServerLog("[TRADER] Object was a Man..");
+						isTrader = true;
+						man.SetAllowDamage(false);
+						man.m_Trader_IsTrader = true;
+					}
+				}
+				else
+				{
+					TraderMessage.ServerLog("TraderObject: " + traderObjectType + " could NOT be spawned at " + objectPosition + ". Please check class name is correct.");
+				}       			
+			}			
 
 			int attachmentCounter = 0;
 			while ( attachmentCounter <= 1000 && line_content.Contains("<Object>") == false)
@@ -384,7 +293,7 @@ modded class MissionServer
 				}
 
 				if (line_content.Contains("<Object>"))
-				{					
+				{
 					skipDirEntry = true;
 					markerCounter++;
 					break;
@@ -396,7 +305,7 @@ modded class MissionServer
 				line_content.Replace("<ObjectAttachment>", "");
 				line_content = FileReadHelper.TrimComment(line_content);
 				
-				TraderMessage.ServerLog("[TRADER] READING OBJECT ATTACHMENT ENTRY..");
+				//TraderMessage.ServerLog("[TRADER] READING OBJECT ATTACHMENT ENTRY..");
 
 				if (isTrader)
 				{
@@ -405,82 +314,35 @@ modded class MissionServer
 				}
 				else
 				{
-					if (line_content == "NPC_DUMMY")
+					if (line_content == "NPC_DUMMY" && newtraderObj)
 					{
-						m_Trader_NPCDummyClasses.Insert(obj.GetType());
+						m_Trader_NPCDummyClasses.Insert(newtraderObj.GetType());
 						TraderMessage.ServerLog("[TRADER] NPC DUMMY WAS REGISTERED!");
 					}
 					else
+					{	
 						TraderMessage.ServerLog("[TRADER] OBJECT TO ATTACH WAS INVALID!");
+					}
 				}
 
 				attachmentCounter++;
 			}
-
-
-
-			
-			/*// Get Object Orientation -------------------------------------------------------------------------------
-			line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<ObjectOrientation>", "<Object>");
-			
-			if (line_content == string.Empty)	
-				line_content = "<FileEnd>";
-			
-			if (line_content.Contains("<Object>"))
-			{				
-				if (isTrader)
-				{
-					//man.m_Trader_IsTrader = true;
-					m_Trader_SpawnedTraderCharacters.Insert(man);
-					man.SetAllowDamage(false);
-				}
-				
-				skipDirEntry = true;
-				markerCounter++;
-				continue;
-			}
-			
-			if (!line_content.Contains("<ObjectOrientation>"))
-				continue;
-			
-			line_content.Replace("<ObjectOrientation>", "");
-			line_content = FileReadHelper.TrimComment(line_content);
-			
-			TraderMessage.ServerLog("[TRADER] READING OBJECT ORIENTATION ENTRY..");
-			
-			TStringArray strsod = new TStringArray;
-			line_content.Split( ",", strsod );
-			
-			string traderObjectOriX = strsod.Get(0);
-			traderObjectOriX = FileReadHelper.TrimSpaces(traderObjectOriX);
-			
-			string traderObjectOriY = strsod.Get(1);
-			traderObjectOriY = FileReadHelper.TrimSpaces(traderObjectOriY);
-			
-			string traderObjectOriZ = strsod.Get(2);
-			traderObjectOriZ = FileReadHelper.TrimSpaces(traderObjectOriZ);
-			
-			vector objectOrientation = vector.Zero;
-			objectOrientation[0] = traderObjectOriX.ToFloat();
-			objectOrientation[1] = traderObjectOriY.ToFloat();
-			objectOrientation[2] = traderObjectOriZ.ToFloat();
-			
-			obj.SetOrientation(objectOrientation);
-
-			TraderMessage.ServerLog("[TRADER] OBJECT ORIENTATION = '" + obj.GetOrientation() + "'");
-
-			if (isTrader)
-			{
-				//man.m_Trader_IsInSafezone = true;
-				m_Trader_SpawnedTraderCharacters.Insert(man);
-				man.SetAllowDamage(false);
-			}*/
-						
-			
-			//markerCounter++;
 		}
 		
 		CloseFile(file_index);
+	}
+
+	override void InvokeOnConnect(PlayerBase player, PlayerIdentity identity)
+    {
+        super.InvokeOnConnect(player, identity);
+		if(!m_Trader_ReadAllTraderData)
+		{
+			TraderMessage.ServerLog( "[TRADER] Trader data was not ready!" );
+		}
+		if (!player.m_Trader_RecievedAllData)
+		{	
+			sendTraderDataToPlayer(player);
+		}
 	}
 
 	void sendTraderDataToPlayer(PlayerBase player)
@@ -591,10 +453,7 @@ modded class MissionServer
 			player.m_Trader_AdminPlayerUIDs.Insert(m_Trader_AdminPlayerUIDs.Get(i));
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_ADMINS_ENTRY, new Param1<string>(m_Trader_AdminPlayerUIDs.Get(i)), true, player.GetIdentity());
 		}
-		
-		// This is stupid - MDC
-		player.SetSafeZoneCountdown(m_Trader_SafezoneTimeout);
-		
+				
 		// confirm that all data was sended:
 		player.m_Trader_RecievedAllData = true;
 		
@@ -606,7 +465,7 @@ modded class MissionServer
 
 	void readTraderVariables()
 	{
-		TraderMessage.ServerLog("[TRADER] DEBUG START");
+		TraderMessage.ServerLog("[TRADER] READING TRADER VARIABLES FILE");
 
 		FileHandle file_index = OpenFile(m_Trader_VariableFilePath, FileMode.READ);
 		
@@ -650,28 +509,6 @@ modded class MissionServer
 				TraderMessage.ServerLog("[TRADER] STATUPDATETIMER = " + line_content);
 			}
 
-			if (line_content.Contains("<FireBarrelUpdateTimer>"))
-			{
-				line_content.Replace("<FireBarrelUpdateTimer>", "");
-				line_content = FileReadHelper.TrimComment(line_content);
-
-				m_Trader_SpawnedFireBarrelsUpdateTimerMax = line_content.ToFloat();
-				validEntry = true;
-
-				TraderMessage.ServerLog("[TRADER] FIREBARRELUPDATETIMER = " + line_content);
-			}
-
-			if (line_content.Contains("<ZombieCleanupTimer>"))
-			{
-				line_content.Replace("<ZombieCleanupTimer>", "");
-				line_content = FileReadHelper.TrimComment(line_content);
-
-				m_Trader_ZombieCleanupUpdateTimerMax = line_content.ToFloat();
-				validEntry = true;
-
-				TraderMessage.ServerLog("[TRADER] ZOMBIECLEANUPTIMER = " + line_content);
-			}
-
 			if (line_content.Contains("<VehicleCleanupTimer>"))
 			{
 				line_content.Replace("<VehicleCleanupTimer>", "");
@@ -694,6 +531,36 @@ modded class MissionServer
 
 				TraderMessage.ServerLog("[TRADER] SAFEZONETIMEOUT = " + line_content);
 			}
+			string lowerLine;
+			if (line_content.Contains("<SafezoneRemoveAnimals>"))
+			{
+				line_content.Replace("<SafezoneRemoveAnimals>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+				lowerLine = line_content;
+				lowerLine.ToLower();
+				if(lowerLine.Contains("yes"))
+				{
+					m_Trader_SafezoneRemoveAnimals = true;
+				}
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] SafezoneRemoveAnimals = " + line_content);
+			}
+			
+			if (line_content.Contains("<SafezoneRemoveInfected>"))
+			{
+				line_content.Replace("<SafezoneRemoveInfected>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+				lowerLine = line_content;
+				lowerLine.ToLower();
+				if(lowerLine.Contains("yes"))
+				{
+					m_Trader_SafezoneRemoveInfected = true;
+				}
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] SafezoneRemoveInfected = " + line_content);
+			}
 
 			if (validEntry)
 				variableCounter++;
@@ -706,6 +573,7 @@ modded class MissionServer
 
 	void readTraderAdmins()
 	{
+		TraderMessage.ServerLog("[TRADER] READING TRADER ADMINS FILE");
 		// clear all data here:
 		m_Trader_AdminPlayerUIDs = new array<string>;	
 
@@ -729,7 +597,7 @@ modded class MissionServer
 			if (line_content.Contains("<FileEnd>") || line_content.Length() < 16)
 				continue;
 
-			TraderMessage.ServerLog("[TRADER] READING ADMIN PLAYER UID ENTRY..");
+			TraderMessage.ServerLog("[TRADER] ADMIN PLAYER UID ENTRY " + line_content);
 			m_Trader_AdminPlayerUIDs.Insert(line_content);
 
 			adminsCounter++;
@@ -782,6 +650,7 @@ modded class MissionServer
 		
 		FileHandle file_index = OpenFile(m_Trader_ConfigFilePath, FileMode.READ);
 		
+		TraderMessage.ServerLog("[TRADER] READING TRADER CURRENCY, PRICES AND CATEGORIES FILES");
 		if ( file_index == 0 )
 		{
 			TraderMessage.ServerLog("[TRADER] FOUND NO TRADERCONFIG FILE!");
@@ -790,11 +659,11 @@ modded class MissionServer
 		
 		string line_content = "";
 		
-		TraderMessage.ServerLog("[TRADER] READING CURRENCY NAME ENTRY..");
 		line_content = FileReadHelper.SearchForNextTermInFile(file_index, "<CurrencyName>", "");
 		line_content.Replace("<CurrencyName>", "");
 		line_content = FileReadHelper.TrimComment(line_content);
 		m_Trader_CurrencyName = line_content;
+		TraderMessage.ServerLog("[TRADER] CURRENCY NAME ENTRY " + m_Trader_CurrencyName);
 
 		int currencyCounter = 0;
 
@@ -808,8 +677,6 @@ modded class MissionServer
 			if (line_content.Contains("<Trader>"))
 				break;
 
-			TraderMessage.ServerLog("[TRADER] READING CURRENCY ENTRY..");
-
 			TStringArray crys = new TStringArray;
 			line_content.Split( ",", crys );
 
@@ -822,6 +689,8 @@ modded class MissionServer
 			m_Trader_CurrencyClassnames.Insert(currencyClassname);
 			m_Trader_CurrencyValues.Insert(currencyValue.ToInt());
 
+			TraderMessage.ServerLog("[TRADER] CURRENCY ENTRY " + currencyClassname + " value: " + currencyValue);
+
 			currencyCounter++;
 		}
 
@@ -830,9 +699,7 @@ modded class MissionServer
 		
 		//line_content = "";
 		while (traderCounter <= 5000 && line_content != "<FileEnd>")
-		{
-			TraderMessage.ServerLog("[TRADER] READING TRADER ENTRY..");
-			
+		{			
 			if (traderInstanceDone == false)
 				line_content = FileReadHelper.SearchForNextTermsInFile(file_index, {"<Trader>", "<OpenFile>"}, "");
 			else
@@ -849,6 +716,7 @@ modded class MissionServer
 			line_content.Replace("<Trader>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
 			
+			TraderMessage.ServerLog("[TRADER] READING TRADER ENTRY " + line_content);
 			m_Trader_TraderNames.Insert(line_content);
 				
 			int categoryCounter = 0;
@@ -878,10 +746,11 @@ modded class MissionServer
 					break;
 				}
 				
-				TraderMessage.ServerLog("[TRADER] READING CATEGORY ENTRY..");
 				line_content.Replace("<Category>", "");
-				m_Trader_Categorys.Insert(FileReadHelper.TrimComment(line_content));
+				string category = FileReadHelper.TrimComment(line_content);
+				m_Trader_Categorys.Insert(category);
 				m_Trader_CategorysTraderKey.Insert(traderCounter);
+				TraderMessage.ServerLog("[TRADER] READING CATEGORY ENTRY " + category);
 				
 				categoryCounter++;
 			}
@@ -1028,7 +897,7 @@ modded class MissionServer
 			line_content = FileReadHelper.TrimComment(line_content);
 			line_content = FileReadHelper.TrimSpaces(line_content);
 			
-			TraderMessage.ServerLog("[TRADER] READING MARKER ID ENTRY..");
+			TraderMessage.ServerLog("[TRADER] MARKER ID ENTRY " + line_content);
 								
 			m_Trader_TraderIDs.Insert(line_content.ToInt());
 			
@@ -1055,7 +924,7 @@ modded class MissionServer
 			markerPosition[1] = traderMarkerPosY.ToFloat();
 			markerPosition[2] = traderMarkerPosZ.ToFloat();
 			
-			TraderMessage.ServerLog("[TRADER] READING MARKER POSITION ENTRY..");
+			TraderMessage.ServerLog("[TRADER] TRADER MARKER POSITION ENTRY " + markerPosition);
 			
 			m_Trader_TraderPositions.Insert(markerPosition);
 			
@@ -1064,9 +933,7 @@ modded class MissionServer
 			
 			line_content.Replace("<TraderMarkerSafezone>", "");
 			line_content = FileReadHelper.TrimComment(line_content);
-			line_content = FileReadHelper.TrimSpaces(line_content);
-			
-			TraderMessage.ServerLog("[TRADER] READING MARKER SAFEZONE ENTRY..");
+			line_content = FileReadHelper.TrimSpaces(line_content);	
 			
 			m_Trader_TraderSafezones.Insert(line_content.ToInt());
 
@@ -1084,6 +951,9 @@ modded class MissionServer
 				triggerPosition[1] = triggerPosition[1] - 50; // Sane default values
 
 				newTrigger.SetCollisionCylinder( triggerRadius, 100 );
+				newTrigger.InitSafeZone(m_Trader_SafezoneTimeout, m_Trader_SafezoneRemoveAnimals, m_Trader_SafezoneRemoveInfected);
+				
+				TraderMessage.ServerLog("[TRADER] SPAWNED SAFEZONE AT " + markerPosition);
 			}
 			
 			// Get Trader Marker Vehicle Spawnpoint:					
@@ -1120,7 +990,7 @@ modded class MissionServer
 			markerVehiclePosition[1] = traderMarkerVehiclePosY.ToFloat();
 			markerVehiclePosition[2] = traderMarkerVehiclePosZ.ToFloat();
 
-			TraderMessage.ServerLog("[TRADER] READING MARKER VEHICLE ENTRY..");
+			TraderMessage.ServerLog("[TRADER] TRADER MARKER VEHICLE ENTRY " + markerVehiclePosition);
 
 			m_Trader_TraderVehicleSpawns.Insert(markerVehiclePosition);
 
@@ -1199,7 +1069,7 @@ modded class MissionServer
 			line_content = FileReadHelper.TrimComment(line_content);
 			line_content = FileReadHelper.TrimSpaces(line_content);
 			
-			TraderMessage.ServerLog("[TRADER] READING VEHICLE NAME ENTRY..");
+			TraderMessage.ServerLog("[TRADER] VEHICLE NAME ENTRY " + line_content);
 
 			m_Trader_Vehicles.Insert(line_content);
 
