@@ -76,7 +76,7 @@ modded class DayZPlayerImplement
 			SetAllowDamage(true);
 	}
 
-	void CreateItemInInventory(string itemType, int amount)
+	void CreateItemInInventory(PlayerBase player, string itemType, int amount)
 	{
 		array<EntityAI> itemsArray = new array<EntityAI>;
 		GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
@@ -144,35 +144,20 @@ modded class DayZPlayerImplement
 		//any leftover or new stacks
 		if (currentAmount > 0 || !hasSomeQuant)
 		{
-			EntityAI newItem = EntityAI.Cast(GetInventory().CreateInInventory(itemType));
+			EntityAI newItem = EntityAI.Cast(GetGame().CreateObjectEx(itemType, player.GetPosition(), ECE_PLACE_ON_SURFACE));
 			if (!newItem)
 			{
-				for (int j = 0; j < itemsArray.Count(); j++)
-				{
-					Class.CastTo(item, itemsArray.Get(j));
-					if (!item)
-						continue;
-					newItem = EntityAI.Cast(item.GetInventory().CreateInInventory(itemType)); //CreateEntityInCargo	
-					if (newItem)
-						break;
-				}
+				Error("[Trader] Failed to spawn entity "+itemType+" , make sure the classname exists and item can be spawned");
+				return;
 			}
-			if (newItem)
+			if(player.ServerTakeEntityToInventory(FindInventoryLocationType.CARGO | FindInventoryLocationType.ATTACHMENT, newItem))
 			{
-				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_added_to_inventory", PlayerBase.Cast(this));
+				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_added_to_inventory", player);
 			}
-			if (!newItem)
+			else
 			{
-				newItem = EntityAI.Cast(GetGame().CreateObjectEx(itemType, GetPosition(), ECE_PLACE_ON_SURFACE));
-				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_was_placed_on_ground", PlayerBase.Cast(this));
-				//GetGame().RPCSingleParam(PlayerBase.Cast(this), TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(true), true, GetIdentity());
-				if (!newItem)
-				{
-					Error("[TraderFix] Failed to spawn entity "+itemType+" , make sure the classname exists and item can be spawned");
-					return;
-				}
+				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_was_placed_on_ground", player);
 			}
-			
 			Magazine newMagItem = Magazine.Cast(newItem);
 			Ammunition_Base newammoItem = Ammunition_Base.Cast(newItem);
 			if(newMagItem && !newammoItem)					
@@ -266,12 +251,12 @@ modded class DayZPlayerImplement
 			{
 				if (currencyAmount > itemMaxAmount * m_Trader_CurrencyValues.Get(i))
 				{
-					CreateItemInInventory(m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
+					CreateItemInInventory(PlayerBase.Cast(this), m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
 					currencyAmount -= itemMaxAmount * m_Trader_CurrencyValues.Get(i);
 				}
 				else
 				{
-					CreateItemInInventory(m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i));
+					CreateItemInInventory(PlayerBase.Cast(this), m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i));
 					currencyAmount -= (currencyAmount / m_Trader_CurrencyValues.Get(i) * m_Trader_CurrencyValues.Get(i));
 				}
 
@@ -443,7 +428,7 @@ modded class DayZPlayerImplement
 			if (isDuplicatingKey)
 				createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
 			else
-				CreateItemInInventory(itemType, itemQuantity);
+				CreateItemInInventory(PlayerBase.Cast(this), itemType, itemQuantity);
 		}
 	}
 
@@ -1527,49 +1512,45 @@ modded class DayZPlayerImplement
 	void spawnVehicle(int traderUID, string vehicleType, int vehicleKeyHash)
 	{
 		vector objectPosition = m_Trader_TraderVehicleSpawns.Get(traderUID);
-		vector objectDirection = m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID);
-
-		// Get all Players to synchronize Things:
-		array<Man> m_Players = new array<Man>;
-		GetGame().GetWorld().GetPlayerList(m_Players);
-		PlayerBase currentPlayer;
-
-		// Spawn:
-		Object obj = GetGame().CreateObject( vehicleType, objectPosition, false, false, true );
-
-		obj.SetOrientation(objectDirection);
-		obj.SetDirection(obj.GetDirection());
-
-		for (int i = 0; i < m_Players.Count(); i++)
+		vector objectOrientation = m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID);
+		
+		EntityAI vehicle = EntityAI.Cast(GetGame().CreateObjectEx(vehicleType, objectPosition, ECE_LOCAL | ECE_CREATEPHYSICS | ECE_TRACE));
+		if(!vehicle)
 		{
-			currentPlayer = PlayerBase.Cast(m_Players.Get(i));
+			//throw error
+			return;
+		}			
+		GetGame().RemoteObjectCreate(vehicle);
 
-			if ( !currentPlayer )
-				continue;
-
-			GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_OBJECT_ORIENTATION, new Param2<Object, vector>( obj, objectDirection ), true, currentPlayer.GetIdentity());
-		}
+		vehicle.SetPosition(objectPosition);
+		vehicle.SetOrientation(objectOrientation);
+		vehicle.SetDirection(vehicle.GetDirection());
 		
 		// Attach Parts:
-		EntityAI vehicle;
-		Class.CastTo(vehicle, obj);
-
 		int vehicleId = -1;
-		for (i = 0; i < m_Trader_Vehicles.Count(); i++)
+		for (int i = 0; i < m_Trader_Vehicles.Count(); i++)
 		{
 			if (vehicleType == m_Trader_Vehicles.Get(i))
+			{
 				vehicleId = i;
+				break;
+			}
 		}
 
 		for (int j = 0; j < m_Trader_VehiclesParts.Count(); j++)
 		{
 			if (m_Trader_VehiclesPartsVehicleId.Get(j) == vehicleId)
-				vehicle.GetInventory().CreateAttachment(m_Trader_VehiclesParts.Get(j));
+			{
+				EntityAI vehiclePart = vehicle.GetInventory().CreateAttachment(m_Trader_VehiclesParts.Get(j));
+				if(!vehiclePart)
+				{
+					vehicle.GetInventory().CreateInInventory(m_Trader_VehiclesParts.Get(j));
+				}
+			}
 		}
 
 		// Try to fill Fuel, Oil, Brakeliquid, Coolantliquid and lock Vehicle:
-		Car car;
-		Class.CastTo(car, vehicle);
+		CarScript car = CarScript.Cast(vehicle);
 		if (car)
 		{
 			car.Fill( CarFluid.FUEL, car.GetFluidCapacity( CarFluid.FUEL ));
@@ -1582,22 +1563,18 @@ modded class DayZPlayerImplement
 			car.Fill( CarFluid.USER3, car.GetFluidCapacity( CarFluid.USER3 ));
 			car.Fill( CarFluid.USER4, car.GetFluidCapacity( CarFluid.USER4 ));
 
-			CarScript carScript;
-			if (Class.CastTo(carScript, vehicle))
+			car.m_Trader_IsInSafezone = true;
+
+			if (vehicleKeyHash != 0)
 			{
-				carScript.m_Trader_IsInSafezone = true;
-
-				if (vehicleKeyHash != 0)
-				{
-					carScript.m_Trader_Locked = true;
-					carScript.m_Trader_HasKey = true;
-					carScript.m_Trader_VehicleKeyHash = vehicleKeyHash;
-				}
-
-				carScript.SynchronizeValues();
-
-				car.SetAllowDamage(false);
+				car.m_Trader_Locked = true;
+				car.m_Trader_HasKey = true;
+				car.m_Trader_VehicleKeyHash = vehicleKeyHash;
 			}
+
+			car.SynchronizeValues();
+
+			car.SetAllowDamage(false);
 		}
 	}
 
