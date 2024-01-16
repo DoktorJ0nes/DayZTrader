@@ -6,7 +6,7 @@ class TraderMessage
         PluginTraderServerLog m_Logger = PluginTraderServerLog.Cast(GetPlugin(PluginTraderServerLog));
         if(m_Logger)
         {
-            m_Logger.Log(str)
+            m_Logger.Log(str);
         }
         else
         {
@@ -21,7 +21,7 @@ class TraderMessage
         PluginTraderTradesLog m_Logger = PluginTraderTradesLog.Cast(GetPlugin(PluginTraderTradesLog));
         if(m_Logger)
         {
-            m_Logger.Log(str)
+            m_Logger.Log(str);
         }
         else
         {
@@ -30,45 +30,33 @@ class TraderMessage
 #endif
     }
 
-    static void PlayerWhite(string message, PlayerBase player, float time = 20)
+    static void PlayerWhite(string message, PlayerBase player, float time = 10)
     {
         if (!player)
             return;
-
-        if (GetGame().IsServer())
-        {
-            GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_MESSAGE_WHITE, new Param2<string, float>( message, time ), false, player.GetIdentity());
-        }
-        else
-        {
-            player.showTraderMessage(message, time);
-        }
+        SendNotification(message, player, time, 0);
     }
 
-    static void PlayerRed(string message, PlayerBase player, float time = 20)
+    static void PlayerRed(string message, PlayerBase player, float time = 10)
     {
         if (!player)
             return;
-
-        if (GetGame().IsServer())
-        {
-            GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_MESSAGE_RED, new Param2<string, float>( message, time ), false, player.GetIdentity());
-        }
-        else
-        {
-            player.showTraderMessage(message, time, 0xFFFA6B6B);
-        }
+        SendNotification(message, player, time, COLOR_RED);
     }
 
-    static void Safezone(PlayerBase player, float time)
+    static void PlayerGreen(string message, PlayerBase player, float time = 10)
+    {
+        if (!player)
+            return;
+        SendNotification(message, player, time, COLOR_GREEN);
+    }
+
+    static void SafezoneExit(PlayerBase player, float time)
     {
         if (!player)
             return;
 
-        if (GetGame().IsServer())
-        {
-            GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_MESSAGE_SAFEZONE, new Param1<float>( time ), false, player.GetIdentity());
-        }
+        SendNotification("", player, time, COLOR_RED, true);
     }
 
     static void DeleteSafezoneMessages(PlayerBase player)
@@ -79,6 +67,25 @@ class TraderMessage
         if (GetGame().IsServer())
         {
             GetGame().RPCSingleParam(player, TRPCs.RPC_DELETE_SAFEZONE_MESSAGES, new Param1<bool>( true ), false, player.GetIdentity());
+        }
+    }
+
+    static void SendNotification(string message, PlayerBase player, float time, int color, bool isExitSafezoneMsg = false)
+    {        
+        if (GetGame().IsServer())
+        {
+            GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_NOTIFICATION, new Param4<string, float, int, bool>( message, time, color, isExitSafezoneMsg), false, player.GetIdentity());
+        }
+        else
+        {
+            if(isExitSafezoneMsg)
+            {
+                player.GetTraderNotifications().ShowExitSafezoneMessage(time);
+            }
+            else
+            {
+                player.GetTraderNotifications().ShowMessage(message, time, color);
+            }
         }
     }
 }

@@ -1,16 +1,16 @@
 modded class PlayerBase
 {
     protected bool m_IsInSafeZone = false;
-
     bool m_Trader_IsTrader = false;
-
+	bool m_Trader_SafezoneShowDebugShapes = false;
 	protected int m_SafeZoneCount = 0;
-
+	protected int m_PrevSafeZoneCount = 0;
     ref TraderMenu m_TraderMenu;
 	
 	void PlayerBase()
 	{
 		RegisterNetSyncVariableBool("m_IsInSafeZone");
+		RegisterNetSyncVariableBool("m_Trader_SafezoneShowDebugShapes");
 	}
 
 	bool IsInSafeZone()
@@ -22,19 +22,24 @@ modded class PlayerBase
 	{
 		if (!GetGame().IsServer())
 			return;
-
+		m_PrevSafeZoneCount = m_SafeZoneCount;
 		m_SafeZoneCount++;
 		//Print("Adding to count: " + m_SafeZoneCount + ", in safezone: " + m_IsInSafeZone);
 		
-		if (!m_IsInSafeZone && m_SafeZoneCount > 0)
+		if (m_SafeZoneCount > 0)
 		{
-			SendToGameLabsTrader(this, "", "", "has entered a safezone");
-
-			TraderMessage.DeleteSafezoneMessages(this);
-			TraderMessage.PlayerRed("#tm_entered_safezone", this);
-
-			SetAllowDamage(false);
-			SetInSafeZone(true);
+			if (!m_IsInSafeZone)
+			{
+				SendToGameLabsTrader(this, "", "", "has entered a safezone");
+				SetAllowDamage(false);
+				SetInSafeZone(true);
+			}
+			if(m_PrevSafeZoneCount == 0)
+			{
+				GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).Remove(OnExitSafeZoneCountdownComplete);
+				TraderMessage.DeleteSafezoneMessages(this);
+				TraderMessage.PlayerGreen("#tm_entered_safezone", this);
+			}
 		}
 	}
 
@@ -51,10 +56,10 @@ modded class PlayerBase
 		
 		if (m_IsInSafeZone && m_SafeZoneCount == 0)
 		{
-			TraderMessage.Safezone(this, exitTimer);			
+			TraderMessage.SafezoneExit(this, exitTimer);			
 			if(exitTimer > 0)
 			{
-				GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(OnExitSafeZoneCountdownComplete, exitTimer * 1000, false);
+				GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(OnExitSafeZoneCountdownComplete, exitTimer * 1000, false);
 			}
 			else
 			{
@@ -79,7 +84,7 @@ modded class PlayerBase
 
 		SetInSafeZone(false);
 	}
-
+	
 	void SetInSafeZone(bool state)
 	{
 		m_IsInSafeZone = state;

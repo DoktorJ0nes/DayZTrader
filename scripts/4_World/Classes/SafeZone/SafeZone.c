@@ -3,9 +3,50 @@ class SafeZoneTrigger : CylinderTrigger
 	private bool m_RemoveAnimals = false;
 	private bool m_RemoveInfected = false;
 	private int m_ExitTimerInSeconds = 30;
+	
+	float m_Radius = 150;
 
 	void SafeZoneTrigger()
 	{
+		RegisterNetSyncVariableFloat("m_Radius", 0, 1000, 2);
+	}
+
+	void EEInit()
+	{
+		super.EEInit();		
+		if(GetGame().IsClient())
+		{			
+			GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(this.SpawnCylinderShape, 1000, true);
+		}
+	}
+
+	void SetRadius(float radius)
+	{
+		m_Radius = radius;
+		SetSynchDirty();
+	}
+
+	void SpawnCylinderShape()
+	{		
+		if(GetGame().IsClient())
+		{
+			PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
+			if(player && player.m_Trader_RecievedAllData)
+			{
+				GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).Remove(this.SpawnCylinderShape);
+				if(player.m_Trader_SafezoneShowDebugShapes)
+				{
+					float height = 100;		
+					array<int> coloursToChoose = {COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW, COLOR_RED_A, COLOR_GREEN_A, COLOR_GREEN_A, COLOR_BLUE_A, COLOR_YELLOW_A};
+					int color = coloursToChoose.GetRandomElement();	
+					vector pos = GetPosition();
+					pos[1] = pos[1] + 50;
+					Debug.DrawCylinder(pos, m_Radius, height, color, ShapeFlags.VISIBLE|ShapeFlags.DOUBLESIDE);
+					Print("Got debug shape with radius " + m_Radius );
+				}
+			}
+			
+		}
 	}
 
 	void InitSafeZone(int exitTimerInSeconds, bool shouldRemoveAnimals, bool shouldRemoveInfected)
@@ -110,54 +151,5 @@ class SafeZoneTrigger : CylinderTrigger
 	override bool ShouldRemoveInsider( TriggerInsider insider )
 	{
 		return !insider.GetObject().IsAlive();
-	}
-}
-
-class SafeZone extends House
-{
-	CylinderTrigger m_Trigger;
-
-	float m_Radius = 150;
-	float m_PositiveHeight = 25;
-	float m_NegativeHeight = 10;
-
-	string m_TriggerType = "SafeZoneTrigger";
-
-	vector m_Position;
-
-	void SafeZone()
-	{
-		
-	}
-
-	void ~SafeZone()
-	{
-		
-	}
-
-	override void EEInit()
-	{
-		m_Position = GetWorldPosition();
-
-		if (GetGame().IsServer())
-			CreateTrigger( m_Position, m_Radius );
-	}
-
-	void CreateTrigger( vector pos, int radius )
-	{
-		pos[1] = pos[1] - m_NegativeHeight;
-		
-		if ( Class.CastTo( m_Trigger, GetGame().CreateObjectEx( m_TriggerType, pos, ECE_NONE ) ) )
-		{
-			m_Trigger.SetCollisionCylinder( radius, ( m_NegativeHeight + m_PositiveHeight ) );
-		}
-	}
-
-	override void EEDelete( EntityAI parent )
-	{
-		if ( m_Trigger )
-			GetGame().ObjectDelete( m_Trigger );
-		
-		super.EEDelete( parent );
 	}
 }

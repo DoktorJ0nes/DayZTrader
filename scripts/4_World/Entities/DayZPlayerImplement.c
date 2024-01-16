@@ -314,8 +314,8 @@ modded class DayZPlayerImplement
 		int itemCosts = m_Trader_ItemsBuyValue.Get(itemID);
 
 		vector playerPosition = GetPosition();
-
-		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > 1.7)
+		PlayerBase player = PlayerBase.Cast(this);
+		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > TR_Helper.GetTraderAllowedTradeDistance())
 		{
 			traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
 			return;
@@ -325,13 +325,13 @@ modded class DayZPlayerImplement
 
 		if (itemCosts < 0)
 		{
-			TraderMessage.PlayerWhite("#tm_cant_be_bought", PlayerBase.Cast(this));
+			TraderMessage.PlayerWhite("#tm_cant_be_bought", player);
 			return;
 		}
 
 		if (m_Player_CurrencyAmount < itemCosts)
 		{
-			TraderMessage.PlayerWhite("#tm_cant_afford", PlayerBase.Cast(this));
+			TraderMessage.PlayerWhite("#tm_cant_afford", player);
 			return;
 		}
 
@@ -344,7 +344,7 @@ modded class DayZPlayerImplement
 
 			if (!vehicleKeyinHands)
 			{
-				TraderMessage.PlayerWhite("Put the Key you\nwant to duplicate\nin your Hands!", PlayerBase.Cast(this));
+				TraderMessage.PlayerWhite("Put the Key you\nwant to duplicate\nin your Hands!", player);
 				return;
 			}
 
@@ -361,29 +361,29 @@ modded class DayZPlayerImplement
 
 			if (foundVehicles.Count() < 1)
 			{
-				TraderMessage.PlayerWhite("There is no Vehicle\nin the Spawn Area!\nMake sure you was the last Driver!", this);
+				TraderMessage.PlayerWhite("There is no Vehicle\nin the Spawn Area!\nMake sure you was the last Driver!", player);
 				return;
 			}
 
 			if (foundVehicles.Count() > 1)
 			{
-				TraderMessage.PlayerWhite("Multiple Vehicles found\nin the Spawn Area!", this);
+				TraderMessage.PlayerWhite("Multiple Vehicles found\nin the Spawn Area!", player);
 				return;
 			}
 
 			CarScript carScript;
 			Class.CastTo(carScript, foundVehicles.Get(0));
 
-			vehicleKeyHash = carScript.m_Trader_VehicleKeyHash
+			vehicleKeyHash = carScript.m_Trader_VehicleKeyHash;
 
 			if (canCreateItemInPlayerInventory("VehicleKeyBase", 1))
 			{
-				TraderMessage.PlayerWhite(getItemDisplayName("VehicleKey") + "\n " + "#tm_added_to_inventory", this);
+				TraderMessage.PlayerWhite(getItemDisplayName("VehicleKey") + "\n " + "#tm_added_to_inventory", player);
 				vehicleKeyHash = createVehicleKeyInPlayerInventory(vehicleKeyHash);
 			}
 			else
 			{
-				TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + getItemDisplayName("VehicleKey") + "\n" + "#tm_was_placed_on_ground", this);
+				TraderMessage.PlayerWhite("#tm_inventory_full" + "\n" + getItemDisplayName("VehicleKey") + "\n" + "#tm_was_placed_on_ground", player);
 				vehicleKeyHash = spawnVehicleKeyOnGround(vehicleKeyHash);
 				GetGame().RPCSingleParam(this, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(false), true, this.GetIdentity());
 			}
@@ -407,7 +407,7 @@ modded class DayZPlayerImplement
 
 			if (blockingObject != "FREE")
 			{
-				TraderMessage.PlayerWhite(getItemDisplayName(blockingObject) + " " + "#tm_way_blocked", PlayerBase.Cast(this));
+				TraderMessage.PlayerWhite(getItemDisplayName(blockingObject) + " " + "#tm_way_blocked", player);
 				return;
 			}
 
@@ -416,11 +416,11 @@ modded class DayZPlayerImplement
 
 			deductPlayerCurrency(itemCosts);
 
-			TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_parked_next_to_you", PlayerBase.Cast(this));
+			TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_parked_next_to_you", player);
 
 			spawnVehicle(traderUID, itemType, vehicleKeyHash);
 
-			GetGame().RPCSingleParam(PlayerBase.Cast(this), TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(false), true, GetIdentity());
+			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(false), true, GetIdentity());
 		}
 		else if (itemType != "VehicleKeyLost")// Is not a Vehicle
 		{
@@ -428,7 +428,7 @@ modded class DayZPlayerImplement
 			if (isDuplicatingKey)
 				createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
 			else
-				CreateItemInInventory(PlayerBase.Cast(this), itemType, itemQuantity);
+				CreateItemInInventory(player, itemType, itemQuantity);
 		}
 	}
 
@@ -456,7 +456,8 @@ modded class DayZPlayerImplement
 
 		vector playerPosition = GetPosition();	
 
-		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > 1.7)
+		PlayerBase player = PlayerBase.Cast(this);
+		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > TR_Helper.GetTraderAllowedTradeDistance())
 		{
 			traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
 			return;
@@ -468,24 +469,24 @@ modded class DayZPlayerImplement
 
 		if (itemSellValue < 0)
 		{
-			TraderMessage.PlayerWhite("#tm_cant_be_sold", PlayerBase.Cast(this));
+			TraderMessage.PlayerWhite("#tm_cant_be_sold", player);
 			return;
 		}
 
 		if (!isInPlayerInventory(itemType, itemQuantity) && !isValidVehicle)
 		{
-			TraderMessage.PlayerWhite("#tm_you_cant_sell", PlayerBase.Cast(this));
+			TraderMessage.PlayerWhite("#tm_you_cant_sell", player);
 
 			if (itemQuantity == -2 || itemQuantity == -6)
-				TraderMessage.PlayerWhite("#tm_cant_sell_vehicle", PlayerBase.Cast(this));
-				//TraderMessage.PlayerWhite("Turn the Engine on and place it inside the Traffic Cones!", PlayerBase.Cast(this));
+				TraderMessage.PlayerWhite("#tm_cant_sell_vehicle", player);
+				//TraderMessage.PlayerWhite("Turn the Engine on and place it inside the Traffic Cones!", player);
 
 			return;
 		}
 
 		traderTradesLog("sold" + " " + getItemDisplayName(itemType) + " (" + itemType + ")");
 
-		TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_was_sold", PlayerBase.Cast(this));
+		TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_was_sold", player);
 
 		if (isValidVehicle)
 			deleteObject(vehicleToSell);
@@ -552,20 +553,12 @@ modded class DayZPlayerImplement
 				handleSendMenuBackRPC(sender, rpc_type, ctx);
 			break;
 
-			case TRPCs.RPC_SEND_MESSAGE_WHITE:
-				handleSendMessageWhiteRPC(sender, rpc_type, ctx);
+			case TRPCs.RPC_SEND_NOTIFICATION:
+				HandleSendNotificationRPC(sender, rpc_type, ctx);
 			break;
 
-			case TRPCs.RPC_SEND_MESSAGE_RED:
-				handleSendMessageRedRPC(sender, rpc_type, ctx);
-			break;
-
-			case TRPCs.RPC_SEND_MESSAGE_SAFEZONE:
-				handleSendMessageSafezoneRPC(sender, rpc_type, ctx);
-			break;
-
-			case TRPCs.RPC_DELETE_SAFEZONE_MESSAGES:					
-				handleDeleteSafezoneMessagesRPC(sender, rpc_type, ctx);
+			case TRPCs.RPC_DELETE_SAFEZONE_MESSAGES:	
+				GetTraderNotifications().DeleteAllMessages();
 			break;
 
 			case TRPCs.RPC_SEND_TRADER_VARIABLES_ENTRY:
@@ -718,33 +711,18 @@ modded class DayZPlayerImplement
 		GetGame().GetUIManager().Back();
 	}
 
-	void handleSendMessageWhiteRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	void HandleSendNotificationRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		Param2<string, float> sendMessageWhite_rp = new Param2<string, float>( "", 0 );
-		ctx.Read( sendMessageWhite_rp );
-		
-		showTraderMessage(sendMessageWhite_rp.param1, sendMessageWhite_rp.param2);
-	}
-
-	void handleSendMessageRedRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
-	{
-		Param2<string, float> sendMessageRed_rp = new Param2<string, float>( "", 0 );
-		ctx.Read( sendMessageRed_rp );
-		
-		showTraderMessage(sendMessageRed_rp.param1, sendMessageRed_rp.param2, 0xFFFA6B6B);
-	}
-
-	void handleSendMessageSafezoneRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
-	{
-		Param1<float> sendMessageSafezone_rp = new Param1<float>( 0 );
-		ctx.Read( sendMessageSafezone_rp );
-		
-		showSafezoneMessage(sendMessageSafezone_rp.param1);
-	}
-
-	void handleDeleteSafezoneMessagesRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
-	{					
-		deleteAllSafezoneMessages();
+		Param4<string, float, int, bool> msg = new Param4<string, float, int, bool>( "", 0, 0, false);
+		ctx.Read( msg );
+		if(msg.param4)
+		{
+			GetTraderNotifications().ShowExitSafezoneMessage(msg.param2);
+		}
+		else
+		{
+			GetTraderNotifications().ShowMessage(msg.param1, msg.param2, msg.param3);
+		}
 	}
 
 	void handleSendTraderVariablesEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
@@ -782,28 +760,14 @@ modded class DayZPlayerImplement
 		TraderMessage.TradesLog("[TRADER] Player: (" + GetIdentity().GetName() + ") " + GetIdentity().GetId() + " " + message);
 	}
 
-	void showTraderMessage(string message, float time, int color = 0)
-	{
+	TraderNotifications GetTraderNotifications()
+	{		
 		if (!m_Trader_TraderNotifications)
+		{	
 			m_Trader_TraderNotifications = new TraderNotifications();
-
-		m_Trader_TraderNotifications.ShowMessage(message, time, color);
-	}
-
-	void showSafezoneMessage(float time)
-	{
-		if (!m_Trader_TraderNotifications)
-			m_Trader_TraderNotifications = new TraderNotifications();
-
-		m_Trader_TraderNotifications.ShowSafezoneMessage(time);
-	}
-
-	void deleteAllSafezoneMessages()
-	{
-		if (!m_Trader_TraderNotifications)
-			return;
-
-		m_Trader_TraderNotifications.DeleteAllSafezoneMessages();
+			m_Trader_TraderNotifications.Init();
+		}
+		return m_Trader_TraderNotifications;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ITEM & INVENTORY
@@ -1061,7 +1025,7 @@ modded class DayZPlayerImplement
 		if (!vehicleKey)
 			return 0;
 
-		//GetHive().CharacterSave(PlayerBase.Cast(this));
+		//GetHive().CharacterSave(player);
 
 		if (hash <= 0)
 			hash = vehicleKey.GenerateNewHash();
@@ -1069,95 +1033,6 @@ modded class DayZPlayerImplement
 			hash = vehicleKey.SetNewHash(hash);
 
 		return hash;
-	}
-
-	void createItemInPlayerInventory(string itemType, int amount)
-	{		
-		EntityAI entity;
-
-		array<ItemBase> mergeableItems = getMergeableItemFromPlayerInventory(itemType, amount);
-
-		bool isMergingPossible = mergeableItems.Count() > 0;
-		bool itemsAreLeftOverMerging = getMergeableItemFromPlayerInventory(itemType, amount, true).Count() == 0;
-
-		if (isMergingPossible)
-		{
-			if (itemsAreLeftOverMerging)
-			{
-				entity = SpawnEntityOnGroundPos(itemType, GetPosition());
-				
-				if (m_Trader_IsSelling)
-					TraderMessage.PlayerWhite("#tm_some_currency_on_ground", PlayerBase.Cast(this));
-				else
-					TraderMessage.PlayerWhite("#tm_some" + " " + itemDisplayNameClient + "\n" + "#tm_were_placed_on_ground", PlayerBase.Cast(this));
-
-				GetGame().RPCSingleParam(PlayerBase.Cast(this), TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>( false ), true, GetIdentity());
-			}
-			else
-			{
-				entity = SpawnEntityOnGroundPos(itemType, GetPosition());
-			}
-		}
-		else
-		{
-			entity = GetHumanInventory().CreateInInventory(itemType);
-		}
-
-		if (!entity)
-			return;
-
-		ItemBase item;
-		Class.CastTo(item, entity);
-
-		if (!item)
-			return;
-		
-		SetItemAmount(item, amount);
-
-		for (int i = 0; i < mergeableItems.Count(); i++)
-		{
-			int mergeQuantity;
-
-			if (getItemAmount(mergeableItems.Get(i)) + getItemAmount(item) <= GetItemMaxQuantity(mergeableItems.Get(i).GetType()))
-				mergeQuantity = getItemAmount(item);
-			else
-				mergeQuantity = GetItemMaxQuantity(mergeableItems.Get(i).GetType()) - getItemAmount(mergeableItems.Get(i));
-
-			//TraderMessage.PlayerWhite("MERGED " + mergeableItems.Get(i).GetType() + "; QTY: " + mergeQuantity, PlayerBase.Cast(this));
-
-			SetItemAmount(mergeableItems.Get(i), getItemAmount(mergeableItems.Get(i)) + mergeQuantity);
-			SetItemAmount(item, getItemAmount(item) - mergeQuantity);
-			amount -= mergeQuantity;
-
-			if (item)
-			{
-				if (getItemAmount(item) <= 0 || amount <= 0)
-				{
-					deleteItem(item);
-					UpdateInventoryMenu(); // RPC-Call needed?
-
-					return;
-				}
-			}
-		}
-
-		UpdateInventoryMenu(); // RPC-Call needed?
-	}
-
-	void spawnItemOnGround(string itemType, int amount, vector position)
-	{		
-		EntityAI entity = SpawnEntityOnGroundPos(itemType, position);
-
-		if (!entity)
-			return;
-
-		ItemBase item;
-		Class.CastTo(item, entity);
-
-		if (!item)
-			return;
-
-		SetItemAmount(item, amount);
 	}
 
 	bool removeFromPlayerInventory(string itemClassname, int amount)

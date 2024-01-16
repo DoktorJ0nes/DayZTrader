@@ -174,7 +174,7 @@ class TraderMenu extends UIScriptedMenu
 			}
 
 			float playerDistanceToTrader = vector.Distance(m_Player.GetPosition(), m_Player.m_Trader_TraderPositions.Get(m_TraderUID));
-			if (playerDistanceToTrader > 1.7)
+			if (playerDistanceToTrader > TR_Helper.GetTraderAllowedTradeDistance())
 				GetGame().GetUIManager().Back();
 
 			m_UiUpdateTimer = 0;
@@ -344,7 +344,7 @@ class TraderMenu extends UIScriptedMenu
 			{
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(0, 1, 1, 1) );
 			}
-			else if (isInPlayerInventory(itemClassname, itemQuantity) || ((itemQuantity == -6 || itemQuantity == -2) && GetVehicleToSell(itemClassname)))
+			else if (IsSellableOrInInventory(itemClassname, itemQuantity))
 			{
 				m_ListboxItems.SetItemColor(i, 2, ARGBF(1, 0, 1, 0) );
 			}
@@ -364,6 +364,11 @@ class TraderMenu extends UIScriptedMenu
 					m_ListboxItems.SetItemColor(i, 0, ARGBF(1, 1, 1, 1) );
 			}
 		}
+	}
+
+	bool IsSellableOrInInventory(string itemClassname, int itemQuantity)
+	{
+		return isInPlayerInventory(itemClassname, itemQuantity) || ((itemQuantity == -6 || itemQuantity == -2) && GetVehicleToSell(itemClassname));
 	}
 
 	void updateItemPreview(string itemType)
@@ -437,11 +442,11 @@ class TraderMenu extends UIScriptedMenu
 				m_ItemQuantity.SetText(itemQuant);
                 if(TR_Helper.KitIgnoreArray.Find(itemType) == -1 && lower.Contains("kit") && previewItemKit)
                 {
-				    m_ItemDescription.SetText(string.Format("This item is a kit. %1",TrimUntPrefix(GetEntityAITooltip(previewItemKit))));
+				    m_ItemDescription.SetText(string.Format("This item is a kit. %1",GetEntityAITooltip(previewItemKit)));
                 }
                 else
                 {
-				    m_ItemDescription.SetText(TrimUntPrefix(GetEntityAITooltip(previewItem)));
+				    m_ItemDescription.SetText(GetEntityAITooltip(previewItem));
                 }
 			}
 			else
@@ -455,29 +460,31 @@ class TraderMenu extends UIScriptedMenu
 	string GetItemWeightText()
 	{
 		ItemBase item_IB = ItemBase.Cast( previewItem );
+		if(item_IB)
+		{
+			int weight = item_IB.GetSingleInventoryItemWeight();
+			//string weightStr = "";
+			
+			if (weight >= 1000)
+			{
+				int kilos = Math.Round(weight / 1000.0);
+				return  "#inv_inspect_about" + " " + kilos.ToString() + " " + "#inv_inspect_kg";
+			}
+			else if (weight >= 500)
+			{
+				return "#inv_inspect_under_1";
+			} 
+			else if (weight >= 250)
+			{
+				return "#inv_inspect_under_05";
+			}
+			else 
+			{
+				return "#inv_inspect_under_025";
+			}			
+		}
 
-		int weight = item_IB.GetSingleInventoryItemWeight();
-		//string weightStr = "";
-		
-		if (weight >= 1000)
-		{
-			int kilos = Math.Round(weight / 1000.0);
-			return  "#inv_inspect_about" + " " + kilos.ToString() + " " + "#inv_inspect_kg";
-		}
-		else if (weight >= 500)
-		{
-			return "#inv_inspect_under_1";
-		} 
-		else if (weight >= 250)
-		{
-			return "#inv_inspect_under_05";
-		}
-		else 
-		{
-			return "#inv_inspect_under_025";
-		}
-
-		return "ERROR";
+		return "";
 	}
 	
 	void updatePlayerCurrencyAmount()
@@ -875,18 +882,18 @@ class TraderMenu extends UIScriptedMenu
 		int itemQuantity = catTraderItem.Quantity;
 		if (catTraderItem.SellValue < 0)
 			return false;
-		else if (isInPlayerInventory(itemClassname, itemQuantity) || (itemQuantity == -2 && GetVehicleToSell(itemClassname)))
-			return true;
-
-		return false;
+		
+		return IsSellableOrInInventory(itemClassname, itemQuantity);
 	}
 
     string GetEntityAITooltip(EntityAI item)
 	{
 		string temp;
 		if (!item.DescriptionOverride(temp))
+		{
 			temp = item.ConfigGetString("descriptionShort");
-		return temp;
+		}
+		return TrimUntPrefix(temp);
 	}
 
     override bool OnMouseButtonDown(Widget w, int x, int y, int button)
@@ -896,7 +903,7 @@ class TraderMenu extends UIScriptedMenu
 		if (w == m_ItemPreviewWidget)
 		{
 			GetGame().GetDragQueue().Call(this, "UpdateRotation");
-			g_Game.GetMousePos(m_PreviewWidgetRotationX, m_PreviewWidgetRotationY);
+			GetMousePos(m_PreviewWidgetRotationX, m_PreviewWidgetRotationY);
 			return true;
 		}
 		return false;
