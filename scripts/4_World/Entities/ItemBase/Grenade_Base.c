@@ -20,7 +20,7 @@ modded class Grenade_Base extends InventoryItemSuper
 
         if (!this)
             return false;
-
+        //stupid ass shit
         for (int k = 0; k < player.m_Trader_TraderPositions.Count(); k++)
         {
             vector grenadePos = this.GetPosition();
@@ -60,7 +60,7 @@ modded class Grenade_Base extends InventoryItemSuper
         }
         else
         {
-            return GetGame().GetPlayer();
+            return PlayerBase.Cast(GetGame().GetPlayer());
         }
 
         return null;

@@ -6,8 +6,11 @@ modded class ActionDetach
 		{
 			if (target.GetObject().IsInherited(CarWheel))
 			{
-				if (CarScript.Cast(target.GetParent()).m_Trader_Locked)
+				CarScript car = CarScript.Cast(target.GetParent());
+				if (car && car.m_Trader_Locked)
+				{
 					return false;
+				}
 			}
 		}
 

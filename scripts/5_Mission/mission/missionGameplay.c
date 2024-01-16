@@ -17,16 +17,7 @@ modded class MissionGameplay
 		if (!player)
 			return;
 
-		updateTraderNotifications(timeslice);
 		handleTraderModIsLoadedReplication(timeslice);
-	}
-
-	void updateTraderNotifications(float timeslice)
-	{
-		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-
-		if (player.m_Trader_TraderNotifications)
-				player.m_Trader_TraderNotifications.Update(timeslice);
 	}
 
 	void handleTraderModIsLoadedReplication(float timeslice)

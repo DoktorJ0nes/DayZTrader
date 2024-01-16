@@ -1,7 +1,9 @@
 class ActionTrade: ActionInteractBase
 {
-	int m_traderUID =  -1;
-	PlayerBase m_Player;
+	private int m_traderUID =  -1;
+	private PlayerBase m_Player;
+	private float m_Trader_AllowedTradeDistance = 3.0;
+
 	void ActionTrade()
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
@@ -12,7 +14,7 @@ class ActionTrade: ActionInteractBase
 
     override void CreateConditionComponents()  
 	{
-		m_ConditionTarget = new CCTObject(10);//CCTMan(10);
+		m_ConditionTarget = new CCTObject(20);//CCTMan(10);
 		m_ConditionItem = new CCINone;
 	}
 
@@ -66,14 +68,14 @@ class ActionTrade: ActionInteractBase
 		{						
 			return false;
 		}
-
+		m_Trader_AllowedTradeDistance = TR_Helper.GetTraderAllowedTradeDistance();
 		m_traderUID = getNearbyTraderUID(playerPosition);
 		bool canOpenTraderMenu = getCanOpenTraderMenu(playerPosition);
 		if (canOpenTraderMenu)
 		{			
 			if(player.m_Trader_TraderNames)
 			{
-				string traderName = player.m_Trader_TraderNames.Get(m_traderUID);
+				string traderName = player.m_Trader_TraderNames.Get(getTraderID());
 				m_Text = "Trade [" + traderName + "]";
 			}
 			return true;
@@ -130,7 +132,7 @@ class ActionTrade: ActionInteractBase
 
     bool getIsTraderNearby(vector position, int traderUID)
 	{
-		return getDistanceToTrader(position, traderUID) <= 1.7;
+		return getDistanceToTrader(position, traderUID) <= m_Trader_AllowedTradeDistance;
 	}
 
 	void initializeTraderMenu()

@@ -9,6 +9,7 @@ modded class MissionServer
 	float m_Trader_SafezoneTimeout = 30;
 	bool m_Trader_SafezoneRemoveAnimals = false;
 	bool m_Trader_SafezoneRemoveInfected = false;
+	bool m_Trader_SafezoneShowDebugShapes = false;
 
 	bool m_Trader_ReadAllTraderData = false;
 
@@ -44,9 +45,6 @@ modded class MissionServer
 		
 	ref array<PlayerBase> m_Trader_SpawnedTraderCharacters;
 
-	float m_Trader_StatUpdateTimeMax = 1;
-	float m_Trader_StatUpdateTime = m_Trader_StatUpdateTimeMax;
-
 	float m_Trader_VehicleCleanupUpdateTimerMax = 15 * 60;
 	float m_Trader_VehicleCleanupUpdateTimer = m_Trader_VehicleCleanupUpdateTimerMax;
 	
@@ -58,6 +56,7 @@ modded class MissionServer
 
     void LoadServerConfigs()
     {
+		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).Remove(this.LoadServerConfigs);
 		TraderMessage.ServerLog("[TRADER] LOADING TRADER CONFIG");
 		SpawnTraderObjects();
 		readTraderVariables();
@@ -69,7 +68,12 @@ modded class MissionServer
 	override void HandleBody(PlayerBase player)
     {
 		if (player.IsUnconscious() || player.IsRestrained())
-            player.SetAllowDamage(true);
+		{
+			if(player.IsInSafeZone())
+			{
+            	player.SetAllowDamage(true);
+			}
+		}
 
         super.HandleBody(player);
     }
@@ -77,36 +81,39 @@ modded class MissionServer
 	override void OnUpdate(float timeslice)
 	{
 		super.OnUpdate(timeslice);
-		m_Trader_VehicleCleanupUpdateTimer += timeslice;
-		if (m_Trader_VehicleCleanupUpdateTimer >= m_Trader_VehicleCleanupUpdateTimerMax && m_Trader_VehicleCleanupUpdateTimerMax != 0 && m_Trader_TraderVehicleSpawns)
+		if(m_Trader_VehicleCleanupUpdateTimerMax > 0)
 		{
-			m_Trader_VehicleCleanupUpdateTimer = 0;
-
-			for (int p = 0; p < m_Trader_TraderVehicleSpawns.Count(); p++)
+			m_Trader_VehicleCleanupUpdateTimer += timeslice;
+			if (m_Trader_VehicleCleanupUpdateTimer >= m_Trader_VehicleCleanupUpdateTimerMax && m_Trader_TraderVehicleSpawns)
 			{
-				vector size = "3 5 9";
-				array<Object> excludedObjects = new array<Object>;
-				array<Object> collidedObjects = new array<Object>;
-				//is this working?
-				if (GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(p), m_Trader_TraderVehicleSpawnsOrientation.Get(p), size, excludedObjects, collidedObjects))
+				m_Trader_VehicleCleanupUpdateTimer = 0;
+
+				for (int p = 0; p < m_Trader_TraderVehicleSpawns.Count(); p++)
 				{
-					for (int q = 0; q < collidedObjects.Count(); q++)
+					vector size = "3 5 9";
+					array<Object> excludedObjects = new array<Object>;
+					array<Object> collidedObjects = new array<Object>;
+					//is this working?
+					if (GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(p), m_Trader_TraderVehicleSpawnsOrientation.Get(p), size, excludedObjects, collidedObjects))
 					{
-						CarScript carScript = CarScript.Cast(collidedObjects.Get(q));
-						if (!carScript)
-							continue;
-
-						if (carScript.m_Trader_Locked)
+						for (int q = 0; q < collidedObjects.Count(); q++)
 						{
-							carScript.m_Trader_CleanupCount++;
+							CarScript carScript = CarScript.Cast(collidedObjects.Get(q));
+							if (!carScript)
+								continue;
 
-							if (carScript.m_Trader_CleanupCount >= 3)
+							if (carScript.m_Trader_Locked)
 							{
-								carScript.m_Trader_CleanupCount = 0;
-								carScript.m_Trader_Locked = false;
-							}
+								carScript.m_Trader_CleanupCount++;
 
-							carScript.SynchronizeValues();
+								if (carScript.m_Trader_CleanupCount >= 3)
+								{
+									carScript.m_Trader_CleanupCount = 0;
+									carScript.m_Trader_Locked = false;
+								}
+
+								carScript.SynchronizeValues();
+							}
 						}
 					}
 				}
@@ -249,7 +256,7 @@ modded class MissionServer
 						ItemBase firewood = ItemBase.Cast(spawnedBarrel.GetInventory().CreateAttachment("FireWood"));
 						if(firewood)
 						{
-							firewood.SetQuantity(firewood.GetQuantityMax())
+							firewood.SetQuantity(firewood.GetQuantityMax());
 						}
 						spawnedBarrel.GetInventory().CreateAttachment("Paper");
 						if(!spawnedBarrel.IsIgnited())
@@ -347,7 +354,7 @@ modded class MissionServer
 
 	void sendTraderDataToPlayer(PlayerBase player)
 	{
-		TraderMessage.ServerLog("[TRADER] SEND DATA TO PLAYER");
+		//TraderMessage.ServerLog("[TRADER] SENDING DATA TO PLAYER " + player.GetIdentity());
 
 		// request client to clear all data:
 		Param1<bool> crpClr = new Param1<bool>( true );
@@ -456,8 +463,9 @@ modded class MissionServer
 				
 		// confirm that all data was sended:
 		player.m_Trader_RecievedAllData = true;
-		
-		TraderMessage.ServerLog("[TRADER] SENT DATA TO PLAYER");
+		player.m_Trader_SafezoneShowDebugShapes = m_Trader_SafezoneShowDebugShapes;
+		player.SetSynchDirty();
+		//TraderMessage.ServerLog("[TRADER] SENT DATA TO PLAYER");
 		Param1<bool> crpConf = new Param1<bool>( true );
 		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION, crpConf, true, player.GetIdentity());
 		//TraderMessage.ServerLog("[TRADER] DEBUG END");
@@ -494,19 +502,7 @@ modded class MissionServer
 				m_Trader_BuySellTimer = line_content.ToFloat();
 				validEntry = true;
 
-				TraderMessage.ServerLog("[TRADER] BUYSELLTIMER = " + line_content);
-			}
-			
-			if (line_content.Contains("<StatUpdateTimer>"))
-			{
-				line_content.Replace("<StatUpdateTimer>", "");
-				line_content = FileReadHelper.TrimComment(line_content);
-
-				m_Trader_StatUpdateTimeMax = line_content.ToFloat();
-				m_Trader_StatUpdateTime = m_Trader_StatUpdateTimeMax;
-				validEntry = true;
-
-				TraderMessage.ServerLog("[TRADER] STATUPDATETIMER = " + line_content);
+				TraderMessage.ServerLog("[TRADER] BuySellTimer = " + line_content);
 			}
 
 			if (line_content.Contains("<VehicleCleanupTimer>"))
@@ -518,7 +514,7 @@ modded class MissionServer
 				m_Trader_VehicleCleanupUpdateTimer = m_Trader_VehicleCleanupUpdateTimerMax;
 				validEntry = true;
 
-				TraderMessage.ServerLog("[TRADER] VEHICLECLEANUPTIMER = " + line_content);
+				TraderMessage.ServerLog("[TRADER] VehicleCleanupTimer = " + line_content);
 			}
 
 			if (line_content.Contains("<SafezoneTimeout>"))
@@ -529,7 +525,7 @@ modded class MissionServer
 				m_Trader_SafezoneTimeout = line_content.ToFloat();
 				validEntry = true;
 
-				TraderMessage.ServerLog("[TRADER] SAFEZONETIMEOUT = " + line_content);
+				TraderMessage.ServerLog("[TRADER] SafezoneTimeout = " + line_content);
 			}
 			string lowerLine;
 			if (line_content.Contains("<SafezoneRemoveAnimals>"))
@@ -560,6 +556,20 @@ modded class MissionServer
 				validEntry = true;
 
 				TraderMessage.ServerLog("[TRADER] SafezoneRemoveInfected = " + line_content);
+			}
+			if (line_content.Contains("<SafezoneShowDebugShape>"))
+			{
+				line_content.Replace("<SafezoneShowDebugShape>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+				lowerLine = line_content;
+				lowerLine.ToLower();
+				if(lowerLine.Contains("yes"))
+				{
+					m_Trader_SafezoneShowDebugShapes = true;
+				}
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] SafezoneShowDebugShape = " + line_content);
 			}
 
 			if (validEntry)
@@ -949,11 +959,12 @@ modded class MissionServer
 				vector triggerPosition = markerPosition;
 				int triggerRadius = line_content.ToInt();
 				triggerPosition[1] = triggerPosition[1] - 50; // Sane default values
-
+				newTrigger.SetPosition(triggerPosition);
 				newTrigger.SetCollisionCylinder( triggerRadius, 100 );
 				newTrigger.InitSafeZone(m_Trader_SafezoneTimeout, m_Trader_SafezoneRemoveAnimals, m_Trader_SafezoneRemoveInfected);
+				newTrigger.SetRadius(triggerRadius);
 				
-				TraderMessage.ServerLog("[TRADER] SPAWNED SAFEZONE AT " + markerPosition);
+				TraderMessage.ServerLog("[TRADER] SPAWNED SAFEZONE AT " + triggerPosition + " with radius " + triggerRadius);
 			}
 			
 			// Get Trader Marker Vehicle Spawnpoint:					

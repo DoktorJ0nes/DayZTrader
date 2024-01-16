@@ -1,6 +1,13 @@
 static const int TRADERMENU_UI  = 665001;
+
+
 class TR_Helper
 {
+    static float GetTraderAllowedTradeDistance()
+    {
+        return 3.0;
+    }
+
     static bool ItemHasQuantity(string itemClassname)
     {
         return GetItemMaxQuantity(itemClassname) > 0;
@@ -68,6 +75,7 @@ class TR_Helper
         "WeaponCleaningKit",
         "KitchenKnife",
         "ElectronicRepairKit",
+        "TireRepairKit",
         "gunwall_kit_mung",
         "gunwall_metal_kit_mung"
     };
