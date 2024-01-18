@@ -962,7 +962,6 @@ modded class MissionServer
 				newTrigger.SetPosition(triggerPosition);
 				newTrigger.SetCollisionCylinder( triggerRadius, 100 );
 				newTrigger.InitSafeZone(m_Trader_SafezoneTimeout, m_Trader_SafezoneRemoveAnimals, m_Trader_SafezoneRemoveInfected);
-				newTrigger.SetRadius(triggerRadius);
 				
 				TraderMessage.ServerLog("[TRADER] SPAWNED SAFEZONE AT " + triggerPosition + " with radius " + triggerRadius);
 			}

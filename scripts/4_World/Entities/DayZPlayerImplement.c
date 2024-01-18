@@ -1,3 +1,9 @@
+class TRITEM
+{
+	string classname;
+	int quantity;
+};
+
 modded class DayZPlayerImplement
 {
 	static const string m_Trader_ConfigFilePath = "$profile:Trader/TraderConfig.txt";
@@ -55,6 +61,8 @@ modded class DayZPlayerImplement
 
 	string m_Trader_PlayerUID;
 	ref array<string> m_Trader_AdminPlayerUIDs;
+	ref array<ref TRITEM> TR_Items_To_Spawn;
+	ref Timer ItemSpawnTimer;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// OVERRIDES
 	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
@@ -76,7 +84,49 @@ modded class DayZPlayerImplement
 			SetAllowDamage(true);
 	}
 
-	void CreateItemInInventory(PlayerBase player, string itemType, int amount)
+	void QueueCreateItemInInventory(PlayerBase player, string itemType, int amount)
+	{
+		if(!TR_Items_To_Spawn)
+		{
+			TR_Items_To_Spawn = new array<ref TRITEM>;
+		}
+		TRITEM newItemToQueue = new TRITEM;
+		newItemToQueue.classname = itemType;
+		newItemToQueue.quantity = amount;
+		TR_Items_To_Spawn.Insert(newItemToQueue);
+		if(!ItemSpawnTimer)
+		{
+			ItemSpawnTimer = new Timer();
+		}
+		if(ItemSpawnTimer && !ItemSpawnTimer.IsRunning())
+		{			
+			ItemSpawnTimer.Run(0.10, this, "CreateQueueItemInInventory", NULL, true);
+		}
+
+	}
+
+	void CreateQueueItemInInventory()
+	{
+		if(TR_Items_To_Spawn.Count() == 0)
+		{
+			if(ItemSpawnTimer && ItemSpawnTimer.IsRunning())
+			{			
+				ItemSpawnTimer.Stop();
+			}
+			return;
+		}
+		PlayerBase player = PlayerBase.Cast(this);
+		TRITEM newItemInQueue = TR_Items_To_Spawn.Get(0);
+		if(!newItemInQueue)
+		{
+			TR_Items_To_Spawn.Remove(0);
+			return;
+		}
+		CreateItemInInventory(player, newItemInQueue.classname, newItemInQueue.quantity);
+		TR_Items_To_Spawn.Remove(0);
+	}
+
+	bool CreateItemInInventory(PlayerBase player, string itemType, int amount)
 	{
 		array<EntityAI> itemsArray = new array<EntityAI>;
 		GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
@@ -144,18 +194,21 @@ modded class DayZPlayerImplement
 		//any leftover or new stacks
 		if (currentAmount > 0 || !hasSomeQuant)
 		{
-			EntityAI newItem = EntityAI.Cast(GetGame().CreateObjectEx(itemType, player.GetPosition(), ECE_PLACE_ON_SURFACE));
-			if (!newItem)
+			Object obj = GetGame().CreateObjectEx(itemType, player.GetPosition(), ECE_PLACE_ON_SURFACE);
+			if (!obj)
 			{
-				Error("[Trader] Failed to spawn entity "+itemType+" , make sure the classname exists and item can be spawned");
-				return;
+				Error("[Trader] Failed to spawn entity "+itemType+" ! Make sure the classname exists and item can be spawned");
+				return false;
 			}
+			EntityAI newItem = EntityAI.Cast(obj);
 			if(player.ServerTakeEntityToInventory(FindInventoryLocationType.CARGO | FindInventoryLocationType.ATTACHMENT, newItem))
 			{
+				player.SetSynchDirty();
 				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_added_to_inventory", player);
 			}
 			else
 			{
+				newItem.SetPosition(player.GetPosition());
 				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_was_placed_on_ground", player);
 			}
 			Magazine newMagItem = Magazine.Cast(newItem);
@@ -165,7 +218,7 @@ modded class DayZPlayerImplement
 				newMagItem.ServerSetAmmoCount(amount);
 				currentAmount = 0;
 				UpdateInventoryMenu();
-				return;
+				return true;
 			}
 			if (hasSomeQuant)
 			{
@@ -173,7 +226,7 @@ modded class DayZPlayerImplement
 				{
 					currentAmount = newammoItem.SetQuantityTR(currentAmount);
 					UpdateInventoryMenu();
-					return;
+					return true;
 				}	
 				ItemBase newItemBase;
 				if (Class.CastTo(newItemBase, newItem))
@@ -183,6 +236,7 @@ modded class DayZPlayerImplement
 			}
 		}
 		UpdateInventoryMenu(); // RPC-Call needed?
+		return true;
 	}
 
 	int createVehicleKeyInPlayerInventory(int hash = 0, string classname = "")
@@ -242,21 +296,26 @@ modded class DayZPlayerImplement
 
 		EntityAI entity;
 		ItemBase item;
-
+		PlayerBase player = PlayerBase.Cast(this);
 		for (int i = m_Trader_CurrencyClassnames.Count() - 1; i < m_Trader_CurrencyClassnames.Count(); i--)
 		{
 			int itemMaxAmount = GetItemMaxQuantity(m_Trader_CurrencyClassnames.Get(i));
+			if(itemMaxAmount == 0)
+			{
+				Error("[Trader] Currency "+ m_Trader_CurrencyClassnames.Get(i) +" has max quantity 0 which might mean this class doesn't exist."); 
+				continue;
+			}
 
 			while (currencyAmount / m_Trader_CurrencyValues.Get(i) > 0)
 			{
 				if (currencyAmount > itemMaxAmount * m_Trader_CurrencyValues.Get(i))
 				{
-					CreateItemInInventory(PlayerBase.Cast(this), m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
+					QueueCreateItemInInventory(player, m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
 					currencyAmount -= itemMaxAmount * m_Trader_CurrencyValues.Get(i);
 				}
 				else
 				{
-					CreateItemInInventory(PlayerBase.Cast(this), m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i));
+					QueueCreateItemInInventory(player, m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i))
 					currencyAmount -= (currencyAmount / m_Trader_CurrencyValues.Get(i) * m_Trader_CurrencyValues.Get(i));
 				}
 
@@ -428,7 +487,7 @@ modded class DayZPlayerImplement
 			if (isDuplicatingKey)
 				createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
 			else
-				CreateItemInInventory(player, itemType, itemQuantity);
+				QueueCreateItemInInventory(player, itemType, itemQuantity);
 		}
 	}
 
