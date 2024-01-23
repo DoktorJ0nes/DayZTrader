@@ -346,7 +346,7 @@ modded class MissionServer
 		{
 			TraderMessage.ServerLog( "[TRADER] Trader data was not ready!" );
 		}
-		if (!player.m_Trader_RecievedAllData)
+		if (!player.m_Trader_ReceivedAllData)
 		{	
 			sendTraderDataToPlayer(player);
 		}
@@ -462,12 +462,10 @@ modded class MissionServer
 		}
 				
 		// confirm that all data was sended:
-		player.m_Trader_RecievedAllData = true;
+		player.m_Trader_ReceivedAllData = true;
 		player.m_Trader_SafezoneShowDebugShapes = m_Trader_SafezoneShowDebugShapes;
 		player.SetSynchDirty();
-		//TraderMessage.ServerLog("[TRADER] SENT DATA TO PLAYER");
-		Param1<bool> crpConf = new Param1<bool>( true );
-		GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION, crpConf, true, player.GetIdentity());
+		//TraderMessage.ServerLog("[TRADER] SENT DATA TO PLAYER");		
 		//TraderMessage.ServerLog("[TRADER] DEBUG END");
 	}
 

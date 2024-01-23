@@ -960,4 +960,19 @@ class TraderMenu extends UIScriptedMenu
 		str.Replace("$UNT$", "");
 		return str;
 	}
+
+	
+	
+	override bool OnKeyDown(Widget w, int x, int y, int key)
+	{
+		super.OnKeyDown(w, x, y, key);
+		
+		switch (key)
+		{
+			case KeyCode.KC_ESCAPE:
+				Close();
+		}
+		
+		return true;
+	}
 };

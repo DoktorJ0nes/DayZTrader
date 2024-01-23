@@ -11,17 +11,8 @@ modded class DayZPlayerImplement
 	static const string m_Trader_VehiclePartsFilePath = "$profile:Trader/TraderVehicleParts.txt";
 
 	ref TraderNotifications m_Trader_TraderNotifications;
-	
-	float m_Trader_WelcomeMessageTimer = 25.0;
-	float m_Trader_WelcomeMessageHandled = false;
-	bool m_Trader_TraderModIsLoaded = false;
-	bool m_Trader_TraderModIsLoadedHandled = false;
-	
-	bool m_Trader_IsInSafezone = false;
-	float m_Trader_IsInSafezoneTimeout = 0;
-	int m_Trader_InfluenzaEnteredSafeZone;
-	
-	bool m_Trader_RecievedAllData = false;
+		
+	bool m_Trader_ReceivedAllData = false;
 	
 	string m_Trader_CurrencyName;
 	ref array<string> m_Trader_CurrencyClassnames;
@@ -74,56 +65,6 @@ modded class DayZPlayerImplement
 			handleServerRPCs(sender, rpc_type, ctx);
 		else
 			handleClientRPCs(sender, rpc_type, ctx);
-	}
-
-	override void SetSuicide(bool state)
-	{
-		super.SetSuicide(state);
-
-		if (state && m_Trader_IsInSafezone && GetGame().IsServer())
-			SetAllowDamage(true);
-	}
-
-	void QueueCreateItemInInventory(PlayerBase player, string itemType, int amount)
-	{
-		if(!TR_Items_To_Spawn)
-		{
-			TR_Items_To_Spawn = new array<ref TRITEM>;
-		}
-		TRITEM newItemToQueue = new TRITEM;
-		newItemToQueue.classname = itemType;
-		newItemToQueue.quantity = amount;
-		TR_Items_To_Spawn.Insert(newItemToQueue);
-		if(!ItemSpawnTimer)
-		{
-			ItemSpawnTimer = new Timer();
-		}
-		if(ItemSpawnTimer && !ItemSpawnTimer.IsRunning())
-		{			
-			ItemSpawnTimer.Run(0.10, this, "CreateQueueItemInInventory", NULL, true);
-		}
-
-	}
-
-	void CreateQueueItemInInventory()
-	{
-		if(TR_Items_To_Spawn.Count() == 0)
-		{
-			if(ItemSpawnTimer && ItemSpawnTimer.IsRunning())
-			{			
-				ItemSpawnTimer.Stop();
-			}
-			return;
-		}
-		PlayerBase player = PlayerBase.Cast(this);
-		TRITEM newItemInQueue = TR_Items_To_Spawn.Get(0);
-		if(!newItemInQueue)
-		{
-			TR_Items_To_Spawn.Remove(0);
-			return;
-		}
-		CreateItemInInventory(player, newItemInQueue.classname, newItemInQueue.quantity);
-		TR_Items_To_Spawn.Remove(0);
 	}
 
 	bool CreateItemInInventory(PlayerBase player, string itemType, int amount)
@@ -194,23 +135,34 @@ modded class DayZPlayerImplement
 		//any leftover or new stacks
 		if (currentAmount > 0 || !hasSomeQuant)
 		{
-			Object obj = GetGame().CreateObjectEx(itemType, player.GetPosition(), ECE_PLACE_ON_SURFACE);
-			if (!obj)
+			EntityAI newItem = EntityAI.Cast(GetInventory().CreateInInventory(itemType));
+			if (!newItem)
 			{
-				Error("[Trader] Failed to spawn entity "+itemType+" ! Make sure the classname exists and item can be spawned");
-				return false;
+				for (int j = 0; j < itemsArray.Count(); j++)
+				{
+					Class.CastTo(item, itemsArray.Get(j));
+					if (!item)
+						continue;
+					newItem = EntityAI.Cast(item.GetInventory().CreateInInventory(itemType)); //CreateEntityInCargo	
+					if (newItem)
+						break;
+				}
 			}
-			EntityAI newItem = EntityAI.Cast(obj);
-			if(player.ServerTakeEntityToInventory(FindInventoryLocationType.CARGO | FindInventoryLocationType.ATTACHMENT, newItem))
+			if (newItem)
 			{
-				player.SetSynchDirty();
-				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_added_to_inventory", player);
+				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_added_to_inventory", PlayerBase.Cast(this));
 			}
-			else
+			if (!newItem)
 			{
-				newItem.SetPosition(player.GetPosition());
-				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_was_placed_on_ground", player);
+				newItem = EntityAI.Cast(GetGame().CreateObjectEx(itemType,  player.GetPosition(), ECE_PLACE_ON_SURFACE));
+				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_was_placed_on_ground", PlayerBase.Cast(this));
+				if (!newItem)
+				{
+					Error("[Trader] Failed to spawn entity "+itemType+" ! Make sure the classname exists and item can be spawned");
+					return false;
+				}
 			}
+
 			Magazine newMagItem = Magazine.Cast(newItem);
 			Ammunition_Base newammoItem = Ammunition_Base.Cast(newItem);
 			if(newMagItem && !newammoItem)					
@@ -310,12 +262,12 @@ modded class DayZPlayerImplement
 			{
 				if (currencyAmount > itemMaxAmount * m_Trader_CurrencyValues.Get(i))
 				{
-					QueueCreateItemInInventory(player, m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
+					CreateItemInInventory(player, m_Trader_CurrencyClassnames.Get(i), itemMaxAmount);
 					currencyAmount -= itemMaxAmount * m_Trader_CurrencyValues.Get(i);
 				}
 				else
 				{
-					QueueCreateItemInInventory(player, m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i))
+					CreateItemInInventory(player, m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i))
 					currencyAmount -= (currencyAmount / m_Trader_CurrencyValues.Get(i) * m_Trader_CurrencyValues.Get(i));
 				}
 
@@ -328,26 +280,11 @@ modded class DayZPlayerImplement
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// SERVER RPC HANDLING
 	void handleServerRPCs(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		if (rpc_type == TRPCs.RPC_TRADER_MOD_IS_LOADED && !m_Trader_TraderModIsLoaded)
-				handleTraderModIsLoadedRPC(sender, rpc_type, ctx);
-
 		if (rpc_type == TRPCs.RPC_BUY)
 			handleBuyRPC(sender, rpc_type, ctx);
 
 		if (rpc_type == TRPCs.RPC_SELL)
 			handleSellRPC(sender, rpc_type, ctx);
-	}
-
-	void handleTraderModIsLoadedRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
-	{
-		Param1<PlayerBase> rp0 = new Param1<PlayerBase>( NULL );
-		ctx.Read(rp0);
-		
-		PlayerBase player = rp0.param1;
-		
-		m_Trader_TraderModIsLoaded = true;
-		
-		GetGame().RPCSingleParam(player, TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM, new Param1<PlayerBase>( player ), true, player.GetIdentity());
 	}
 
 	void handleBuyRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
@@ -487,7 +424,7 @@ modded class DayZPlayerImplement
 			if (isDuplicatingKey)
 				createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
 			else
-				QueueCreateItemInInventory(player, itemType, itemQuantity);
+				CreateItemInInventory(player, itemType, itemQuantity);
 		}
 	}
 
@@ -588,20 +525,8 @@ modded class DayZPlayerImplement
 				handleSendTraderMarkerEntryRPC(sender, rpc_type, ctx);
 			break;
 			
-			case TRPCs.RPC_SEND_TRADER_DATA_CONFIRMATION:
-				handleSendTraderDataConfirmationRPC(sender, rpc_type, ctx);
-			break;
-			
 			case TRPCs.RPC_SEND_TRADER_CLEAR:
 				handleSendTraderClearRPC(sender, rpc_type, ctx);
-			break;
-			
-			case TRPCs.RPC_TRADER_MOD_IS_LOADED_CONFIRM:
-				handleTraderModIsLoadedConfirmRPC(sender, rpc_type, ctx);
-			break;
-
-			case TRPCs.RPC_SYNC_OBJECT_ORIENTATION:
-				handleSyncObjectOrientationRPC(sender, rpc_type, ctx);
 			break;
 
 			/*case TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE:
@@ -701,18 +626,9 @@ modded class DayZPlayerImplement
 		m_Trader_TraderVehicleSpawnsOrientation.Insert(markerEntry.param5);
 	}
 	
-	void handleSendTraderDataConfirmationRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
-	{
-		Param1<bool> conf_rp = new Param1<bool>( false );
-		ctx.Read( conf_rp );
-		
-		m_Trader_RecievedAllData = conf_rp.param1;
-		Print("[TRADER] Received trader data");
-	}
-	
 	void handleSendTraderClearRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		m_Trader_RecievedAllData = false;	
+		m_Trader_ReceivedAllData = false;	
 		m_Trader_CurrencyName = "";
 		m_Trader_CurrencyClassnames = new array<string>;
 		m_Trader_CurrencyValues = new array<int>;
@@ -736,23 +652,6 @@ modded class DayZPlayerImplement
 		m_Trader_PlayerUID = "";
 		m_Trader_AdminPlayerUIDs = new array<string>;
 		m_Trader_NPCDummyClasses = new array<string>;
-	}
-	
-	void handleTraderModIsLoadedConfirmRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
-	{
-		m_Trader_TraderModIsLoaded = true;
-		m_Trader_TraderModIsLoadedHandled = true;
-	}
-
-	void handleSyncObjectOrientationRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
-	{
-		Param2<Object, vector> syncObject_rp = new Param2<Object, vector>( NULL, "0 0 0" );
-		ctx.Read( syncObject_rp );
-		
-		Object objectToSync = syncObject_rp.param1;
-		vector objectToSyncOrientation  = syncObject_rp.param2;
-
-		objectToSync.SetOrientation(objectToSyncOrientation);
 	}
 
 	/*void handleSyncCarscriptIsInSafezoneRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
@@ -1096,6 +995,42 @@ modded class DayZPlayerImplement
 
 	bool removeFromPlayerInventory(string itemClassname, int amount)
 	{
+		ItemBase item = ItemBase.Cast(GetHumanInventory().GetEntityInHands());
+		if (item)
+		{
+			if(RemoveItem(item , itemClassname, amount))
+			{
+				return true;
+			}
+		}
+
+		array<EntityAI> itemsArray = new array<EntityAI>;
+		GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
+		
+		for (int i = 0; i < itemsArray.Count(); i++)
+		{
+			Class.CastTo(item, itemsArray.Get(i));
+			if (!item)
+				continue;
+
+			if(RemoveItem(item , itemClassname, amount))
+			{
+				return true;
+			}
+			
+		}
+
+		return false;
+	}
+
+	bool RemoveItem(ItemBase item, string itemClassname, int amount)
+	{		
+		if (item.IsRuined())
+			return false;
+
+		if (isAttached(item))
+			return false;
+
 		itemClassname.ToLower();
 
 		bool isMagazine = false;
@@ -1109,83 +1044,27 @@ modded class DayZPlayerImplement
 		bool isSteak = false;
 		if (amount == -5)
 			isSteak = true;
-		
 
-		string itemPlayerClassname = "";
 		int itemAmount = -1;
+		string itemPlayerClassname = "";
+		itemPlayerClassname = item.GetType();
+		itemPlayerClassname.ToLower();
 
-		ItemBase item = ItemBase.Cast(GetHumanInventory().GetEntityInHands());
-		if (item)
+		if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.5))))
 		{
-			itemPlayerClassname = item.GetType();
-			itemPlayerClassname.ToLower();
-
-			if(!isAttached(item) && !item.IsRuined() && itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.5))))
+			itemAmount = getItemAmount(item);
+			
+			if (itemAmount == amount || isMagazine || isWeapon || isSteak)
 			{
-				itemAmount = getItemAmount(item);
-				
-				if (itemAmount == amount || isMagazine || isWeapon || isSteak)
-				{
-					deleteItem(item);
-					//DeleteItemAndOfferRewardsForAllAttachments(item);
-					
-					UpdateInventoryMenu(); // RPC-Call needed?
-					return true;
-				}
-				else
-				{
-					SetItemAmount(item, itemAmount - amount);
-				
-					UpdateInventoryMenu(); // RPC-Call needed?
-					return true;
-				}
+				deleteItem(item);
+				return true;
+			}
+			else
+			{
+				SetItemAmount(item, itemAmount - amount);
+				return true;
 			}
 		}
-
-
-		array<EntityAI> itemsArray = new array<EntityAI>;
-		GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
-		
-		for (int i = 0; i < itemsArray.Count(); i++)
-		{
-			Class.CastTo(item, itemsArray.Get(i));
-			itemPlayerClassname = "";
-
-			if (!item)
-				continue;
-
-			if (item.IsRuined())
-				continue;
-
-			if (isAttached(item))
-				continue;
-
-			itemPlayerClassname = item.GetType();
-			itemPlayerClassname.ToLower();
-
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.5))))
-			{
-				itemAmount = getItemAmount(item);
-				
-				if (itemAmount == amount || isMagazine || isWeapon || isSteak)
-				{
-					deleteItem(item);
-					//DeleteItemAndOfferRewardsForAllAttachments(item);
-					
-					UpdateInventoryMenu(); // RPC-Call needed?
-					return true;
-				}
-				else
-				{
-					SetItemAmount(item, itemAmount - amount);
-				
-					UpdateInventoryMenu(); // RPC-Call needed?
-					return true;
-				}
-			}
-		}
-		
-		UpdateInventoryMenu(); // RPC-Call needed?
 		return false;
 	}
 

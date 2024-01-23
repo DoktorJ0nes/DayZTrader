@@ -4,7 +4,7 @@ modded class TrapBase
 	{
         if (player)
         {
-            if (player.m_Trader_IsInSafezone)
+            if (player.IsInSafeZone())
                return;
         }
 
