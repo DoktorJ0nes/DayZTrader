@@ -11,7 +11,7 @@ modded class PlayerBase
 	{
 		RegisterNetSyncVariableBool("m_IsInSafeZone");
 		RegisterNetSyncVariableBool("m_Trader_SafezoneShowDebugShapes");
-		RegisterNetSyncVariableBool("m_Trader_ReceivedAllData");
+		RegisterNetSyncVariableBool("m_Trader_RecievedAllData");
 	}
 
 	bool IsInSafeZone()

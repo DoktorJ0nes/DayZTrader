@@ -12,7 +12,8 @@ modded class DayZPlayerImplement
 
 	ref TraderNotifications m_Trader_TraderNotifications;
 		
-	bool m_Trader_ReceivedAllData = false;
+	//This variable will soon be removed. If you're a modder start using HasReceivedAllTraderData() function instead
+	bool m_Trader_RecievedAllData = false;
 	
 	string m_Trader_CurrencyName;
 	ref array<string> m_Trader_CurrencyClassnames;
@@ -55,6 +56,15 @@ modded class DayZPlayerImplement
 	ref array<ref TRITEM> TR_Items_To_Spawn;
 	ref Timer ItemSpawnTimer;
 	
+	bool HasReceivedAllTraderData()
+	{
+		return m_Trader_RecievedAllData;
+	}
+
+	void SetReceivedAllTraderData(bool state)
+	{
+		m_Trader_RecievedAllData = state;
+	}
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// OVERRIDES
 	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
@@ -541,6 +551,10 @@ modded class DayZPlayerImplement
 				HandleSendNotificationRPC(sender, rpc_type, ctx);
 			break;
 
+			case TRPCs.RPC_SYNC_OBJECT_ORIENTATION:
+				handleSyncObjectOrientationRPC(sender, rpc_type, ctx);
+			break;
+
 			case TRPCs.RPC_DELETE_SAFEZONE_MESSAGES:	
 				GetTraderNotifications().DeleteAllMessages();
 			break;
@@ -559,6 +573,18 @@ modded class DayZPlayerImplement
 		}
 	}
 
+	//Shitty garage mod is dependant on this
+	void handleSyncObjectOrientationRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
+	{
+		Param2<Object, vector> syncObject_rp = new Param2<Object, vector>( NULL, "0 0 0" );
+		ctx.Read( syncObject_rp );
+		
+		Object objectToSync = syncObject_rp.param1;
+		vector objectToSyncOrientation  = syncObject_rp.param2;
+
+		objectToSync.SetOrientation(objectToSyncOrientation);
+	}
+	
 	void handleSendTraderCurrencyNameEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
 		Param1<string> currencyName_rp = new Param1<string>( "" );
@@ -628,7 +654,7 @@ modded class DayZPlayerImplement
 	
 	void handleSendTraderClearRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
-		m_Trader_ReceivedAllData = false;	
+		SetReceivedAllTraderData(false);
 		m_Trader_CurrencyName = "";
 		m_Trader_CurrencyClassnames = new array<string>;
 		m_Trader_CurrencyValues = new array<int>;

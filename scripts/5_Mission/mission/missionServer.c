@@ -346,7 +346,7 @@ modded class MissionServer
 		{
 			TraderMessage.ServerLog( "[TRADER] Trader data was not ready!" );
 		}
-		if (!player.m_Trader_ReceivedAllData)
+		if (!player.HasReceivedAllTraderData())
 		{	
 			sendTraderDataToPlayer(player);
 		}
@@ -462,7 +462,7 @@ modded class MissionServer
 		}
 				
 		// confirm that all data was sended:
-		player.m_Trader_ReceivedAllData = true;
+		player.SetReceivedAllTraderData(true);
 		player.m_Trader_SafezoneShowDebugShapes = m_Trader_SafezoneShowDebugShapes;
 		player.SetSynchDirty();
 		//TraderMessage.ServerLog("[TRADER] SENT DATA TO PLAYER");		
@@ -950,18 +950,21 @@ modded class MissionServer
 				
 				We create a trigger for the safezone of the trader.
 			*/
-
-			SafeZoneTrigger newTrigger; // Should be stored in an array later
-			if (Class.CastTo(newTrigger, GetGame().CreateObjectEx("SafeZoneTrigger", markerPosition, ECE_NONE)))
+			int triggerRadius = line_content.ToInt();
+			if(triggerRadius > 0)
 			{
-				vector triggerPosition = markerPosition;
-				int triggerRadius = line_content.ToInt();
-				triggerPosition[1] = triggerPosition[1] - 50; // Sane default values
-				newTrigger.SetPosition(triggerPosition);
-				newTrigger.SetCollisionCylinder( triggerRadius, 100 );
-				newTrigger.InitSafeZone(m_Trader_SafezoneTimeout, m_Trader_SafezoneRemoveAnimals, m_Trader_SafezoneRemoveInfected);
-				
-				TraderMessage.ServerLog("[TRADER] SPAWNED SAFEZONE AT " + triggerPosition + " with radius " + triggerRadius);
+				SafeZoneTrigger newTrigger; // Should be stored in an array later
+				if (Class.CastTo(newTrigger, GetGame().CreateObjectEx("SafeZoneTrigger", markerPosition, ECE_NONE)))
+				{
+					vector triggerPosition = markerPosition;
+					int halfheight = 100;
+					triggerPosition[1] = triggerPosition[1] - halfheight; // Sane default values
+					newTrigger.SetPosition(triggerPosition);
+					newTrigger.SetCollisionCylinder( triggerRadius, halfheight * 2 );
+					newTrigger.InitSafeZone(m_Trader_SafezoneTimeout, m_Trader_SafezoneRemoveAnimals, m_Trader_SafezoneRemoveInfected);
+					
+					TraderMessage.ServerLog("[TRADER] SPAWNED SAFEZONE AT " + triggerPosition + " with radius " + triggerRadius);
+				}
 			}
 			
 			// Get Trader Marker Vehicle Spawnpoint:					

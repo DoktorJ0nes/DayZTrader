@@ -31,7 +31,7 @@ class ActionTrade: ActionInteractBase
 		if(!target || !target.GetObject() || !player)
 			return false;		
 
-		if (player && !player.m_Trader_ReceivedAllData)
+		if (player && !player.HasReceivedAllTraderData())
 		{						
 			return false;
 		}

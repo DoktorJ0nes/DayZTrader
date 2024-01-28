@@ -18,7 +18,7 @@ class SafeZoneTrigger : CylinderTrigger
 		if(GetGame().IsClient())
 		{
 			PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
-			if(player && player.m_Trader_ReceivedAllData)
+			if(player && player.HasReceivedAllTraderData())
 			{
 				GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).Remove(this.SpawnCylinderShape);
 				if(player.m_Trader_SafezoneShowDebugShapes)

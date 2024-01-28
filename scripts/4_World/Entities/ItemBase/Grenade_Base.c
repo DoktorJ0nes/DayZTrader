@@ -52,7 +52,7 @@ modded class Grenade_Base extends InventoryItemSuper
                 if (!player.IsAlive())
 					continue;
 
-				if (!player.m_Trader_ReceivedAllData)
+				if (!player.HasReceivedAllTraderData())
 					continue;
 
                 return player;
