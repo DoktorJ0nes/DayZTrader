@@ -31,13 +31,24 @@ class ActionTrade: ActionInteractBase
 		if(!target || !target.GetObject() || !player)
 			return false;		
 
+		if (player && !player.HasReceivedAllTraderData())
+		{						
+			return false;
+		}
+
 		bool isTraderNPCObject = false;
 		if(player.m_Trader_NPCDummyClasses)
 		{	
 			for ( int i = 0; i < player.m_Trader_NPCDummyClasses.Count(); i++ )
 			{
-				if (target.GetObject().GetType() == player.m_Trader_NPCDummyClasses.Get(i))
+				string targetName = target.GetObject().GetType();
+				string dummyName = player.m_Trader_NPCDummyClasses.Get(i);
+				targetName.ToLower();
+				dummyName.ToLower();
+				if (targetName == dummyName)
+				{	
 					isTraderNPCObject = true;
+				}
 			}
 		}
 		PlayerBase ntarget = PlayerBase.Cast(target.GetObject());
@@ -64,10 +75,6 @@ class ActionTrade: ActionInteractBase
 	{
 		m_Player = player;
 		vector playerPosition = player.GetPosition();
-		if (player.m_Trader_RecievedAllData == false)
-		{						
-			return false;
-		}
 		m_Trader_AllowedTradeDistance = TR_Helper.GetTraderAllowedTradeDistance();
 		m_traderUID = getNearbyTraderUID(playerPosition);
 		bool canOpenTraderMenu = getCanOpenTraderMenu(playerPosition);

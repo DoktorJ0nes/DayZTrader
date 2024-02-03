@@ -11,6 +11,7 @@ modded class PlayerBase
 	{
 		RegisterNetSyncVariableBool("m_IsInSafeZone");
 		RegisterNetSyncVariableBool("m_Trader_SafezoneShowDebugShapes");
+		RegisterNetSyncVariableBool("m_Trader_RecievedAllData");
 	}
 
 	bool IsInSafeZone()
@@ -108,6 +109,14 @@ modded class PlayerBase
 
         RegisterNetSyncVariableBool("m_Trader_IsTrader");
     }
+
+	override void SetSuicide(bool state)
+	{
+		super.SetSuicide(state);
+
+		if (state && IsInSafeZone() && GetGame().IsServer())
+			SetAllowDamage(true);
+	}
 
     override void SetActions(out TInputActionMap InputActionMap)
 	{

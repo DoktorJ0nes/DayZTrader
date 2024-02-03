@@ -959,5 +959,15 @@ class TraderMenu extends UIScriptedMenu
 	{
 		str.Replace("$UNT$", "");
 		return str;
+	}	
+	
+	override bool OnKeyDown(Widget w, int x, int y, int key)
+	{
+		if ( key == KeyCode.KC_ESCAPE )
+		{
+			Close();
+		}
+		
+		return super.OnKeyDown(w, x, y, key);
 	}
 };

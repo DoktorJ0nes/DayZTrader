@@ -3,15 +3,8 @@ class SafeZoneTrigger : CylinderTrigger
 	private bool m_RemoveAnimals = false;
 	private bool m_RemoveInfected = false;
 	private int m_ExitTimerInSeconds = 30;
-	
-	float m_Radius = 150;
 
-	void SafeZoneTrigger()
-	{
-		RegisterNetSyncVariableFloat("m_Radius", 0, 1000, 2);
-	}
-
-	void EEInit()
+	override void EEInit()
 	{
 		super.EEInit();		
 		if(GetGame().IsClient())
@@ -20,29 +13,27 @@ class SafeZoneTrigger : CylinderTrigger
 		}
 	}
 
-	void SetRadius(float radius)
-	{
-		m_Radius = radius;
-		SetSynchDirty();
-	}
-
 	void SpawnCylinderShape()
 	{		
 		if(GetGame().IsClient())
 		{
 			PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
-			if(player && player.m_Trader_RecievedAllData)
+			if(player && player.HasReceivedAllTraderData())
 			{
 				GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).Remove(this.SpawnCylinderShape);
 				if(player.m_Trader_SafezoneShowDebugShapes)
 				{
-					float height = 100;		
+					float radius = GetCollisionRadius();
+					//float height = 100;		
 					array<int> coloursToChoose = {COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW, COLOR_RED_A, COLOR_GREEN_A, COLOR_GREEN_A, COLOR_BLUE_A, COLOR_YELLOW_A};
 					int color = coloursToChoose.GetRandomElement();	
+					vector minMax[2];
+					GetCollisionBox(minMax);
+					float height = Math.AbsFloat(minMax[0][1]) + Math.AbsFloat(minMax[1][1]);
 					vector pos = GetPosition();
-					pos[1] = pos[1] + 50;
-					Debug.DrawCylinder(pos, m_Radius, height, color, ShapeFlags.VISIBLE|ShapeFlags.DOUBLESIDE);
-					Print("Got debug shape with radius " + m_Radius );
+					pos[1] = pos[1] + (height * 0.5);
+					Debug.DrawCylinder(pos, radius, height, color, ShapeFlags.VISIBLE|ShapeFlags.DOUBLESIDE);
+					Print("Got debug shape with radius " + radius );
 				}
 			}
 			

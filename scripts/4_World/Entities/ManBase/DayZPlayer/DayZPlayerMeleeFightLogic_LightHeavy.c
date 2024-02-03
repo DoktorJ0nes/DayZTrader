@@ -4,11 +4,11 @@ modded class DayZPlayerMeleeFightLogic_LightHeavy
 	{
         PlayerBase playerClone = PlayerBase.Cast(m_DZPlayer);
         
-        if (playerClone)
-        {
-            if (playerClone.m_Trader_IsInSafezone)
-            return false;
-        }
+        // if (playerClone)
+        // {
+        //     if (playerClone.m_Trader_IsInSafezone)
+        //     return false;
+        // }
 
         return super.HandleFightLogic(pCurrentCommandID, pInputs, pEntityInHands, pMovementState, pContinueAttack);
     }
