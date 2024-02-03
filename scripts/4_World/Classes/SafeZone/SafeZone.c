@@ -4,7 +4,7 @@ class SafeZoneTrigger : CylinderTrigger
 	private bool m_RemoveInfected = false;
 	private int m_ExitTimerInSeconds = 30;
 
-	void EEInit()
+	override void EEInit()
 	{
 		super.EEInit();		
 		if(GetGame().IsClient())

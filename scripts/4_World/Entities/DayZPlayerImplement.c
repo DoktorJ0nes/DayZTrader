@@ -405,7 +405,6 @@ modded class DayZPlayerImplement
 			itemQuantity = 1;
 		}
 
-		traderTradesLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 
 		if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
 		{
@@ -422,6 +421,7 @@ modded class DayZPlayerImplement
 
 			deductPlayerCurrency(itemCosts);
 
+			traderTradesLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 			TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_parked_next_to_you", player);
 
 			spawnVehicle(traderUID, itemType, vehicleKeyHash);
@@ -430,6 +430,7 @@ modded class DayZPlayerImplement
 		}
 		else if (itemType != "VehicleKeyLost")// Is not a Vehicle
 		{
+			traderTradesLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 			deductPlayerCurrency(itemCosts);
 			if (isDuplicatingKey)
 				createVehicleKeyInPlayerInventory(vehicleKeyHash, itemType);
@@ -1252,10 +1253,14 @@ modded class DayZPlayerImplement
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
 		array<Object> nearby_objects = new array<Object>;
+		vector position = m_Trader_TraderVehicleSpawns.Get(traderUID);
+		position[1] = position[1] + 2.5;
 
-		GetGame().IsBoxColliding( m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects);
+		GetGame().IsBoxColliding( position, m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects);
 		if (nearby_objects.Count() > 0)
+		{
 			return nearby_objects.Get(0).GetType();
+		}
 
 		return "FREE";
 	}
