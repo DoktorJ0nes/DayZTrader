@@ -1,8 +1,10 @@
 modded class PlayerBase
-{
+{ 
     protected bool m_IsInSafeZone = false;
     bool m_Trader_IsTrader = false;
 	bool m_Trader_SafezoneShowDebugShapes = false;
+	float m_Trader_TradingDistance = 3.0;
+	int m_Trader_TraderID = -1;
 	protected int m_SafeZoneCount = 0;
 	protected int m_PrevSafeZoneCount = 0;
     ref TraderMenu m_TraderMenu;
@@ -12,6 +14,8 @@ modded class PlayerBase
 		RegisterNetSyncVariableBool("m_IsInSafeZone");
 		RegisterNetSyncVariableBool("m_Trader_SafezoneShowDebugShapes");
 		RegisterNetSyncVariableBool("m_Trader_RecievedAllData");
+		RegisterNetSyncVariableFloat("m_Trader_TradingDistance", 0.0, 3.0, 1);
+		RegisterNetSyncVariableInt("m_Trader_TraderID", -1, 1000);
 	}
 
 	bool IsInSafeZone()
