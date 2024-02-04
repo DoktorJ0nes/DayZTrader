@@ -14,6 +14,8 @@ modded class DayZPlayerImplement
 		
 	//This variable will soon be removed. If you're a modder start using HasReceivedAllTraderData() function instead
 	bool m_Trader_RecievedAllData = false;
+	//This variable is not being used anymore. Backwards compatibility with Garage mod
+	bool m_Trader_IsInSafezone = false;
 	
 	string m_Trader_CurrencyName;
 	ref array<string> m_Trader_CurrencyClassnames;
@@ -709,6 +711,12 @@ modded class DayZPlayerImplement
 			GetTraderNotifications().ShowMessage(msg.param1, msg.param2, msg.param3);
 		}
 	}
+	
+	//DEPRECATED. SHOULDNT BE USED ANYMORE
+	void showTraderMessage(string message, float time, int color = 0)
+	{
+		GetTraderNotifications().ShowMessage(message, time, color);
+	}
 
 	void handleSendTraderVariablesEntryRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
@@ -1250,16 +1258,18 @@ modded class DayZPlayerImplement
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// VEHICLE
 	string isVehicleSpawnFree(int traderUID)
 	{
-		vector size = "3 5 9";
+		vector size = "3 1 9";
 		array<Object> excluded_objects = new array<Object>;
 		array<Object> nearby_objects = new array<Object>;
-		vector position = m_Trader_TraderVehicleSpawns.Get(traderUID);
-		position[1] = position[1] + 2.5;
 
-		GetGame().IsBoxColliding( position, m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects);
+		GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects);
 		if (nearby_objects.Count() > 0)
 		{
-			return nearby_objects.Get(0).GetType();
+			BuildingBase building = BuildingBase.Cast(nearby_objects.Get(0));
+			if(!building)
+			{
+				return nearby_objects.Get(0).GetType();
+			}
 		}
 
 		return "FREE";

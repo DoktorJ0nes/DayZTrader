@@ -411,6 +411,10 @@ class TraderMenu extends UIScriptedMenu
                 itemName = itemType.Substring(0,leng);  
             }
 			previewItem = EntityAI.Cast(GetGame().CreateObject( itemName, "0 0 0", true, false, true ));
+			if(!previewItem)
+			{
+				previewItem = EntityAI.Cast(GetGame().CreateObject( itemType, "0 0 0", true, false, true ));
+			}
 			m_ItemPreviewWidget.SetItem( previewItem );
             
 			m_ItemPreviewWidget.SetModelPosition( Vector(1.0,1.0,0.5) );
