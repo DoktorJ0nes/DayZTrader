@@ -25,6 +25,13 @@ class TraderNotification
 
     void Update()
 	{
+        PlayerBase currentPlayer = PlayerBase.Cast(GetGame().GetPlayer());
+        if(currentPlayer && !currentPlayer.IsAlive())
+        {
+            RemoveNotification();
+            return;
+        }
+        
         m_Timer -= 1;
 
         if (m_IsExitSafezoneMsg)

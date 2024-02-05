@@ -1,6 +1,7 @@
 class ActionTrade: ActionInteractBase
 {
-	private int m_traderUID =  -1;
+	private int m_traderID =  -1;
+	private int m_traderIndex =  -1;
 	private PlayerBase m_Player;
 	private float m_Trader_AllowedTradeDistance = 3.0;
 
@@ -58,7 +59,7 @@ class ActionTrade: ActionInteractBase
 		PlayerBase ntarget = PlayerBase.Cast(target.GetObject());
 		bool isTraderNPCCharacter = false;
 		if(ntarget)
-			isTraderNPCCharacter = ntarget.m_Trader_IsTrader;
+			isTraderNPCCharacter = ntarget.IsTrader();
 					
 		if (!isTraderNPCCharacter && !isTraderNPCObject)
 			return false;
@@ -81,16 +82,17 @@ class ActionTrade: ActionInteractBase
 		vector playerPosition = player.GetPosition();
 		m_Trader_AllowedTradeDistance = player.m_Trader_TradingDistance;
 		BuildingBase buildingItem = BuildingBase.Cast(target);
-		m_traderUID = getNearbyTraderUID(playerPosition);
-		if(buildingItem && buildingItem.m_Trader_TraderID > -1)
+		m_traderIndex = getNearbyTraderUID(playerPosition);
+		if(buildingItem && buildingItem.m_Trader_TraderIndex > -1)
 		{			
-			m_traderUID = buildingItem.m_Trader_TraderID;
+			m_traderIndex = buildingItem.m_Trader_TraderIndex;
 		}
 		PlayerBase playerTrader = PlayerBase.Cast(target);
-		if(playerTrader&& playerTrader.m_Trader_TraderID > -1)
+		if(playerTrader&& playerTrader.m_Trader_TraderIndex > -1)
 		{
-			m_traderUID = playerTrader.m_Trader_TraderID;
+			m_traderIndex = playerTrader.m_Trader_TraderIndex;
 		}
+		m_traderID = getTraderID();
 		bool canOpenTraderMenu = getCanOpenTraderMenu(playerPosition);
 		if (canOpenTraderMenu)
 		{			
@@ -108,7 +110,7 @@ class ActionTrade: ActionInteractBase
 	{		
 		bool playerIsInSafezoneRange = getIsInSafezoneRange(position);
 		
-		if (m_traderUID == -1 && playerIsInSafezoneRange)
+		if (m_traderIndex == -1 && playerIsInSafezoneRange)
 		{
 			return false;
 		}
@@ -143,7 +145,7 @@ class ActionTrade: ActionInteractBase
 
     int getTraderID()
 	{
-		return m_Player.m_Trader_TraderIDs.Get(m_traderUID);
+		return m_Player.m_Trader_TraderIDs.Get(m_traderIndex);
 	}
 
     float getDistanceToTrader(vector position, int traderIndex)
@@ -161,10 +163,10 @@ class ActionTrade: ActionInteractBase
 		if (GetGame().GetUIManager().GetMenu() == NULL) 
 		{                
 			m_Player.m_TraderMenu = TraderMenu.Cast(GetGame().GetUIManager().EnterScriptedMenu(TRADERMENU_UI, null));
-			m_Player.m_TraderMenu.m_TraderID = getTraderID();
-			m_Player.m_TraderMenu.m_TraderUID = m_traderUID;
-			m_Player.m_TraderMenu.m_TraderVehicleSpawn = m_Player.m_Trader_TraderVehicleSpawns.Get(m_traderUID);
-			m_Player.m_TraderMenu.m_TraderVehicleSpawnOrientation = m_Player.m_Trader_TraderVehicleSpawnsOrientation.Get(m_traderUID);
+			m_Player.m_TraderMenu.m_TraderID = m_traderID;
+			m_Player.m_TraderMenu.m_traderIndex = m_traderIndex;
+			m_Player.m_TraderMenu.m_TraderVehicleSpawn = m_Player.m_Trader_TraderVehicleSpawns.Get(m_traderIndex);
+			m_Player.m_TraderMenu.m_TraderVehicleSpawnOrientation = m_Player.m_Trader_TraderVehicleSpawnsOrientation.Get(m_traderIndex);
 			m_Player.m_TraderMenu.m_buySellTime = m_Player.m_Trader_BuySellTimer;
 			m_Player.m_TraderMenu.InitTraderValues();
 		}

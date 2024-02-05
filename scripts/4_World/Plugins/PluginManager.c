@@ -1,3 +1,4 @@
+#ifdef SERVER
 modded class PluginManager
 {
 	override void Init()
@@ -12,3 +13,4 @@ modded class PluginManager
 		}		
 	}
 };
+#endif

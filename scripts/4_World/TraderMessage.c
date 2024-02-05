@@ -2,6 +2,7 @@ class TraderMessage
 {
 	static void ServerLog(string str)
 	{
+#ifdef SERVER
 #ifndef TRADER_HIDE_SERVER_LOGS        
         PluginTraderServerLog m_Logger = PluginTraderServerLog.Cast(GetPlugin(PluginTraderServerLog));
         if(m_Logger)
@@ -13,10 +14,12 @@ class TraderMessage
             Print(str);
         }
 #endif
+#endif
     }
 
 	static void TradesLog(string str)
 	{
+#ifdef SERVER
 #ifndef TRADER_HIDE_SERVER_LOGS        
         PluginTraderTradesLog m_Logger = PluginTraderTradesLog.Cast(GetPlugin(PluginTraderTradesLog));
         if(m_Logger)
@@ -27,6 +30,7 @@ class TraderMessage
         {
             Print(str);
         }
+#endif
 #endif
     }
 

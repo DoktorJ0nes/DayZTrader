@@ -50,6 +50,16 @@ class SafeZoneTrigger : CylinderTrigger
 	override bool CanAddObjectAsInsider(Object object)
 	{
 		#ifdef SERVER
+		CarScript vehicle = CarScript.Cast(object);
+		if(vehicle)
+		{
+			return true;
+		}
+		Grenade_Base grenade = Grenade_Base.Cast(object);
+		if(grenade)
+		{
+			return true;
+		}
 		DayZCreatureAI creature = DayZCreatureAI.Cast( object );
 		if(creature)
 		{
@@ -76,10 +86,22 @@ class SafeZoneTrigger : CylinderTrigger
 		
 		if (insider)
 		{
-			PlayerBase playerInsider = PlayerBase.Cast( insider.GetObject() );
-			
+			PlayerBase playerInsider = PlayerBase.Cast( insider.GetObject() );			
 			if (playerInsider)
-				playerInsider.AddSafeZoneTrigger();				
+			{
+				playerInsider.AddSafeZoneTrigger();
+				return;
+			}
+			CarScript vehicle = CarScript.Cast(insider.GetObject());
+			if(vehicle)
+			{
+				vehicle.SetIsInSafezone(true);
+			}
+			Grenade_Base grenade = Grenade_Base.Cast(insider.GetObject());
+			if(grenade)
+			{
+				grenade.SetInSafezone(true);
+			}
 		}
 	}
 
@@ -111,12 +133,25 @@ class SafeZoneTrigger : CylinderTrigger
 	{
 		super.OnLeaveServerEvent( insider );
 		
-		if ( insider )
+		if (insider)
 		{
-			PlayerBase playerInsider = PlayerBase.Cast( insider.GetObject() );
-			
-			if ( playerInsider )
+			PlayerBase playerInsider = PlayerBase.Cast(insider.GetObject());			
+			if (playerInsider)
+			{	
 				playerInsider.RemoveSafeZoneTrigger(m_ExitTimerInSeconds);
+				return;
+			}
+			
+			CarScript vehicle = CarScript.Cast(insider.GetObject());
+			if(vehicle)
+			{
+				vehicle.SetIsInSafezone(false);
+			}
+			Grenade_Base grenade = Grenade_Base.Cast(insider.GetObject());
+			if(grenade)
+			{
+				grenade.SetInSafezone(false);
+			}
 		}
 	}
 

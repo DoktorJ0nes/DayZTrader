@@ -77,39 +77,7 @@ modded class CarScript
         PlayerBase player = PlayerBase.Cast(CrewMember(DayZPlayerConstants.VEHICLESEAT_DRIVER));
         if (player)
             m_Trader_LastDriverId = player.GetIdentity().GetId();
-	}
-
-    /*override bool CanReleaseAttachment( EntityAI attachment ) // doesnt work because the vanilla Child Classes dont return/call the super.CanReleaseAttachment properly..
-	{
-        if(!super.CanReleaseAttachment(attachment))
-            return false;
-
-        return !m_Trader_Locked;
-    }*/
-
-    /*override bool CanReceiveItemIntoCargo(EntityAI cargo)
-    {
-        if(!super.CanPutInCargo(cargo))
-            return false;
-
-        return !m_Trader_Locked;
-    }
-
-    override bool CanReleaseCargo (EntityAI cargo)
-	{
-		if(!super.CanReleaseCargo(cargo))
-            return false;
-
-        return !m_Trader_Locked;
-	}
-
-    override bool CanDisplayCargo() // doesnt work at all..
-	{
-		if(!super.CanDisplayCargo())
-			return false;
-		
-		return !m_Trader_Locked;
-	}*/
+	}    
 	
 	override bool CanDisplayAttachmentSlot( string slot_name )
 	{
@@ -141,5 +109,20 @@ modded class CarScript
 
 			SetSynchDirty();
         }
+    }
+
+    void SetIsInSafezone(bool isInSafezone)
+	{
+        m_Trader_IsInSafezone = isInSafezone;
+        SynchronizeValues();
+        SetAllowDamage(!isInSafezone);
+        // if(isInSafezone)
+        // {
+        //     TraderMessage.ServerLog(GetDisplayName() + " entered the safezone.");
+        // }
+        // else
+        // {
+        //     TraderMessage.ServerLog(GetDisplayName() + " left the safezone.");
+        // }
     }
 }
