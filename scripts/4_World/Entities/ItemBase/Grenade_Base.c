@@ -1,10 +1,8 @@
 modded class Grenade_Base extends InventoryItemSuper
 {
-    bool m_Trader_IsInSafezone = false;
-
     override protected void ExplodeGrenade(EGrenadeType grenade_type)
 	{
-        if (IsInSafeZone())
+        if (isInSafezone())
         {
             OnExplode(); // deletes Grenade from Server
             return;
@@ -13,21 +11,58 @@ modded class Grenade_Base extends InventoryItemSuper
         super.ExplodeGrenade(grenade_type);
 	}
 
-    void SetInSafezone(bool IsInSafeZone)
+    bool isInSafezone()
     {
-        m_Trader_IsInSafezone = IsInSafeZone;
-        if(IsInSafeZone)
+        PlayerBase player = getRandomValidPlayer();
+
+        if (!player)
+            return false;
+
+        if (!this)
+            return false;
+        //stupid ass shit
+        for (int k = 0; k < player.m_Trader_TraderPositions.Count(); k++)
         {
-            TraderMessage.ServerLog(GetDisplayName() + " entered the safezone.");
+            vector grenadePos = this.GetPosition();
+            vector safezonePos = player.m_Trader_TraderPositions.Get(k);
+            float distanceToSafezone = vector.Distance(grenadePos, safezonePos);
+            float distanceToSafezoneMax = player.m_Trader_TraderSafezones.Get(k);
+
+            if (distanceToSafezone <= distanceToSafezoneMax)
+                return true;
+        }
+
+        return false;
+    }
+
+    PlayerBase getRandomValidPlayer()
+    {
+        if( GetGame().IsServer() )
+        {
+            array<Man> m_Players = new array<Man>;
+		    GetGame().GetWorld().GetPlayerList(m_Players);
+
+            for (int j = 0; j < m_Players.Count(); j++)
+			{
+				PlayerBase player = PlayerBase.Cast(m_Players.Get(j));
+				
+				if (!player)
+					continue;
+
+                if (!player.IsAlive())
+					continue;
+
+				if (!player.HasReceivedAllTraderData())
+					continue;
+
+                return player;
+            }
         }
         else
         {
-            TraderMessage.ServerLog(GetDisplayName() + " left the safezone.");
+            return PlayerBase.Cast(GetGame().GetPlayer());
         }
-    }
 
-    bool IsInSafeZone()
-    {
-        return m_Trader_IsInSafezone;
+        return null;
     }
-}
+};

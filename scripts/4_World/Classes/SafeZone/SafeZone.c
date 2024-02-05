@@ -7,10 +7,9 @@ class SafeZoneTrigger : CylinderTrigger
 	override void EEInit()
 	{
 		super.EEInit();		
-		if(GetGame().IsClient())
-		{			
+		#ifndef SERVER
 			GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(this.SpawnCylinderShape, 1000, true);
-		}
+		#endif
 	}
 
 	void SpawnCylinderShape()
