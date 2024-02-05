@@ -54,11 +54,6 @@ class SafeZoneTrigger : CylinderTrigger
 		{
 			return true;
 		}
-		Grenade_Base grenade = Grenade_Base.Cast(object);
-		if(grenade)
-		{
-			return true;
-		}
 		DayZCreatureAI creature = DayZCreatureAI.Cast( object );
 		if(creature)
 		{
@@ -95,11 +90,6 @@ class SafeZoneTrigger : CylinderTrigger
 			if(vehicle)
 			{
 				vehicle.SetIsInSafezone(true);
-			}
-			Grenade_Base grenade = Grenade_Base.Cast(insider.GetObject());
-			if(grenade)
-			{
-				grenade.SetInSafezone(true);
 			}
 		}
 	}
@@ -145,11 +135,6 @@ class SafeZoneTrigger : CylinderTrigger
 			if(vehicle)
 			{
 				vehicle.SetIsInSafezone(false);
-			}
-			Grenade_Base grenade = Grenade_Base.Cast(insider.GetObject());
-			if(grenade)
-			{
-				grenade.SetInSafezone(false);
 			}
 		}
 	}

@@ -1,20 +1,20 @@
 modded class Grenade_Base extends InventoryItemSuper
-{
-    override protected void ExplodeGrenade(EGrenadeType grenade_type)
+{    
+	override protected void InitiateExplosion()
 	{
         if (isInSafezone())
         {
             OnExplode(); // deletes Grenade from Server
             return;
         }
-		
-        super.ExplodeGrenade(grenade_type);
+
+        super.InitiateExplosion();
 	}
 
     bool isInSafezone()
     {
         PlayerBase player = getRandomValidPlayer();
-
+        
         if (!player)
             return false;
 
