@@ -64,6 +64,7 @@ modded class MissionServer
 		readTraderVariables();
 		readTraderData();
 		readTraderAdmins();
+		g_Game.SetTraderPositionsAndSafezones(m_Trader_TraderPositions, m_Trader_TraderSafezones);
 		TraderMessage.ServerLog("[TRADER] FINISHED LOADING TRADER CONFIG");
     }
 
@@ -79,7 +80,7 @@ modded class MissionServer
 
         super.HandleBody(player);
     }
-	
+
 	override void OnUpdate(float timeslice)
 	{
 		super.OnUpdate(timeslice);
@@ -983,8 +984,6 @@ modded class MissionServer
 			markerPosition[1] = traderMarkerPosY.ToFloat();
 			markerPosition[2] = traderMarkerPosZ.ToFloat();
 			
-			TraderMessage.ServerLog("[TRADER] TRADER MARKER POSITION ENTRY " + markerPosition);
-			
 			m_Trader_TraderPositions.Insert(markerPosition);
 			Object traderAtPos = FindTraderObjectAtPosition(markerPosition);			
 			if(traderAtPos)
@@ -1003,7 +1002,12 @@ modded class MissionServer
 					playerTrader.m_Trader_TraderIndex = m_Trader_TraderIDs.Count() - 1;
 					playerTrader.SetSynchDirty();
 					//TraderMessage.ServerLog("[TRADER] TRADER MARKER playerTrader " + playerTrader);
-				}
+				}			
+				TraderMessage.ServerLog("[TRADER] TRADER MARKER POSITION ENTRY " + markerPosition);
+			}
+			else
+			{
+				TraderMessage.ServerLog("[TRADER][ERROR] Marker couldn't find an object at position " + markerPosition);
 			}
 			
 			// Get Trader Marker Safezone Radius:					
@@ -1227,6 +1231,6 @@ modded class MissionServer
 	//DEPRECATED - NOT USED ANYMORE
 	void SetPlayerVehicleIsInSafezone( PlayerBase player, bool isInSafezone )
 	{
-		Print("A mod is using SetPlayerVehicleIsInSafezone from Trader mod. Function has been deprecated.")
+		Print("A mod is using SetPlayerVehicleIsInSafezone from Trader mod. Function has been deprecated.");
 	}
 }
