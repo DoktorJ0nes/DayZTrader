@@ -279,7 +279,7 @@ modded class DayZPlayerImplement
 				}
 				else
 				{
-					CreateItemInInventory(player, m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i))
+					CreateItemInInventory(player, m_Trader_CurrencyClassnames.Get(i), currencyAmount / m_Trader_CurrencyValues.Get(i));
 					currencyAmount -= (currencyAmount / m_Trader_CurrencyValues.Get(i) * m_Trader_CurrencyValues.Get(i));
 				}
 
@@ -304,7 +304,7 @@ modded class DayZPlayerImplement
 		Param3<int, int, string> rpb = new Param3<int, int, string>(-1, -1, "");
 		ctx.Read(rpb);
 
-		int traderUID = rpb.param1;
+		int traderIndex = rpb.param1;
 		int itemID = rpb.param2;
 		itemDisplayNameClient = rpb.param3;
 
@@ -314,7 +314,7 @@ modded class DayZPlayerImplement
 			return;
 		m_Trader_LastBuyedTime = GetGame().GetTime();
 
-		if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
+		if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderIndex >= m_Trader_TraderPositions.Count() || traderIndex < 0)
 			return;
 
 		string itemType = m_Trader_ItemsClassnames.Get(itemID);
@@ -323,7 +323,7 @@ modded class DayZPlayerImplement
 
 		vector playerPosition = GetPosition();
 		PlayerBase player = PlayerBase.Cast(this);
-		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > TR_Helper.GetTraderAllowedTradeDistance())
+		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderIndex)) > TR_Helper.GetTraderAllowedTradeDistance())
 		{
 			traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
 			return;
@@ -365,7 +365,7 @@ modded class DayZPlayerImplement
 		bool isLostKey = false;
 		if (itemQuantity == -8) // is Lost Key
 		{
-			array<Transport> foundVehicles = GetVehicleToGetKeyFor(traderUID);
+			array<Transport> foundVehicles = GetVehicleToGetKeyFor(traderIndex);
 
 			if (foundVehicles.Count() < 1)
 			{
@@ -410,7 +410,7 @@ modded class DayZPlayerImplement
 
 		if (itemQuantity == -2 || itemQuantity == -6) // Is a Vehicle
 		{
-			string blockingObject = isVehicleSpawnFree(traderUID);
+			string blockingObject = isVehicleSpawnFree(traderIndex);
 
 			if (blockingObject != "FREE")
 			{
@@ -426,7 +426,7 @@ modded class DayZPlayerImplement
 			traderTradesLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
 			TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_parked_next_to_you", player);
 
-			spawnVehicle(traderUID, itemType, vehicleKeyHash);
+			spawnVehicle(traderIndex, itemType, vehicleKeyHash);
 
 			GetGame().RPCSingleParam(player, TRPCs.RPC_SEND_MENU_BACK, new Param1<bool>(false), true, GetIdentity());
 		}
@@ -446,7 +446,7 @@ modded class DayZPlayerImplement
 		Param3<int, int, string> rps = new Param3<int, int, string>( -1, -1, "" );
 		ctx.Read(rps);
 
-		int traderUID = rps.param1;
+		int traderIndex = rps.param1;
 		int itemID = rps.param2;
 		itemDisplayNameClient = rps.param3;
 
@@ -456,7 +456,7 @@ modded class DayZPlayerImplement
 			return;
 		m_Trader_LastSelledTime = GetGame().GetTime();
 
-		if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderUID >= m_Trader_TraderPositions.Count() || traderUID < 0)
+		if (itemID >= m_Trader_ItemsClassnames.Count() || itemID < 0 || traderIndex >= m_Trader_TraderPositions.Count() || traderIndex < 0)
 			return;
 
 		string itemType = m_Trader_ItemsClassnames.Get(itemID);
@@ -466,14 +466,14 @@ modded class DayZPlayerImplement
 		vector playerPosition = GetPosition();	
 
 		PlayerBase player = PlayerBase.Cast(this);
-		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderUID)) > TR_Helper.GetTraderAllowedTradeDistance())
+		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderIndex)) > TR_Helper.GetTraderAllowedTradeDistance())
 		{
 			traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
 			return;
 		}
 
 
-		Object vehicleToSell = GetVehicleToSell(traderUID, itemType);
+		Object vehicleToSell = GetVehicleToSell(traderIndex, itemType);
 		bool isValidVehicle = ((itemQuantity == -2 || itemQuantity == -6) && vehicleToSell);
 
 		if (itemSellValue < 0)
@@ -1256,13 +1256,13 @@ modded class DayZPlayerImplement
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// VEHICLE
-	string isVehicleSpawnFree(int traderUID)
+	string isVehicleSpawnFree(int traderIndex)
 	{
 		vector size = "3 1 9";
 		array<Object> excluded_objects = new array<Object>;
 		array<Object> nearby_objects = new array<Object>;
 
-		GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects);
+		GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(traderIndex), m_Trader_TraderVehicleSpawnsOrientation.Get(traderIndex), size, excluded_objects, nearby_objects);
 		if (nearby_objects.Count() > 0)
 		{
 			BuildingBase building = BuildingBase.Cast(nearby_objects.Get(0));
@@ -1275,7 +1275,7 @@ modded class DayZPlayerImplement
 		return "FREE";
 	}
 
-	array<Transport> GetVehicleToGetKeyFor(int traderUID)
+	array<Transport> GetVehicleToGetKeyFor(int traderIndex)
 	{
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
@@ -1284,7 +1284,7 @@ modded class DayZPlayerImplement
 		array<Transport> found_vehicles = new array<Transport>;
 		Transport transport;
 
-		if (GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(traderUID), m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID), size, excluded_objects, nearby_objects))
+		if (GetGame().IsBoxColliding(m_Trader_TraderVehicleSpawns.Get(traderIndex), m_Trader_TraderVehicleSpawnsOrientation.Get(traderIndex), size, excluded_objects, nearby_objects))
 		{
 			for (int i = 0; i < nearby_objects.Count(); i++)
 			{
@@ -1308,13 +1308,13 @@ modded class DayZPlayerImplement
 		return found_vehicles;
 	}
 
-	Object GetVehicleToSell(int traderUID, string vehicleClassname) // duplicate
+	Object GetVehicleToSell(int traderIndex, string vehicleClassname) // duplicate
 	{
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
 		array<Object> nearby_objects = new array<Object>;
-		vector position = m_Trader_TraderVehicleSpawns.Get(traderUID);
-		vector orientation = m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID);
+		vector position = m_Trader_TraderVehicleSpawns.Get(traderIndex);
+		vector orientation = m_Trader_TraderVehicleSpawnsOrientation.Get(traderIndex);
 		bool Colliding = GetGame().IsBoxColliding( position, orientation, size, excluded_objects, nearby_objects);
 		if (Colliding)
 		{
@@ -1363,10 +1363,10 @@ modded class DayZPlayerImplement
 		return NULL;
 	}
 
-	void spawnVehicle(int traderUID, string vehicleType, int vehicleKeyHash)
+	void spawnVehicle(int traderIndex, string vehicleType, int vehicleKeyHash)
 	{
-		vector objectPosition = m_Trader_TraderVehicleSpawns.Get(traderUID);
-		vector objectOrientation = m_Trader_TraderVehicleSpawnsOrientation.Get(traderUID);
+		vector objectPosition = m_Trader_TraderVehicleSpawns.Get(traderIndex);
+		vector objectOrientation = m_Trader_TraderVehicleSpawnsOrientation.Get(traderIndex);
 		
 		EntityAI vehicle = EntityAI.Cast(GetGame().CreateObjectEx(vehicleType, objectPosition, ECE_LOCAL | ECE_CREATEPHYSICS | ECE_TRACE));
 		if(!vehicle)
@@ -1416,8 +1416,6 @@ modded class DayZPlayerImplement
 			car.Fill( CarFluid.USER2, car.GetFluidCapacity( CarFluid.USER2 ));
 			car.Fill( CarFluid.USER3, car.GetFluidCapacity( CarFluid.USER3 ));
 			car.Fill( CarFluid.USER4, car.GetFluidCapacity( CarFluid.USER4 ));
-
-			car.m_Trader_IsInSafezone = true;
 
 			if (vehicleKeyHash != 0)
 			{

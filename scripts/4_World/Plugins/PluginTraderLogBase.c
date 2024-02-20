@@ -1,3 +1,4 @@
+#ifdef SERVER
 class PluginTraderLogBase extends PluginBase
 {
 	private FileHandle m_LogFile;
@@ -108,3 +109,4 @@ class PluginTraderLogBase extends PluginBase
 		currentTime = sHour + ":" + sMinute + ":" + sSecond + " | ";
 	}
 };
+#endif

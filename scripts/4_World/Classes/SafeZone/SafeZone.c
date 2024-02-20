@@ -7,10 +7,9 @@ class SafeZoneTrigger : CylinderTrigger
 	override void EEInit()
 	{
 		super.EEInit();		
-		if(GetGame().IsClient())
-		{			
+		#ifndef SERVER
 			GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(this.SpawnCylinderShape, 1000, true);
-		}
+		#endif
 	}
 
 	void SpawnCylinderShape()
@@ -50,6 +49,11 @@ class SafeZoneTrigger : CylinderTrigger
 	override bool CanAddObjectAsInsider(Object object)
 	{
 		#ifdef SERVER
+		CarScript vehicle = CarScript.Cast(object);
+		if(vehicle)
+		{
+			return true;
+		}
 		DayZCreatureAI creature = DayZCreatureAI.Cast( object );
 		if(creature)
 		{
@@ -76,10 +80,17 @@ class SafeZoneTrigger : CylinderTrigger
 		
 		if (insider)
 		{
-			PlayerBase playerInsider = PlayerBase.Cast( insider.GetObject() );
-			
+			PlayerBase playerInsider = PlayerBase.Cast( insider.GetObject() );			
 			if (playerInsider)
-				playerInsider.AddSafeZoneTrigger();				
+			{
+				playerInsider.AddSafeZoneTrigger();
+				return;
+			}
+			CarScript vehicle = CarScript.Cast(insider.GetObject());
+			if(vehicle)
+			{
+				vehicle.SetIsInSafezone(true);
+			}
 		}
 	}
 
@@ -111,12 +122,20 @@ class SafeZoneTrigger : CylinderTrigger
 	{
 		super.OnLeaveServerEvent( insider );
 		
-		if ( insider )
+		if (insider)
 		{
-			PlayerBase playerInsider = PlayerBase.Cast( insider.GetObject() );
-			
-			if ( playerInsider )
+			PlayerBase playerInsider = PlayerBase.Cast(insider.GetObject());			
+			if (playerInsider)
+			{	
 				playerInsider.RemoveSafeZoneTrigger(m_ExitTimerInSeconds);
+				return;
+			}
+			
+			CarScript vehicle = CarScript.Cast(insider.GetObject());
+			if(vehicle)
+			{
+				vehicle.SetIsInSafezone(false);
+			}
 		}
 	}
 

@@ -1,3 +1,4 @@
+#ifdef SERVER
 class PluginTraderTradesLog extends PluginTraderLogBase
 {
 	void PluginTraderTradesLog()
@@ -5,3 +6,4 @@ class PluginTraderTradesLog extends PluginTraderLogBase
 		m_LogName  = "TM_TradesLog_";
 	}
 };
+#endif

@@ -31,7 +31,7 @@ class TraderMenu extends UIScriptedMenu
 	bool m_active = false;
 	
 	int m_TraderID = -1;
-	int m_TraderUID = -1;
+	int m_traderIndex = -1;
 	vector m_TraderVehicleSpawn = "0 0 0";
 	vector m_TraderVehicleSpawnOrientation = "0 0 0";
 	
@@ -173,10 +173,6 @@ class TraderMenu extends UIScriptedMenu
 				updateItemPreview(itemType);
 			}
 
-			float playerDistanceToTrader = vector.Distance(m_Player.GetPosition(), m_Player.m_Trader_TraderPositions.Get(m_TraderUID));
-			if (playerDistanceToTrader > TR_Helper.GetTraderAllowedTradeDistance())
-				GetGame().GetUIManager().Back();
-
 			m_UiUpdateTimer = 0;
 		}
 		else
@@ -268,7 +264,7 @@ class TraderMenu extends UIScriptedMenu
 			}
 			m_UiBuyTimer = m_buySellTime;
 
-			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_BUY, new Param3<int, int, string>( m_TraderUID, m_FilteredListOfTraderItems.Get(row_index).IndexId, getItemDisplayName(itemType)), true);
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_BUY, new Param3<int, int, string>( m_traderIndex, m_FilteredListOfTraderItems.Get(row_index).IndexId, getItemDisplayName(itemType)), true);
 			
 			return true;
 		}
@@ -282,7 +278,7 @@ class TraderMenu extends UIScriptedMenu
 			}
 			m_UiSellTimer = m_buySellTime;
 
-			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SELL, new Param3<int, int, string>( m_TraderUID, m_FilteredListOfTraderItems.Get(row_index).IndexId, getItemDisplayName(itemType)), true);
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SELL, new Param3<int, int, string>( m_traderIndex, m_FilteredListOfTraderItems.Get(row_index).IndexId, getItemDisplayName(itemType)), true);
 			
 			return true;
 		}

@@ -64,6 +64,7 @@ modded class MissionServer
 		readTraderVariables();
 		readTraderData();
 		readTraderAdmins();
+		g_Game.SetTraderPositionsAndSafezones(m_Trader_TraderPositions, m_Trader_TraderSafezones);
 		TraderMessage.ServerLog("[TRADER] FINISHED LOADING TRADER CONFIG");
     }
 
@@ -79,7 +80,7 @@ modded class MissionServer
 
         super.HandleBody(player);
     }
-	
+
 	override void OnUpdate(float timeslice)
 	{
 		super.OnUpdate(timeslice);
@@ -281,7 +282,6 @@ modded class MissionServer
 						TraderMessage.ServerLog("[TRADER] Object was a Man..");
 						isTrader = true;
 						man.SetAllowDamage(false);
-						man.m_Trader_IsTrader = true;
 					}
 				}
 				else
@@ -984,8 +984,6 @@ modded class MissionServer
 			markerPosition[1] = traderMarkerPosY.ToFloat();
 			markerPosition[2] = traderMarkerPosZ.ToFloat();
 			
-			TraderMessage.ServerLog("[TRADER] TRADER MARKER POSITION ENTRY " + markerPosition);
-			
 			m_Trader_TraderPositions.Insert(markerPosition);
 			Object traderAtPos = FindTraderObjectAtPosition(markerPosition);			
 			if(traderAtPos)
@@ -993,17 +991,23 @@ modded class MissionServer
 				BuildingBase buildingItem = BuildingBase.Cast(traderAtPos);
 				if(buildingItem)
 				{
-					buildingItem.m_Trader_TraderID = currentTraderID;
+					buildingItem.m_Trader_TraderIndex = m_Trader_TraderIDs.Count() - 1;
 					buildingItem.SetSynchDirty();
 					//TraderMessage.ServerLog("[TRADER] TRADER MARKER buildingItem " + buildingItem);
 				}
 				PlayerBase playerTrader = PlayerBase.Cast(traderAtPos);
 				if(playerTrader)
 				{
-					playerTrader.m_Trader_TraderID = currentTraderID;
+					playerTrader.m_Trader_IsTrader = true;
+					playerTrader.m_Trader_TraderIndex = m_Trader_TraderIDs.Count() - 1;
 					playerTrader.SetSynchDirty();
 					//TraderMessage.ServerLog("[TRADER] TRADER MARKER playerTrader " + playerTrader);
-				}
+				}			
+				TraderMessage.ServerLog("[TRADER] TRADER MARKER POSITION ENTRY " + markerPosition);
+			}
+			else
+			{
+				TraderMessage.ServerLog("[TRADER][ERROR] Marker couldn't find an object at position " + markerPosition);
 			}
 			
 			// Get Trader Marker Safezone Radius:					
@@ -1224,25 +1228,9 @@ modded class MissionServer
 		return 0;
 	}
 
+	//DEPRECATED - NOT USED ANYMORE
 	void SetPlayerVehicleIsInSafezone( PlayerBase player, bool isInSafezone )
 	{
-		CarScript car = CarScript.Cast(player.GetParent());
-
-		if (car)
-		{
-			car.m_Trader_IsInSafezone = isInSafezone;
-			car.SynchronizeValues();
-			car.SetAllowDamage(!isInSafezone);
-		}
-
-		/*for (int j = 0; j < m_Players.Count(); j++)
-		{
-			PlayerBase currentPlayer = PlayerBase.Cast(m_Players.Get(j));
-			
-			if ( !currentPlayer )
-				continue;
-
-			GetGame().RPCSingleParam(currentPlayer, TRPCs.RPC_SYNC_CARSCRIPT_ISINSAFEZONE, new Param2<CarScript, bool>( car, isInSafezone ), true, currentPlayer.GetIdentity());
-		}*/
+		Print("A mod is using SetPlayerVehicleIsInSafezone from Trader mod. Function has been deprecated.");
 	}
 }
