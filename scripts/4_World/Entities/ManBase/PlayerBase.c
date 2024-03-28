@@ -41,7 +41,7 @@ modded class PlayerBase
 		{
 			if (!m_IsInSafeZone)
 			{
-				SendToGameLabsTrader(this, "", "", "has entered a safezone");
+				//SendToGameLabsTrader(this, "", "", "has entered a safezone");
 				SetAllowDamage(false);
 				SetInSafeZone(true);
 			}
@@ -84,7 +84,7 @@ modded class PlayerBase
 		TraderMessage.DeleteSafezoneMessages(this);
 		TraderMessage.PlayerRed("#tm_left_safezone", this);
 
-		SendToGameLabsTrader(this, "", "", "has left a safezone");
+		//SendToGameLabsTrader(this, "", "", "has left a safezone");
 		
 		bool godModeVPP, godModeCOT;
 		EnScript.GetClassVar(this, "hasGodmode", 0, godModeVPP);
@@ -130,6 +130,18 @@ modded class PlayerBase
 		
 		return super.CanBeTargetedByAI(ai);
 	}
+	
+	#ifdef EXPANSIONMODCORE
+	override bool Expansion_IsInSafeZone()
+    {
+		if(IsTrader() || IsInSafeZone())
+		{
+			return true;
+		}
+
+        return super.Expansion_IsInSafeZone();
+    }
+	#endif
 
     override void SetActions(out TInputActionMap InputActionMap)
 	{

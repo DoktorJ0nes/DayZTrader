@@ -14,7 +14,7 @@ modded class DayZGame
     {
         if(!m_Trader_TraderPositions)
         {
-            return;
+            return false;
         }
         for (int k = 0; k < m_Trader_TraderPositions.Count(); k++)
         {

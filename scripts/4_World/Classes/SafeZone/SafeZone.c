@@ -2,6 +2,7 @@ class SafeZoneTrigger : CylinderTrigger
 {
 	private bool m_RemoveAnimals = false;
 	private bool m_RemoveInfected = false;
+	private bool m_RemoveEAI = false;
 	private int m_ExitTimerInSeconds = 30;
 
 	override void EEInit()
@@ -39,11 +40,12 @@ class SafeZoneTrigger : CylinderTrigger
 		}
 	}
 
-	void InitSafeZone(int exitTimerInSeconds, bool shouldRemoveAnimals, bool shouldRemoveInfected)
+	void InitSafeZone(int exitTimerInSeconds, bool shouldRemoveAnimals, bool shouldRemoveInfected, bool shouldRemoveEAI)
 	{
 		m_ExitTimerInSeconds = exitTimerInSeconds;
 		m_RemoveAnimals = shouldRemoveAnimals;
 		m_RemoveInfected = shouldRemoveInfected;
+		m_RemoveEAI = shouldRemoveEAI;
 	}
 
 	override bool CanAddObjectAsInsider(Object object)
@@ -66,11 +68,28 @@ class SafeZoneTrigger : CylinderTrigger
 		else
 		{
 			PlayerBase player = PlayerBase.Cast(object);
-			return player != null;
+			if(player)
+			{				
+				#ifdef ENFUSION_AI_PROJECT
+				if(player.IsAI() && m_RemoveEAI)
+				{
+					return true;
+				}
+				#endif
+				if(player.GetIdentity() != null)
+				{
+					return !player.IsTrader();
+				}
+				else
+				{
+					return false;
+				}
+			}
 		}
+		return false;
 		#else
 		PlayerBase player = PlayerBase.Cast(object);
-		return (player && player.IsControlledPlayer());
+		return (player && player.IsControlledPlayer() && !player.IsTrader());
 		#endif
 	}
 
@@ -83,6 +102,12 @@ class SafeZoneTrigger : CylinderTrigger
 			PlayerBase playerInsider = PlayerBase.Cast( insider.GetObject() );			
 			if (playerInsider)
 			{
+				#ifdef ENFUSION_AI_PROJECT		
+				if (playerInsider && playerInsider.IsAI())
+				{
+					return;
+				}
+				#endif
 				playerInsider.AddSafeZoneTrigger();
 				return;
 			}
@@ -102,6 +127,10 @@ class SafeZoneTrigger : CylinderTrigger
 		if (!Class.CastTo(player, insider.GetObject()))
 			return;
 		
+		#ifdef ENFUSION_AI_PROJECT
+		if (player.IsAI())
+			return;
+		#endif
 		if (player == GetGame().GetPlayer())
 			VONManager.GetInstance().SetInSafeZone(true);
 	}
@@ -114,6 +143,10 @@ class SafeZoneTrigger : CylinderTrigger
 		if (!Class.CastTo(player, insider.GetObject()))
 			return;
 		
+		#ifdef ENFUSION_AI_PROJECT
+		if (player.IsAI())
+			return;
+		#endif
 		if (player == GetGame().GetPlayer())
 			VONManager.GetInstance().SetInSafeZone(false);
 	}
@@ -127,6 +160,10 @@ class SafeZoneTrigger : CylinderTrigger
 			PlayerBase playerInsider = PlayerBase.Cast(insider.GetObject());			
 			if (playerInsider)
 			{	
+				#ifdef ENFUSION_AI_PROJECT
+				if (playerInsider.IsAI())
+					return;
+				#endif
 				playerInsider.RemoveSafeZoneTrigger(m_ExitTimerInSeconds);
 				return;
 			}
@@ -141,7 +178,16 @@ class SafeZoneTrigger : CylinderTrigger
 
 	override void OnStayServerEvent(TriggerInsider insider, float deltaTime) 
 	{
-		super.OnStayServerEvent( insider, deltaTime);
+		super.OnStayServerEvent( insider, deltaTime);		
+		#ifdef ENFUSION_AI_PROJECT
+		PlayerBase playerInsider = PlayerBase.Cast(insider.GetObject());			
+		if (playerInsider && playerInsider.IsAI())
+		{
+			playerInsider.SetHealth("","Health", 0);
+			playerInsider.Delete();
+			return;
+		}
+		#endif
 		DayZCreatureAI creature = DayZCreatureAI.Cast( insider.GetObject() );
 		if (creature)
 		{
