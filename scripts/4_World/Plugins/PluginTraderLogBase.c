@@ -5,6 +5,7 @@ class PluginTraderLogBase extends PluginBase
 	private bool m_LogEnabled = false;
 	private static const string m_profileFolder = "$profile:";
 	protected string m_LogName  = "TM_Trades_";
+	protected string m_LogFullFileName  = "TM_Trades_";
 	
 	int year, month, day, hour, minute, second;
 	string sYear, sMonth, sDay, sHour, sMinute, sSecond, currentDateTime, currentTime;
@@ -20,13 +21,7 @@ class PluginTraderLogBase extends PluginBase
 			
 			//setting currentDateTime
 			SetCurrentTime();
-			string currentFileName = m_profileFolder + "/" + m_LogName + currentDateTime + ".log";
-		
-			// Create New Log
-			if (CreateNewLogFile(currentFileName))
-			{				
-				m_LogEnabled = true;
-			}
+			m_LogFullFileName = m_profileFolder + "/" + m_LogName + currentDateTime + ".log";
 		}
 	}
 
@@ -59,11 +54,20 @@ class PluginTraderLogBase extends PluginBase
 
 	void Log(string text)
 	{
+		if(!m_LogEnabled)
+		{
+			// Create New Log
+			if (CreateNewLogFile(m_LogFullFileName))
+			{				
+				m_LogEnabled = true;
+			}
+		}
 		if (GetGame().IsServer() && m_LogEnabled)
 		{
 			SetCurrentTime();			
 			FPrintln(m_LogFile, currentTime + text);
 		}
+
 	}
 
 	protected void SetCurrentTime()

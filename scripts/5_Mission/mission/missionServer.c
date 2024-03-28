@@ -9,6 +9,7 @@ modded class MissionServer
 	float m_Trader_SafezoneTimeout = 30;
 	bool m_Trader_SafezoneRemoveAnimals = false;
 	bool m_Trader_SafezoneRemoveInfected = false;
+	bool m_Trader_SafezoneRemoveEAI = false;
 	bool m_Trader_SafezoneShowDebugShapes = false;
 	float m_Trader_TradingDistance = 3.0;
 
@@ -581,6 +582,21 @@ modded class MissionServer
 
 				TraderMessage.ServerLog("[TRADER] SafezoneRemoveInfected = " + line_content);
 			}
+			
+			if (line_content.Contains("<SafezoneRemoveEAI>"))
+			{
+				line_content.Replace("<SafezoneRemoveEAI>", "");
+				line_content = FileReadHelper.TrimComment(line_content);
+				lowerLine = line_content;
+				lowerLine.ToLower();
+				if(lowerLine.Contains("yes"))
+				{
+					m_Trader_SafezoneRemoveEAI = true;
+				}
+				validEntry = true;
+
+				TraderMessage.ServerLog("[TRADER] SafezoneRemoveEAI = " + line_content);
+			}
 			if (line_content.Contains("<SafezoneShowDebugShape>"))
 			{
 				line_content.Replace("<SafezoneShowDebugShape>", "");
@@ -993,7 +1009,7 @@ modded class MissionServer
 				{
 					buildingItem.m_Trader_TraderIndex = m_Trader_TraderIDs.Count() - 1;
 					buildingItem.SetSynchDirty();
-					//TraderMessage.ServerLog("[TRADER] TRADER MARKER buildingItem " + buildingItem);
+					TraderMessage.ServerLog("[TRADER] TRADER MARKER Building Trader " + buildingItem);
 				}
 				PlayerBase playerTrader = PlayerBase.Cast(traderAtPos);
 				if(playerTrader)
@@ -1001,7 +1017,7 @@ modded class MissionServer
 					playerTrader.m_Trader_IsTrader = true;
 					playerTrader.m_Trader_TraderIndex = m_Trader_TraderIDs.Count() - 1;
 					playerTrader.SetSynchDirty();
-					//TraderMessage.ServerLog("[TRADER] TRADER MARKER playerTrader " + playerTrader);
+					TraderMessage.ServerLog("[TRADER] TRADER MARKER Human Trader " + playerTrader);
 				}			
 				TraderMessage.ServerLog("[TRADER] TRADER MARKER POSITION ENTRY " + markerPosition);
 			}
@@ -1035,7 +1051,7 @@ modded class MissionServer
 					triggerPosition[1] = triggerPosition[1] - halfheight; // Sane default values
 					newTrigger.SetPosition(triggerPosition);
 					newTrigger.SetCollisionCylinder( triggerRadius, halfheight * 2 );
-					newTrigger.InitSafeZone(m_Trader_SafezoneTimeout, m_Trader_SafezoneRemoveAnimals, m_Trader_SafezoneRemoveInfected);
+					newTrigger.InitSafeZone(m_Trader_SafezoneTimeout, m_Trader_SafezoneRemoveAnimals, m_Trader_SafezoneRemoveInfected , m_Trader_SafezoneRemoveEAI);
 					
 					TraderMessage.ServerLog("[TRADER] SPAWNED SAFEZONE AT " + triggerPosition + " with radius " + triggerRadius);
 				}

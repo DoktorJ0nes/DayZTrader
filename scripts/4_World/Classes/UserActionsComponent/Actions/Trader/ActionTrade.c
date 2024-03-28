@@ -93,9 +93,8 @@ class ActionTrade: ActionInteractBase
 			m_traderIndex = playerTrader.m_Trader_TraderIndex;
 		}
 		m_traderID = getTraderID();
-		bool canOpenTraderMenu = getCanOpenTraderMenu(playerPosition);
-		if (canOpenTraderMenu)
-		{			
+		if (m_traderIndex != -1)
+		{
 			if(player.m_Trader_TraderNames)
 			{
 				string traderName = player.m_Trader_TraderNames.Get(getTraderID());
@@ -104,21 +103,6 @@ class ActionTrade: ActionInteractBase
 			return true;
 		}
 		return false;
-	}
-
-    bool getCanOpenTraderMenu(vector position)
-	{		
-		bool playerIsInSafezoneRange = getIsInSafezoneRange(position);
-		
-		if (m_traderIndex == -1 && playerIsInSafezoneRange)
-		{
-			return false;
-		}
-
-		if (!playerIsInSafezoneRange)
-			return false;	
-
-		return true;
 	}
 
     int getNearbyTraderUID(vector position)
@@ -132,17 +116,6 @@ class ActionTrade: ActionInteractBase
 		return -1;
 	}
 
-    bool getIsInSafezoneRange(vector position)
-	{
-		for ( int traderIndex = 0; traderIndex < m_Player.m_Trader_TraderPositions.Count(); traderIndex++ )
-		{
-			if (getDistanceToTrader(position, traderIndex) <= m_Player.m_Trader_TraderSafezones.Get(traderIndex) || getIsTraderNearby(position, traderIndex))
-				return true;
-		}
-
-		return false;
-	}
-
     int getTraderID()
 	{
 		return m_Player.m_Trader_TraderIDs.Get(m_traderIndex);
@@ -150,12 +123,14 @@ class ActionTrade: ActionInteractBase
 
     float getDistanceToTrader(vector position, int traderIndex)
 	{
-		return vector.Distance(position, m_Player.m_Trader_TraderPositions.Get(traderIndex));
+		vector traderPosition = m_Player.m_Trader_TraderPositions.Get(traderIndex);
+		return vector.Distance(position, traderPosition);
 	}
 
     bool getIsTraderNearby(vector position, int traderIndex)
 	{
-		return getDistanceToTrader(position, traderIndex) <= m_Trader_AllowedTradeDistance;
+		float distanceToTrader = getDistanceToTrader(position, traderIndex);
+		return  distanceToTrader <= m_Trader_AllowedTradeDistance;
 	}
 
 	void initializeTraderMenu()

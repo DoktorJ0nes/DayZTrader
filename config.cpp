@@ -140,6 +140,7 @@ class CfgVehicles
 	{
 		scope = 2;
 		model = "TM\Trader\Road_Cone.p3d";
+		physLayer = "item_small";
 	};
 	class Hoodie_ColorBase;
 	class Hoodie_GraffitiTiles: Hoodie_ColorBase
