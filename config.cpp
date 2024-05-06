@@ -134,6 +134,62 @@ class CfgVehicles
 		displayName=$STR_tm_100_ruble_note;
 		hiddenSelectionsTextures[]={"TM\Trader\data\ruble100_co.paa"};
 	};
+	
+	class TM_Wallet: Inventory_Base
+	{
+		scope = 2;
+		displayName = "Wallet";
+		descriptionShort = "An old wallet to hold money.";
+		model = "\TM\Trader\data\wallet\wallet.p3d";
+		weight = 130;
+		itemSize[] = {3,2};
+		itemsCargoSize[] = {6,4};
+		canBeDigged = 0;
+		allowOwnedCargoManipulation = 1;
+		class DamageSystem
+		{
+			class GlobalHealth
+			{
+				class Health
+				{
+					hitpoints=100;
+					healthLevels[]=
+					{
+						{
+							1.0,
+							{
+								"TM\Trader\data\wallet\wallet.rvmat"
+							}
+						},						
+						{
+							0.69999999,
+							{
+								"TM\Trader\data\wallet\wallet.rvmat"
+							}
+						},						
+						{
+							0.5,							
+							{
+								"TM\Trader\data\wallet\wallet_damage.rvmat"
+							}
+						},						
+						{
+							0.30000001,
+							{
+								"TM\Trader\data\wallet\wallet_damage.rvmat"
+							}
+						},						
+						{
+							0.0,							
+							{
+								"TM\Trader\data\wallet\wallet_destruct.rvmat"
+							}
+						}
+					};
+				};
+			};
+		};
+	};
 
 	class HouseNoDestruct;
 	class Land_RoadCone: HouseNoDestruct
@@ -141,19 +197,6 @@ class CfgVehicles
 		scope = 2;
 		model = "TM\Trader\Road_Cone.p3d";
 		physLayer = "item_small";
-	};
-	class Hoodie_ColorBase;
-	class Hoodie_GraffitiTiles: Hoodie_ColorBase
-	{
-		scope = 2;
-		visibilityModifier = 0.95;
-		hiddenSelectionsTextures[] = {"","","","","TM\Trader\data\hoodie_graffiti_co.paa","TM\Trader\data\hoodie_graffiti_co.paa","TM\Trader\data\hoodie_graffiti_co.paa"};
-	};
-	class Hoodie_DrJ0nes: Hoodie_ColorBase
-	{
-		scope = 2;
-		visibilityModifier = 0.95;
-		hiddenSelectionsTextures[] = {"","","","","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa","TM\Trader\data\hoodie_drj0nes_co.paa"};
 	};
 	class VehicleKeyBase: Inventory_Base
 	{

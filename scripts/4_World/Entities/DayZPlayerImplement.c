@@ -323,7 +323,9 @@ modded class DayZPlayerImplement
 
 		vector playerPosition = GetPosition();
 		PlayerBase player = PlayerBase.Cast(this);
-		if (vector.Distance(playerPosition, m_Trader_TraderPositions.Get(traderIndex)) > TR_Helper.GetTraderAllowedTradeDistance())
+		vector traderPosition = m_Trader_TraderPositions.Get(traderIndex);
+		float distanceToPlayer = vector.Distance(playerPosition, traderPosition);
+		if (distanceToPlayer > TR_Helper.GetTraderAllowedTradeDistance())
 		{
 			traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
 			return;
@@ -471,9 +473,10 @@ modded class DayZPlayerImplement
 			traderServerLog("tried to access the Trader out of Range! This could be an Hacker!");
 			return;
 		}
-
-
-		Object vehicleToSell = GetVehicleToSell(traderIndex, itemType);
+		
+		vector position = m_Trader_TraderVehicleSpawns.Get(traderIndex);
+		vector orientation = m_Trader_TraderVehicleSpawnsOrientation.Get(traderIndex);
+		Object vehicleToSell = GetVehicleToSell(itemType, position, orientation);
 		bool isValidVehicle = ((itemQuantity == -2 || itemQuantity == -6) && vehicleToSell);
 
 		if (itemSellValue < 0)
@@ -482,27 +485,62 @@ modded class DayZPlayerImplement
 			return;
 		}
 
-		if (!isInPlayerInventory(itemType, itemQuantity) && !isValidVehicle)
+		bool sold = false;
+		string persistentID;
+		int b1;
+		int b2;
+		int b3;
+		int b4;
+		if(!isValidVehicle)
 		{
-			TraderMessage.PlayerWhite("#tm_you_cant_sell", player);
+			ItemBase sellableItem;
+			if (!isInPlayerInventory(itemType, itemQuantity, sellableItem))
+			{
+				TraderMessage.PlayerWhite("#tm_you_cant_sell", player);
 
-			if (itemQuantity == -2 || itemQuantity == -6)
-				TraderMessage.PlayerWhite("#tm_cant_sell_vehicle", player);
-				//TraderMessage.PlayerWhite("Turn the Engine on and place it inside the Traffic Cones!", player);
+				if (itemQuantity == -2 || itemQuantity == -6)
+					TraderMessage.PlayerWhite("#tm_cant_sell_vehicle", player);
+					//TraderMessage.PlayerWhite("Turn the Engine on and place it inside the Traffic Cones!", player);
 
-			return;
+				return;
+			}
+			if(sellableItem)
+			{
+				sellableItem.GetPersistentID(b1, b2, b3, b4);				
+				persistentID = itemType+ "["+b1+" "+b2+" "+b3+" "+b4+"]";
+				sold = RemoveItem(sellableItem , itemType, itemQuantity);
+			}
 		}
-
-		traderTradesLog("sold" + " " + getItemDisplayName(itemType) + " (" + itemType + ")");
-
-		TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_was_sold", player);
-
-		if (isValidVehicle)
-			deleteObject(vehicleToSell);
-		else
-			removeFromPlayerInventory(itemType, itemQuantity);
 		
-		increasePlayerCurrency(itemSellValue);
+		if (isValidVehicle)
+		{			
+			
+			EntityAI entityVehicle = EntityAI.Cast(vehicleToSell);
+			if(entityVehicle)
+			{
+				entityVehicle.GetPersistentID(b1, b2, b3, b4);
+				persistentID = itemType+ "_"+b1+"_"+b2+"_"+b3+"_"+b4;
+			}
+			else
+			{
+				persistentID = itemType;
+			}
+			deleteObject(vehicleToSell);
+			sold = true;
+		}
+		
+		if(sold)
+		{				
+			string itemAmount = "";
+			if(itemQuantity > 0)
+			{
+				itemAmount = itemQuantity.ToString() + "x ";
+			}
+			traderTradesLog("sold" + " "+ itemAmount + getItemDisplayName(itemType) + " (" + persistentID + ")");
+
+			TraderMessage.PlayerWhite("" + getItemDisplayName(itemType) + "\n" + "#tm_was_sold", player);
+			increasePlayerCurrency(itemSellValue);
+		}
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// CLIENT RPC HANDLING
@@ -764,13 +802,13 @@ modded class DayZPlayerImplement
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// ITEM & INVENTORY
-	string TrimUntPrefix(string str) // duplicate
+	string TrimUntPrefix(string str) // not duplicate anymore?
 	{
 		str.Replace("$UNT$", "");
 		return str;
 	}
 
-	string getItemDisplayName(string itemClassname) // duplicate
+	string getItemDisplayName(string itemClassname) // not duplicate anymore?
 	{
 		TStringArray itemInfos = new TStringArray;
 		
@@ -809,7 +847,7 @@ modded class DayZPlayerImplement
 			return itemClassname;
 	}
 
-	int GetItemMaxQuantity(string itemClassname) // duplicate
+	int GetItemMaxQuantity(string itemClassname) // not duplicate anymore?
 	{
 		TStringArray searching_in = new TStringArray;
 		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
@@ -829,7 +867,7 @@ modded class DayZPlayerImplement
 		return 0;
 	}
 
-	int getItemAmount(ItemBase item) // duplicate
+	int getItemAmount(ItemBase item) // not duplicate anymore?
 	{
 		Magazine mgzn = Magazine.Cast(item);
 				
@@ -880,7 +918,7 @@ modded class DayZPlayerImplement
 		return true;
 	}
 
-	bool isInPlayerInventory(string itemClassname, int amount) // duplicate
+	bool isInPlayerInventory(string itemClassname, int amount, out ItemBase item) // not duplicate anymore?
 	{
 		itemClassname.ToLower();
 		
@@ -900,8 +938,7 @@ modded class DayZPlayerImplement
 		GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
 		//TraderMessage.PlayerWhite("--------------");
-
-		ItemBase item;		
+	
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
@@ -916,14 +953,64 @@ modded class DayZPlayerImplement
 			if (isAttached(item))
 				continue;
 
+			if(item.GetInventory())
+			{
+				if (!item.GetInventory().CanRemoveEntity())
+				{
+					continue;
+				}
+				if (item.GetNumberOfItems() > 0)
+				{
+					continue;
+				}
+				if(!isWeapon && item.GetInventory().AttachmentCount() > 0)
+				{
+					continue;
+				}
+			}
+
 			itemPlayerClassname = item.GetType();
 			itemPlayerClassname.ToLower();
 
 			//TraderMessage.PlayerWhite("I: " + itemPlayerClassname + " == " + itemClassname);
 
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.5)))) // && m_Trader_LastSelledItemID != item.GetID())
+			if(itemPlayerClassname == itemClassname)
 			{
-				return true;
+				float steakProcentage = 0.5;
+				if(isSteak)
+				{
+					Edible_Base edible = Edible_Base.Cast(item);
+					if(edible)
+					{
+						if (edible.GetFoodStage())
+						{
+							if(edible.GetFoodStageType() == FoodStageType.ROTTEN)
+							{
+								continue;
+							}
+						}
+					}	
+					int steakAmount = getItemAmount(item);
+					int maxSteakAmount = GetItemMaxQuantity(itemPlayerClassname);
+					int MaxPercentage = maxSteakAmount * steakProcentage;
+					if(steakAmount >= MaxPercentage)
+					{
+						return true;
+					}
+					else
+					{
+						continue;
+					}
+				}
+				if(isMagazine || isWeapon)
+				{
+					return true;
+				}
+				if(getItemAmount(item) >= amount)
+				{
+					return true;
+				}
+
 			}
 		}
 		
@@ -1028,36 +1115,6 @@ modded class DayZPlayerImplement
 		return hash;
 	}
 
-	bool removeFromPlayerInventory(string itemClassname, int amount)
-	{
-		ItemBase item = ItemBase.Cast(GetHumanInventory().GetEntityInHands());
-		if (item)
-		{
-			if(RemoveItem(item , itemClassname, amount))
-			{
-				return true;
-			}
-		}
-
-		array<EntityAI> itemsArray = new array<EntityAI>;
-		GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
-		
-		for (int i = 0; i < itemsArray.Count(); i++)
-		{
-			Class.CastTo(item, itemsArray.Get(i));
-			if (!item)
-				continue;
-
-			if(RemoveItem(item , itemClassname, amount))
-			{
-				return true;
-			}
-			
-		}
-
-		return false;
-	}
-
 	bool RemoveItem(ItemBase item, string itemClassname, int amount)
 	{		
 		if (item.IsRuined())
@@ -1080,16 +1137,32 @@ modded class DayZPlayerImplement
 		if (amount == -5)
 			isSteak = true;
 
-		int itemAmount = -1;
 		string itemPlayerClassname = "";
 		itemPlayerClassname = item.GetType();
 		itemPlayerClassname.ToLower();
-
-		if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.5))))
+		if(itemPlayerClassname == itemClassname)
 		{
-			itemAmount = getItemAmount(item);
-			
-			if (itemAmount == amount || isMagazine || isWeapon || isSteak)
+			int itemAmount = getItemAmount(item);
+			int maxAmount = GetItemMaxQuantity(itemPlayerClassname);
+			float steakProcentage = 0.5;
+			bool shouldDel = false;
+			if(isSteak)
+			{
+				int MaxPercentage = maxAmount * steakProcentage;
+				if(itemAmount >=  MaxPercentage )
+				{
+					shouldDel = true;
+				}
+			}
+			if(isMagazine || isWeapon)
+			{
+				shouldDel = true;
+			}
+			if(itemAmount == amount)
+			{
+				shouldDel = true;
+			}
+			if(shouldDel)
 			{
 				deleteItem(item);
 				return true;
@@ -1134,7 +1207,7 @@ modded class DayZPlayerImplement
 		//TraderMessage.PlayerWhite("DELETED " + item.GetType() + "; QTY: " + getItemAmount(item), PlayerBase.Cast(this));
 	}
 
-	bool isAttached(ItemBase item) // duplicate
+	bool isAttached(ItemBase item) // not duplicate anymore?
 	{
 		EntityAI parent = item.GetHierarchyParent();
 
@@ -1151,7 +1224,7 @@ modded class DayZPlayerImplement
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// CURRENCY
-	int getPlayerCurrencyAmount() // duplicate
+	int getPlayerCurrencyAmount() // not duplicate anymore?
 	{
 		PlayerBase m_Player = PlayerBase.Cast(this);
 		
@@ -1308,13 +1381,11 @@ modded class DayZPlayerImplement
 		return found_vehicles;
 	}
 
-	Object GetVehicleToSell(int traderIndex, string vehicleClassname) // duplicate
+	Object GetVehicleToSell(string vehicleClassname, vector position, vector orientation) // not duplicate anymore?
 	{
 		vector size = "3 5 9";
 		array<Object> excluded_objects = new array<Object>;
 		array<Object> nearby_objects = new array<Object>;
-		vector position = m_Trader_TraderVehicleSpawns.Get(traderIndex);
-		vector orientation = m_Trader_TraderVehicleSpawnsOrientation.Get(traderIndex);
 		bool Colliding = GetGame().IsBoxColliding( position, orientation, size, excluded_objects, nearby_objects);
 		if (Colliding)
 		{

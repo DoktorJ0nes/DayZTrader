@@ -264,7 +264,7 @@ class TraderMenu extends UIScriptedMenu
 			}
 			m_UiBuyTimer = m_buySellTime;
 
-			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_BUY, new Param3<int, int, string>( m_traderIndex, m_FilteredListOfTraderItems.Get(row_index).IndexId, getItemDisplayName(itemType)), true);
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_BUY, new Param3<int, int, string>( m_traderIndex, m_FilteredListOfTraderItems.Get(row_index).IndexId, ""), true);
 			
 			return true;
 		}
@@ -278,7 +278,7 @@ class TraderMenu extends UIScriptedMenu
 			}
 			m_UiSellTimer = m_buySellTime;
 
-			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SELL, new Param3<int, int, string>( m_traderIndex, m_FilteredListOfTraderItems.Get(row_index).IndexId, getItemDisplayName(itemType)), true);
+			GetGame().RPCSingleParam(m_Player, TRPCs.RPC_SELL, new Param3<int, int, string>( m_traderIndex, m_FilteredListOfTraderItems.Get(row_index).IndexId, ""), true);
 			
 			return true;
 		}
@@ -364,7 +364,17 @@ class TraderMenu extends UIScriptedMenu
 
 	bool IsSellableOrInInventory(string itemClassname, int itemQuantity)
 	{
-		return isInPlayerInventory(itemClassname, itemQuantity) || ((itemQuantity == -6 || itemQuantity == -2) && GetVehicleToSell(itemClassname));
+		ItemBase item;
+		if(m_Player.isInPlayerInventory(itemClassname, itemQuantity, item))
+		{
+			return true;
+		}
+		// Is a Vehicle
+		if(itemQuantity == -6 || itemQuantity == -2)
+		{
+			return m_Player.GetVehicleToSell(itemClassname, m_TraderVehicleSpawn, m_TraderVehicleSpawnOrientation) != NULL;
+		}
+		return false;
 	}
 
 	void updateItemPreview(string itemType)
@@ -490,213 +500,8 @@ class TraderMenu extends UIScriptedMenu
 	void updatePlayerCurrencyAmount()
 	{
 		m_Player_CurrencyAmount = 0;
-		m_Player_CurrencyAmount = getPlayerCurrencyAmount();
+		m_Player_CurrencyAmount = m_Player.getPlayerCurrencyAmount();
 		m_SaldoValue.SetText(" " + m_Player_CurrencyAmount);
-	}
-	
-	int getPlayerCurrencyAmount() // duplicate
-	{		
-		int currencyAmount = 0;
-		
-		array<EntityAI> itemsArray = new array<EntityAI>;
-		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
-
-		ItemBase item;
-		
-		for (int i = 0; i < itemsArray.Count(); i++)
-		{
-			Class.CastTo(item, itemsArray.Get(i));
-
-			if (!item)
-				continue;
-
-			for (int j = 0; j < m_Player.m_Trader_CurrencyClassnames.Count(); j++)
-			{
-				if(item.GetType() == m_Player.m_Trader_CurrencyClassnames.Get(j))
-				{
-					currencyAmount += getItemAmount(item) * m_Player.m_Trader_CurrencyValues.Get(j);
-				}
-			}
-		}
-		
-		return currencyAmount;
-	}
-	
-	bool isInPlayerInventory(string itemClassname, int amount) // duplicate
-	{
-		itemClassname.ToLower();
-		
-		bool isMagazine = false;
-		if (amount == -3)
-			isMagazine = true;
-
-		bool isWeapon = false;
-		if (amount == -4)
-			isWeapon = true;
-
-		bool isSteak = false;
-		if (amount == -5)
-			isSteak = true;
-
-		array<EntityAI> itemsArray = new array<EntityAI>;		
-		m_Player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
-		
-		//TraderMessage.PlayerWhite("--------------");
-
-		ItemBase item;		
-		for (int i = 0; i < itemsArray.Count(); i++)
-		{
-			Class.CastTo(item, itemsArray.Get(i));
-			string itemPlayerClassname = "";
-
-			if (!item)
-				continue;
-
-			if (item.IsRuined())
-				continue;
-
-			if (isAttached(item))
-				continue;
-
-			itemPlayerClassname = item.GetType();
-			itemPlayerClassname.ToLower();
-
-			//TraderMessage.PlayerWhite("I: " + itemPlayerClassname + " == " + itemClassname);
-
-			if(itemPlayerClassname == itemClassname && ((getItemAmount(item) >= amount && !isMagazine && !isWeapon && !isSteak) || isMagazine || isWeapon || (isSteak && (getItemAmount(item) >= GetItemMaxQuantity(itemPlayerClassname) * 0.5))))
-			{
-				return true;
-			}
-		}
-		
-		return false;
-	}
-
-	int GetItemMaxQuantity(string itemClassname) // duplicate
-	{
-		TStringArray searching_in = new TStringArray;
-		searching_in.Insert( CFG_MAGAZINESPATH  + " " + itemClassname + " count");
-		//searching_in.Insert( CFG_WEAPONSPATH );
-		searching_in.Insert( CFG_VEHICLESPATH + " " + itemClassname + " varQuantityMax");
-
-		for ( int s = 0; s < searching_in.Count(); ++s )
-		{
-			string path = searching_in.Get( s );
-
-			if ( GetGame().ConfigIsExisting( path ) )
-			{
-				return g_Game.ConfigGetInt( path );
-			}
-		}
-
-		return 0;
-	}
-	
-	int getItemAmount(ItemBase item) // duplicate
-	{
-		Magazine mgzn = Magazine.Cast(item);
-				
-		int itemAmount = 0;
-		if( item.IsMagazine() )
-		{
-			itemAmount = mgzn.GetAmmoCount();
-		}
-		else
-		{
-			itemAmount = QuantityConversions.GetItemQuantity(item);
-		}
-		
-		return itemAmount;
-	}
-	
-	string getItemDisplayName(string itemClassname) // duplicate
-	{
-		TStringArray itemInfos = new TStringArray;
-		
-		string cfg = "CfgVehicles " + itemClassname + " displayName";
-		string displayName;
-		GetGame().ConfigGetText(cfg, displayName);
-	
-		if (displayName == "")
-		{
-			cfg = "CfgAmmo " + itemClassname + " displayName";
-			GetGame().ConfigGetText(cfg, displayName);
-		}
-		
-		if (displayName == "")
-		{
-			cfg = "CfgMagazines " + itemClassname + " displayName";
-			GetGame().ConfigGetText(cfg, displayName);
-		}
-		
-		if (displayName == "")
-		{
-			cfg = "cfgWeapons " + itemClassname + " displayName";
-			GetGame().ConfigGetText(cfg, displayName);
-		}
-	
-		if (displayName == "")
-		{
-			cfg = "CfgNonAIVehicles " + itemClassname + " displayName";
-			GetGame().ConfigGetText(cfg, displayName);
-		}
-		
-		
-		if (displayName != "")
-			return TrimUntPrefix(displayName);
-		else
-			return itemClassname;
-	}
-
-	Object GetVehicleToSell(string vehicleClassname) // duplicate
-	{
-		vector size = "3 5 9";
-		array<Object> excluded_objects = new array<Object>;
-		array<Object> nearby_objects = new array<Object>;
-
-		if (GetGame().IsBoxColliding( m_TraderVehicleSpawn, m_TraderVehicleSpawnOrientation, size, excluded_objects, nearby_objects))
-		{
-			for (int i = 0; i < nearby_objects.Count(); i++)
-			{
-				if (nearby_objects.Get(i).GetType() == vehicleClassname)
-				{
-					// Check if there is any Player in the Vehicle:
-					bool vehicleIsEmpty = true;
-
-					Transport transport;
-					Class.CastTo(transport, nearby_objects.Get(i));
-					if (transport)
-					{
-						int crewSize = transport.CrewSize();
-						for (int c = 0; c < crewSize; c++)
-						{
-							if (transport.CrewMember(c))
-								vehicleIsEmpty = false;
-						}
-					}
-					else
-					{
-						continue;
-					}
-
-					if (!vehicleIsEmpty)
-						continue;
-
-					// Check if Engine is running:
-					/*Car car;
-					Class.CastTo(car, nearby_objects.Get(i));
-					if (car && vehicleIsEmpty)
-					{
-						if (car.EngineIsOn())
-							return nearby_objects.Get(i);
-					}*/
-
-					return nearby_objects.Get(i);		
-				}					
-			}
-		}
-
-		return NULL;
 	}
 
 	bool IsAttached(EntityAI parentEntity, string attachmentClassname)
@@ -707,22 +512,6 @@ class TraderMenu extends UIScriptedMenu
 			if ( attachment.IsKindOf ( attachmentClassname ) )
 				return true;
 		}
-
-		return false;
-	}
-
-	bool isAttached(ItemBase item) // duplicate
-	{
-		EntityAI parent = item.GetHierarchyParent();
-
-		if (!parent)
-			return false;
-
-		if (item.GetInventory().IsAttachment() || item.GetNumberOfItems() > 0)
-			return true;
-
-		if (parent.IsWeapon() || parent.IsMagazine())
-			return true;
 
 		return false;
 	}
@@ -821,7 +610,7 @@ class TraderMenu extends UIScriptedMenu
 			countFilter = 0;
 			foreach(TraderItem traderItem : m_ListOfTraderItems)
 			{                
-				displayName = getItemDisplayName(traderItem.ClassName);
+				displayName = m_Player.getItemDisplayName(traderItem.ClassName);
 				string low_DisplayName = displayName;
 				low_DisplayName.ToLower();
 				string low_m_SearchFilter = m_SearchFilter;
@@ -843,7 +632,7 @@ class TraderMenu extends UIScriptedMenu
 			{                
 				if(!ShouldShowInSellablesList(sellableTraderItem))
 						continue;
-				displayName = getItemDisplayName(sellableTraderItem.ClassName);
+				displayName = m_Player.getItemDisplayName(sellableTraderItem.ClassName);
 				m_FilteredListOfTraderItems.Insert(sellableTraderItem);
 				m_ListboxItems.AddItem( displayName, NULL, 0 );	
 				m_ListboxItems.SetItem( countFilter, "" + sellableTraderItem.BuyValue, NULL, 1 );
@@ -856,7 +645,7 @@ class TraderMenu extends UIScriptedMenu
 			countFilter = 0;
 			foreach(TraderItem catTraderItem : m_ListOfCategoryTraderItems)
 			{ 
-				displayName = getItemDisplayName(catTraderItem.ClassName);    
+				displayName = m_Player.getItemDisplayName(catTraderItem.ClassName);    
 				m_FilteredListOfTraderItems.Insert(catTraderItem);
 				m_ListboxItems.AddItem( displayName, NULL, 0 );	
 				m_ListboxItems.SetItem( countFilter, "" + catTraderItem.BuyValue, NULL, 1 );
@@ -893,7 +682,7 @@ class TraderMenu extends UIScriptedMenu
 		{
 			temp = item.ConfigGetString("descriptionShort");
 		}
-		return TrimUntPrefix(temp);
+		return m_Player.TrimUntPrefix(temp);
 	}
 
     override bool OnMouseButtonDown(Widget w, int x, int y, int button)
@@ -953,12 +742,6 @@ class TraderMenu extends UIScriptedMenu
 			float new_y = y - ( m_characterScaleDelta / 8 );
 			m_ItemPreviewWidget.SetPos( new_x, new_y );
 		}
-	}
-
-	string TrimUntPrefix(string str) // duplicate
-	{
-		str.Replace("$UNT$", "");
-		return str;
 	}	
 	
 	override bool OnKeyDown(Widget w, int x, int y, int key)
