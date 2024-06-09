@@ -147,28 +147,23 @@ modded class DayZPlayerImplement
 		//any leftover or new stacks
 		if (currentAmount > 0 || !hasSomeQuant)
 		{
-			EntityAI newItem = EntityAI.Cast(GetInventory().CreateInInventory(itemType));
+			InventoryLocationType foundLocType;
+			EntityAI newItem = EntityAI.Cast(TM_InventoryTransactions.CreateItemInPlayerInventory(itemType, this, foundLocType));
 			if (!newItem)
 			{
-				for (int j = 0; j < itemsArray.Count(); j++)
-				{
-					Class.CastTo(item, itemsArray.Get(j));
-					if (!item)
-						continue;
-					newItem = EntityAI.Cast(item.GetInventory().CreateInInventory(itemType)); //CreateEntityInCargo	
-					if (newItem)
-						break;
-				}
+				foundLocType = InventoryLocationType.UNKNOWN;
 			}
-			if (newItem)
+
+			switch ( foundLocType )
 			{
-				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_added_to_inventory", PlayerBase.Cast(this));
-			}
-			if (!newItem)
-			{
-				newItem = EntityAI.Cast(GetGame().CreateObjectEx(itemType,  player.GetPosition(), ECE_PLACE_ON_SURFACE));
-				TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_was_placed_on_ground", PlayerBase.Cast(this));
-				if (!newItem)
+				case InventoryLocationType.CARGO:
+				case InventoryLocationType.ATTACHMENT:
+					TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_added_to_inventory", PlayerBase.Cast(this));
+					break;
+				case InventoryLocationType.GROUND:
+					TraderMessage.PlayerWhite(newItem.GetDisplayName() + "\n" + "#tm_was_placed_on_ground", PlayerBase.Cast(this));
+					break;
+				case InventoryLocationType.UNKNOWN:
 				{
 					Error("[Trader] Failed to spawn entity "+itemType+" ! Make sure the classname exists and item can be spawned");
 					return false;

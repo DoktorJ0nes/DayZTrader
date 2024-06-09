@@ -68,6 +68,7 @@ class CfgModels
 class CfgVehicles
 {
 	class Inventory_Base;
+	class Container_Base;
 	class MoneyRuble1: Inventory_Base
 	{
 		scope=2;
@@ -135,7 +136,7 @@ class CfgVehicles
 		hiddenSelectionsTextures[]={"TM\Trader\data\ruble100_co.paa"};
 	};
 	
-	class TM_Wallet: Inventory_Base
+	class TM_Wallet: Container_Base
 	{
 		scope = 2;
 		displayName = "Wallet";

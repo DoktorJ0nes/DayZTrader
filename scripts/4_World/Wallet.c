@@ -1,4 +1,4 @@
-class TM_Wallet : ItemBase 
+class TM_Wallet : Container_Base 
 {	
 	ref array<string> m_AllowedCargo = 
 	{
@@ -6,14 +6,15 @@ class TM_Wallet : ItemBase
 		"MoneyRuble1",
 		"TraderPlusMoney_Base",
 		"TraderPlusCoin_Base"
-	};
+	}
+
 	override bool CanReceiveItemIntoCargo (EntityAI item)
 	{
 		foreach( string allowedCargo : m_AllowedCargo )
 		{
 			if(item.IsKindOf(allowedCargo))
 			{
-				return true;
+				return super.CanReceiveItemIntoCargo(item);
 			}
 		}
 		
@@ -26,7 +27,7 @@ class TM_Wallet : ItemBase
 		{		
 			if(child_entity.IsKindOf(allowedCargo) && new_entity.IsKindOf(allowedCargo))
 			{
-				return true;//
+				return super.CanSwapItemInCargo(child_entity,new_entity);
 			}
 		}
 		return false;		
