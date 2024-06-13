@@ -916,19 +916,20 @@ modded class DayZPlayerImplement
 	bool isInPlayerInventory(string itemClassname, int amount, out ItemBase item) // not duplicate anymore?
 	{
 		itemClassname.ToLower();
-		
-		bool isMagazine = false;
-		if (amount == -3)
-			isMagazine = true;
+
+		ItemBase item_in_hands = ItemBase.Cast(GetHumanInventory().GetEntityInHands());
+		if (item_in_hands)
+		{			
+			if(DoItemSellChecks(item_in_hands, itemClassname, amount))
+			{
+				item = item_in_hands;
+				return true;
+			}
+		}
 
 		bool isWeapon = false;
 		if (amount == -4)
 			isWeapon = true;
-
-		bool isSteak = false;
-		if (amount == -5)
-			isSteak = true;
-
 		array<EntityAI> itemsArray = new array<EntityAI>;		
 		GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, itemsArray);
 		
@@ -937,7 +938,6 @@ modded class DayZPlayerImplement
 		for (int i = 0; i < itemsArray.Count(); i++)
 		{
 			Class.CastTo(item, itemsArray.Get(i));
-			string itemPlayerClassname = "";
 
 			if (!item)
 				continue;
@@ -964,51 +964,69 @@ modded class DayZPlayerImplement
 				}
 			}
 
-			itemPlayerClassname = item.GetType();
-			itemPlayerClassname.ToLower();
-
-			//TraderMessage.PlayerWhite("I: " + itemPlayerClassname + " == " + itemClassname);
-
-			if(itemPlayerClassname == itemClassname)
+			if(DoItemSellChecks(item, itemClassname, amount))
 			{
-				float steakProcentage = 0.5;
-				if(isSteak)
-				{
-					Edible_Base edible = Edible_Base.Cast(item);
-					if(edible)
-					{
-						if (edible.GetFoodStage())
-						{
-							if(edible.GetFoodStageType() == FoodStageType.ROTTEN)
-							{
-								continue;
-							}
-						}
-					}	
-					int steakAmount = getItemAmount(item);
-					int maxSteakAmount = GetItemMaxQuantity(itemPlayerClassname);
-					int MaxPercentage = maxSteakAmount * steakProcentage;
-					if(steakAmount >= MaxPercentage)
-					{
-						return true;
-					}
-					else
-					{
-						continue;
-					}
-				}
-				if(isMagazine || isWeapon)
-				{
-					return true;
-				}
-				if(getItemAmount(item) >= amount)
-				{
-					return true;
-				}
-
+				return true;
 			}
 		}
 		
+		return false;
+	}
+
+	protected bool DoItemSellChecks(ItemBase item, string itemClassname, int amount)
+	{
+		string itemPlayerClassname = item.GetType();
+		itemPlayerClassname.ToLower();	
+		
+		bool isMagazine = false;
+		if (amount == -3)
+			isMagazine = true;
+
+		bool isWeapon = false;
+		if (amount == -4)
+			isWeapon = true;
+
+		bool isSteak = false;
+		if (amount == -5)
+			isSteak = true;
+
+		if(itemPlayerClassname == itemClassname)
+		{
+			float steakProcentage = 0.5;
+			if(isSteak)
+			{
+				Edible_Base edible = Edible_Base.Cast(item);
+				if(edible)
+				{
+					if (edible.GetFoodStage())
+					{
+						if(edible.GetFoodStageType() == FoodStageType.ROTTEN)
+						{
+							return false;
+						}
+					}
+				}	
+				int steakAmount = getItemAmount(item);
+				int maxSteakAmount = GetItemMaxQuantity(itemPlayerClassname);
+				int MaxPercentage = maxSteakAmount * steakProcentage;
+				if(steakAmount >= MaxPercentage)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			if(isMagazine || isWeapon)
+			{
+				return true;
+			}
+			if(getItemAmount(item) >= amount)
+			{
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -1196,9 +1214,18 @@ modded class DayZPlayerImplement
 	void deleteItem(ItemBase item)
 	{
 		if (item)
+		{
+			InventoryLocation src = new InventoryLocation();
+			if (item.GetInventory() && item.GetInventory().GetCurrentInventoryLocation(src))
+			{
+				if(src.GetType() == InventoryLocationType.HANDS)
+				{
+					LocalDestroyEntityInHands();
+					return;
+				}
+			}
 			GetGame().ObjectDelete(item);
-			//item.Delete();
-
+		}
 		//TraderMessage.PlayerWhite("DELETED " + item.GetType() + "; QTY: " + getItemAmount(item), PlayerBase.Cast(this));
 	}
 
