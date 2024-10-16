@@ -421,7 +421,7 @@ modded class DayZPlayerImplement
 			deductPlayerCurrency(itemCosts);
 
 			traderTradesLog("bought " + getItemDisplayName(itemType) + "(" + itemType + ")");
-			TraderMessage.PlayerWhite("" + itemDisplayNameClient + "\n" + "#tm_parked_next_to_you", player);
+			TraderMessage.PlayerWhite("" + getItemDisplayName(itemType) + "\n" + "#tm_parked_next_to_you", player);
 
 			spawnVehicle(traderIndex, itemType, vehicleKeyHash);
 
@@ -1518,8 +1518,13 @@ modded class DayZPlayerImplement
 			}
 
 			car.SynchronizeValues();
-
-			car.SetAllowDamage(false);
+		}
+		
+		BoatScript boat = BoatScript.Cast(vehicle);
+		if (boat)
+		{
+			boat.Fill( BoatFluid.FUEL, boat.GetFluidCapacity( BoatFluid.FUEL ));
+			boat.SetSynchDirty();
 		}
 	}
 
