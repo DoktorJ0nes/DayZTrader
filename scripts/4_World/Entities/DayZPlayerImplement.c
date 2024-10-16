@@ -471,8 +471,16 @@ modded class DayZPlayerImplement
 		
 		vector position = m_Trader_TraderVehicleSpawns.Get(traderIndex);
 		vector orientation = m_Trader_TraderVehicleSpawnsOrientation.Get(traderIndex);
-		Object vehicleToSell = GetVehicleToSell(itemType, position, orientation);
-		bool isValidVehicle = ((itemQuantity == -2 || itemQuantity == -6) && vehicleToSell);
+		Object vehicleToSell;
+		bool isValidVehicle = false;
+		if(itemQuantity == -2 || itemQuantity == -6)
+		{
+			vehicleToSell = GetVehicleToSell(itemType, position, orientation);
+			if(vehicleToSell)
+			{
+				isValidVehicle = true;
+			}
+		}
 
 		if (itemSellValue < 0)
 		{
@@ -1441,14 +1449,16 @@ modded class DayZPlayerImplement
 						continue;
 
 					// Check if Player was last Driver:
-					CarScript carsScript = CarScript.Cast(nearby_objects.Get(i));
-					if(!carsScript)
-						continue;
-					
-					if(carsScript.m_Trader_LastDriverId != GetIdentity().GetId())
-						continue;					
-
-					return nearby_objects.Get(i);		
+					CarScript carsScript = CarScript.Cast(transport);					
+					if(carsScript && carsScript.m_Trader_LastDriverId == GetIdentity().GetId())
+					{
+						return carsScript;
+					}
+					BoatScript boatScript = BoatScript.Cast(transport);				
+					if(boatScript && boatScript.m_Trader_LastDriverId == GetIdentity().GetId())
+					{
+						return boatScript;
+					}				
 				}					
 			}
 		}
